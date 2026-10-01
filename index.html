@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Built from src/index.html by tools/build-standalone.js — edit the sources, not this file. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AidAtlas</title>
+<meta name="description" content="Forecast disaster impact, allocate relief by need, and route it at the lowest feasible cost — live, planning, historical and risk modes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* AidAtlas — skill: ui-sketch.
+   Layout concept: a white field-notebook page; pencil-sketched landscape underlies every screen;
+   the satellite map is the working surface, the notebook panel is the plan. Single light theme by design. */
+:root {
+  --paper: #ffffff;
+  --paper-2: #f7f8f9;
+  --ink: #23262b;
+  --graphite: #5b6068;
+  --faint: #8a9099;
+  --rule: #e2e5e9;
+  --accent: #1f5fbf;
+  --accent-ink: #ffffff;
+  --affected: #16a34a;
+  --supply: #dc2626;
+  --storage: #7c3aed;
+  --warn: #b45309;
+  --truck: #f59e0b;
+  --bus: #0ea5e9;
+  --casualty: #db2777;
+  --display: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r: 6px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.wordmark { font-family: var(--display); font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+.wordmark b { color: var(--accent); font-weight: 700; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--graphite); font-weight: 600; }
+.sketch-bg { position: relative; isolation: isolate; }
+.sketch-bg::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMTYwMCA1MjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWF4IHNsaWNlIiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUb3pZalptTURFNE55MDRZV1E1TFRRNFpqTXRPR1E1TlMxbE9XRTRaamt3TlRJMU5qY0FBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphUE04dFFZdEQ0Y2M2djl1ZnpROThMc0FBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEcGhaREF5TkRRM05TMWhaakV5TFRRM09UQXRPRE5tT0MwNU5HUXhOalZrWXpWbU16VnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob05rZ0h1bC84MXZTNzBaVWVOeWZCY0FBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2crRm1VRjEySzBVTUtaVFpmM1k5VFg2R29oSWQ5WnI0WHlmUWlYeFh4cHdTa1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphTmx5TnRJRTVvT0tmeGpMZ0h2eE0vQUFBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDQWFtN1BRbzE2cy9qbHFaSkt4dDF3eXBsN21aeGxFRGRHbEIya1piTXNOSkdSdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCak9abXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qTmlObVl3TVRnM0xUaGhaRGt0TkRobU15MDRaRGsxTFdVNVlUaG1PVEExTWpVMk55OWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qQTRZVFEwTURBNUxUZzVaR1V0TkdReE5DMWhPVGhpTFRZNE9EY3pPVGxsTnpVM1luSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NENFdaUVhYWXJSUXdwbE5sL2RqMU5mb2FpRWgzMW12aGZKOUNKZkZmR25CS0pqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnbkJWTDhWaG1pVkpiNmh4YnQrOFMxdndhckFnelJ2amZROW5XS0w3RGs2dWlZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dSb3d5M1hoM0ZpYXpHdURuY252SUpRcmJJNFNmcFZoSkhNeGhPcjRQLzE1MFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRT1dJbnh4WUd3WFVLQWh5TTFPMTRVNVJUZEI0Z2x2VXJYNytoU0NUYnRabjFEV28xa0lpNnpYWnUrdENXSzAxb1FiTHQxMjFYUWJpaytNTk4veHp0Vm89PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+CjxkZWZzPgo8ZmlsdGVyIGlkPSJyMSIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAzNSIgbnVtT2N0YXZlcz0iMiIgc2VlZD0iMyIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjMuMiIvPjwvZmlsdGVyPgo8ZmlsdGVyIGlkPSJyMiIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjA1IiBudW1PY3RhdmVzPSIyIiBzZWVkPSIxMSIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjQuNSIvPjwvZmlsdGVyPgo8ZyBpZD0ic2NlbmUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Ik0yNzAuMCAyMDAuMCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAyMDguMiBBNi4zIDYuMyAwIDAgMSAyNTIuOSAyMTAuMiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAyMDQuNiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAxOTUuNCBBNi4zIDYuMyAwIDAgMSAyNTIuOSAxODkuOCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAxOTEuOCBBNi4zIDYuMyAwIDAgMSAyNzAuMCAyMDAuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTI5Ni4wIDE2Mi4wIEE5LjAgOS4wIDAgMCAxIDI4OC41IDE3My43IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE3Ni42IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE2OC41IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE1NS41IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE0Ny40IEE5LjAgOS4wIDAgMCAxIDI4OC41IDE1MC4zIEE5LjAgOS4wIDAgMCAxIDI5Ni4wIDE2Mi4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMjk0LjAgMTE4LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMzMuMiBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDEzNy4wIEExMS43IDExLjcgMCAwIDEgMjQ0LjYgMTI2LjUgQTExLjcgMTEuNyAwIDAgMSAyNDQuNiAxMDkuNSBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDk5LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMDIuOCBBMTEuNyAxMS43IDAgMCAxIDI5NC4wIDExOC4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMzMyLjAgNzQuMCBBMTQuNCAxNC40IDAgMCAxIDMyMC4wIDkyLjggQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA5Ny40IEExNC40IDE0LjQgMCAwIDEgMjcxLjIgODQuNCBBMTQuNCAxNC40IDAgMCAxIDI3MS4yIDYzLjYgQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA1MC42IEExNC40IDE0LjQgMCAwIDEgMzIwLjAgNTUuMiBBMTQuNCAxNC40IDAgMCAxIDMzMi4wIDc0LjAiIHN0cm9rZS13aWR0aD0iMS4zIi8+CjxwYXRoIGQ9Ik0zODAuMCA0Mi4wIEExMy41IDEzLjUgMCAwIDEgMzY4LjcgNTkuNiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDYzLjkgQTEzLjUgMTMuNSAwIDAgMSAzMjMuMCA1MS44IEExMy41IDEzLjUgMCAwIDEgMzIzLjAgMzIuMiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDIwLjEgQTEzLjUgMTMuNSAwIDAgMSAzNjguNyAyNC40IEExMy41IDEzLjUgMCAwIDEgMzgwLjAgNDIuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTAgNDAyIEMgMTYwIDM5OCwgMzIwIDQwNiwgNTIwIDQwMSBTIDgyMCAzOTgsIDEwMDAgNDA0IFMgMTE2MCA0MDAsIDExODAgNDA0IiBzdHJva2Utd2lkdGg9IjEuNiIvPgo8cGF0aCBkPSJNNDAgNDAyIEwxNzUgMjYyIFEyMDUgMjM4IDIzNiAyMzEgTDI2NiAyMzEgUTI5NiAyMzggMzI2IDI2MiBMNDcwIDQwMiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0yMzYgMjMxIFEyNTEgMjQwIDI2NiAyMzEiIHN0cm9rZS13aWR0aD0iMS42Ii8+CjxwYXRoIGQ9Ik0yNDYgMjM0IFEyMzYgMjgwIDIyMiAzMzAgUTIxNiAzNTAgMjA2IDM3MiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTI1OCAyMzQgUTI3MiAyODYgMzAwIDMzNiBRMzEyIDM1NiAzMTggMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNMzgwIDQwMiBMNDY4IDMwMCBMNTE4IDMzMiBMNjAwIDIyOCBMNjc2IDMxOCBMNzI0IDI4OCBMODEyIDQwMiIgc3Ryb2tlLXdpZHRoPSIxLjgiLz4KPHBhdGggZD0iTTU3NCAyNjIgTDYwMCAyMjggTDYyOCAyNjIgTDYxNCAyNTQgTDYwMSAyNzAgTDU4OCAyNTQgWiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTY0MCAzMzIgQyA2NjggMzcyLCA2MTAgNDEyLCA3MDYgNDQ2IFMgOTA2IDQ4MiwgMTEwNiA0NzAgUyAxMjU2IDQ1MiwgMTMzNiA0MzQiIHN0cm9rZS13aWR0aD0iMS40Ii8+CjxwYXRoIGQ9Ik02NjQgMzM2IEMgNjkwIDM3NiwgNjQwIDQwNCwgNzI0IDQzMiBTIDkxNiA0NjYsIDExMTIgNDU2IFMgMTI2MiA0NDAsIDEzNDAgNDI0IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNNzA2IDQwMiBMNzA2IDM4NyBNNjg4LjAgMzg3IEw3MDYgMzQyLjAgTDcyNC4wIDM4NyBaIE02OTIgMzcyIEw3MDYgMzMzIEw3MjAgMzcyIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzM0IDQwMiBMNzM0IDM5MCBNNzE5LjYgMzkwIEw3MzQgMzU0LjAgTDc0OC40IDM5MCBaIE03MjIgMzc4IEw3MzQgMzQ3IEw3NDYgMzc4IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzYwIDQwMiBMNzYwIDM4NiBNNzQwLjIgMzg2IEw3NjAgMzM2LjAgTDc3OS44IDM4NiBaIE03NDQgMzY5IEw3NjAgMzI2IEw3NzYgMzY5IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzg4IDQwMiBMNzg4IDM5MSBNNzc0LjUgMzkxIEw3ODggMzU3LjAgTDgwMS41IDM5MSBaIE03NzcgMzgwIEw3ODggMzUwIEw3OTkgMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNODEyIDM5OCBxLTkgLTE4IDMgLTMyIHEtMSAxMyA4IDE1IHE1IC0xNCAtMSAtMjYgcTE5IDEzIDkgNDMiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik04MjggMzk2IHEtOSAtMTggMyAtMzIgcS0xIDEzIDggMTUgcTUgLTE0IC0xIC0yNiBxMTkgMTMgOSA0MyIgc3Ryb2tlLXdpZHRoPSIxLjEiLz4KPHBhdGggZD0iTTg0NiA0MDAgcS05IC0xOCAzIC0zMiBxLTEgMTMgOCAxNSBxNSAtMTQgLTEgLTI2IHExOSAxMyA5IDQzIiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNODcwIDQwMiBWMzUyIEg5MjAgVjQwMiBNODY0IDM1NCBMODk1IDMyMiBMOTI2IDM1NCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTg4NCA0MDIgdi0yMiBoMTIgdjIyIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTk0MCA0MDIgVjM0MCBIMTAwMCBWNDAyIE05MzQgMzQyIEw5NzAgMzA0IEwxMDA2IDM0MiIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTk3MCAzNDAgTDk2MiAzNTggTDk3NSAzNjggTDk2NiAzODYgTDk3MyA0MDIiIHN0cm9rZS13aWR0aD0iMS4yIi8+CjxwYXRoIGQ9Ik05NDggMzU2IGgxNCB2MTIgaC0xNCBaIE05ODIgMzU2IGgxMiB2MTIgaC0xMiBaIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEwMjIgNDAyIFYyOTYgSDEwNjggVjQwMiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTEwMjggMzA2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMDYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMwNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzIxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMjEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMyMSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzM2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMzYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMzNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzUxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNTEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM1MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzY2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNjYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM2NiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzgxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzODEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM4MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwODYgNDAyIEwxMDk0IDM1NiBMMTEzOCAzNjQgTDExMzIgNDAyIE0xMDg4IDM1OCBMMTEyMCAzMzAgTDExNDQgMzY2IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8cGF0aCBkPSJNNzgwIDQxNCBMODAwIDQyNCBMODE2IDQxNCBMODM2IDQzMiBMODUyIDQyMCBMODgyIDQzNiBMOTAyIDQyNCBMOTMwIDQ0MCIgc3Ryb2tlLXdpZHRoPSIxLjQiLz4KPHBhdGggZD0iTTkyMCA0NzAgUTk2MCA0NTIgMTAwMCA0NzAiIHN0cm9rZS13aWR0aD0iMS4wIi8+CjxwYXRoIGQ9Ik04OTAgNDc0IFE5NjAgNDM4IDEwMzAgNDc0IiBzdHJva2Utd2lkdGg9IjEuMCIvPgo8cGF0aCBkPSJNODYwIDQ3OCBROTYwIDQyNSAxMDYwIDQ3OCIgc3Ryb2tlLXdpZHRoPSIxLjAiLz4KPHBhdGggZD0iTTg3MiAxNTAgUTg1OCAxMjAgODkwIDExMyBROTAwIDg0IDkzNiA5MyBROTU2IDY2IDk5MiA4NiBRMTAyOCA4MCAxMDM0IDExMiBRMTA2NiAxMTggMTA1NCAxNTAgWiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTg4NCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNODk4IDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05MTIgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTkyNiAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTQwIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05NTQgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk2OCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTgyIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05OTYgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMTAgMTYyIGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMjQgMTY4IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMzggMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk4MCAxNTYgTDk2MiAyMDAgTDk4NCAyMDAgTDk2NCAyNTAiIHN0cm9rZS13aWR0aD0iMS44Ii8+CjxwYXRoIGQ9Ik0xNDQ0LjAgMTI4LjAgTDE0NDQuNSAxMjguNCBMMTQ0NC45IDEyOC44IEwxNDQ1LjMgMTI5LjQgTDE0NDUuNSAxMzAuMCBMMTQ0NS43IDEzMC42IEwxNDQ1LjcgMTMxLjMgTDE0NDUuNiAxMzIuMSBMMTQ0NS40IDEzMi44IEwxNDQ1LjAgMTMzLjYgTDE0NDQuNSAxMzQuMyBMMTQ0My45IDEzNS4wIEwxNDQzLjEgMTM1LjcgTDE0NDIuMiAxMzYuMyBMMTQ0MS4yIDEzNi45IEwxNDQwLjAgMTM3LjMgTDE0MzguNyAxMzcuNyBMMTQzNy40IDEzNy45IEwxNDM1LjkgMTM4LjAgTDE0MzQuNCAxMzguMCBMMTQzMi45IDEzNy44IEwxNDMxLjQgMTM3LjUgTDE0MjkuOCAxMzcuMCBMMTQyOC4zIDEzNi40IEwxNDI2LjkgMTM1LjYgTDE0MjUuNSAxMzQuNyBMMTQyNC4yIDEzMy42IEwxNDIzLjEgMTMyLjQgTDE0MjIuMSAxMzEuMCBMMTQyMS4zIDEyOS42IEwxNDIwLjcgMTI4LjAgTDE0MjAuMyAxMjYuMyBMMTQyMC4xIDEyNC42IEwxNDIwLjIgMTIyLjkgTDE0MjAuNSAxMjEuMSBMMTQyMS4xIDExOS4zIEwxNDIxLjkgMTE3LjUgTDE0MjMuMCAxMTUuOCBMMTQyNC40IDExNC4xIEwxNDI2LjAgMTEyLjUgTDE0MjcuOCAxMTEuMSBMMTQyOS45IDEwOS44IEwxNDMyLjEgMTA4LjcgTDE0MzQuNiAxMDcuNyBMMTQzNy4yIDEwNy4wIEwxNDQwLjAgMTA2LjQgTDE0NDIuOSAxMDYuMiBMMTQ0NS44IDEwNi4xIEwxNDQ4LjggMTA2LjMgTDE0NTEuOCAxMDYuOCBMMTQ1NC44IDEwNy42IEwxNDU3LjYgMTA4LjYgTDE0NjAuNCAxMDkuOSBMMTQ2My4xIDExMS40IEwxNDY1LjUgMTEzLjIgTDE0NjcuOCAxMTUuMiBMMTQ2OS43IDExNy40IEwxNDcxLjUgMTE5LjggTDE0NzIuOCAxMjIuNCBMMTQ3My45IDEyNS4xIEwxNDc0LjYgMTI4LjAgTDE0NzQuOSAxMzAuOSBMMTQ3NC44IDEzMy45IEwxNDc0LjQgMTM2LjkgTDE0NzMuNSAxMzkuOSBMMTQ3Mi4yIDE0Mi45IEwxNDcwLjUgMTQ1LjcgTDE0NjguNCAxNDguNCBMMTQ2NS45IDE1MS4wIEwxNDYzLjAgMTUzLjQgTDE0NTkuOCAxNTUuNSBMMTQ1Ni40IDE1Ny40IEwxNDUyLjYgMTU5LjAgTDE0NDguNiAxNjAuMyBMMTQ0NC40IDE2MS4yIEwxNDQwLjAgMTYxLjggTDE0MzUuNSAxNjIuMCBMMTQzMS4wIDE2MS45IEwxNDI2LjUgMTYxLjMgTDE0MjIuMCAxNjAuNCBMMTQxNy42IDE1OS4wIEwxNDEzLjQgMTU3LjMgTDE0MDkuMyAxNTUuMiBMMTQwNS42IDE1Mi44IEwxNDAyLjEgMTUwLjAgTDEzOTkuMCAxNDYuOSBMMTM5Ni4zIDE0My42IEwxMzk0LjAgMTQwLjAgTDEzOTIuMiAxMzYuMSBMMTM5MC45IDEzMi4xIEwxMzkwLjEgMTI4LjAgTDEzODkuOSAxMjMuOCBMMTM5MC4yIDExOS41IEwxMzkxLjEgMTE1LjMgTDEzOTIuNiAxMTEuMSBMMTM5NC42IDEwNy4wIEwxMzk3LjIgMTAzLjEgTDE0MDAuMyA5OS40IEwxNDAzLjkgOTUuOSBMMTQwOC4wIDkyLjcgTDE0MTIuNSA4OS45IEwxNDE3LjQgODcuNCBMMTQyMi43IDg1LjQgTDE0MjguMiA4My44IEwxNDM0LjAgODIuNiBMMTQ0MC4wIDgyLjAgTDE0NDYuMSA4MS44IEwxNDUyLjIgODIuMiBMMTQ1OC4zIDgzLjAgTDE0NjQuMiA4NC40IEwxNDcwLjAgODYuNCBMMTQ3NS42IDg4LjggTDE0ODAuOSA5MS43IEwxNDg1LjggOTUuMCBMMTQ5MC4zIDk4LjggTDE0OTQuMyAxMDIuOSBMMTQ5Ny43IDEwNy40IEwxNTAwLjYgMTEyLjMgTDE1MDIuOCAxMTcuMyBMMTUwNC4zIDEyMi42IiBzdHJva2Utd2lkdGg9IjEuNCIvPgo8cGF0aCBkPSJNMTI5MCA2MCBxMzAgLTggNjAgMCIgc3Ryb2tlLXdpZHRoPSIxIi8+CjxwYXRoIGQ9Ik0xMjk2IDg4IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDIgMTE2IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDggMTQ0IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMTQgMTcyIHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTExNTAgNDMyIEMgMTIyMiA0MjAsIDEyNjIgMzMyLCAxMzQyIDMwMCBDIDE0MjIgMjcwLCAxNTAyIDI5OCwgMTQ5NCAzNTggQyAxNDg2IDM5OCwgMTQzMiAzOTIsIDE0NDAgMzYyIEMgMTQ0OCAzMzgsIDE0ODIgMzQyLCAxNDc2IDM2MiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMTcwIDQzMCBDIDEyNDAgNDEyLCAxMjgyIDM0NiwgMTM1MCAzMTgiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik0xMTUwIDQ0MCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTExNjAgNDU2IHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNMTE3MCA0NzIgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik0xMTgwIDQ4OCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPC9nPgo8ZyBpZD0iaGF0Y2giIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIwLjgiPgo8cGF0aCBkPSJNMzAwIDI3MCBsMTggMjIiLz4KPHBhdGggZD0iTTMxNSAyODMgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zMzAgMjk2IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzQ1IDMwOSBsMTggMjIiLz4KPHBhdGggZD0iTTM2MCAzMjIgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zNzUgMzM1IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzkwIDM0OCBsMTggMjIiLz4KPHBhdGggZD0iTTQwNSAzNjEgbDE4IDIyIi8+CjxwYXRoIGQ9Ik00MjAgMzc0IGwxOCAyMiIvPgo8cGF0aCBkPSJNMTIwIDMzMCBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xMzIgMzIyIGwtMTAgMTYiLz4KPHBhdGggZD0iTTE0NCAzMTQgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTU2IDMwNiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xNjggMjk4IGwtMTAgMTYiLz4KPHBhdGggZD0iTTE4MCAyOTAgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTkyIDI4MiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik02MjAgMjYyIGwxNCAtNCIvPgo8cGF0aCBkPSJNNjI5IDI3MSBsMTQgLTQiLz4KPHBhdGggZD0iTTYzOCAyODAgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NDcgMjg5IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjU2IDI5OCBsMTQgLTQiLz4KPHBhdGggZD0iTTY2NSAzMDcgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NzQgMzE2IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjgzIDMyNSBsMTQgLTQiLz4KPHBhdGggZD0iTTY5MiAzMzQgbDE0IC00Ii8+CjxwYXRoIGQ9Ik03MDEgMzQzIGwxNCAtNCIvPgo8cGF0aCBkPSJNNDg2IDMxOCBsMTIgLTMiLz4KPHBhdGggZD0iTTQ5MyAzMjggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MDAgMzM4IGwxMiAtMyIvPgo8cGF0aCBkPSJNNTA3IDM0OCBsMTIgLTMiLz4KPHBhdGggZD0iTTUxNCAzNTggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MjEgMzY4IGwxMiAtMyIvPgo8cGF0aCBkPSJNMTAyMiAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDI4IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwMzQgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA0MCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDQ2IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwNTIgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA1OCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDY0IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEzNjAgMzAwIGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzY5IDMwOCBsOCAxOCIvPgo8cGF0aCBkPSJNMTM3OCAzMTYgbDggMTgiLz4KPHBhdGggZD0iTTEzODcgMzI0IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzk2IDMwMCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQwNSAzMDggbDggMTgiLz4KPHBhdGggZD0iTTE0MTQgMzE2IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDIzIDMyNCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQzMiAzMDAgbDggMTgiLz4KPHBhdGggZD0iTTE0NDEgMzA4IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDUwIDMxNiBsOCAxOCIvPgo8cGF0aCBkPSJNMTQ1OSAzMjQgbDggMTgiLz4KPC9nPgo8L2RlZnM+CjxnIHN0cm9rZT0iIzRhNGY1NyI+Cjx1c2UgeGxpbms6aHJlZj0iI3NjZW5lIiBocmVmPSIjc2NlbmUiIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuODUiLz4KPHVzZSB4bGluazpocmVmPSIjc2NlbmUiIGhyZWY9IiNzY2VuZSIgZmlsdGVyPSJ1cmwoI3IyKSIgb3BhY2l0eT0iMC4zNSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMS41IDEpIi8+Cjx1c2UgeGxpbms6aHJlZj0iI2hhdGNoIiBocmVmPSIjaGF0Y2giIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuNTUiLz4KPC9nPgo8L3N2Zz4=') center bottom / cover no-repeat; opacity: var(--sketch-opacity, 0.14); pointer-events: none; }
+
+/* ---------------- landing ---------------- */
+.landing { min-height: 100%; display: flex; flex-direction: column; padding-inline: 16px; --sketch-opacity: 0.9; }
+.landing::before { background-size: max(1400px, 100%) auto; background-position: center bottom; }
+.landing header { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.landing header .wordmark { font-size: 40px; }
+.landing nav { display: flex; gap: 18px; font-size: 13px; }
+.landing nav a { color: var(--graphite); text-decoration: none; }
+.landing nav a:hover { color: var(--ink); text-decoration: underline; }
+.hero { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 12px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.hero h1 { font-family: var(--display); font-size: clamp(40px, 6vw, 68px); line-height: 0.95; margin: 0 0 14px; font-weight: 700; text-wrap: balance; }
+.hero h1 .hl { background: linear-gradient(transparent 62%, #fde68a 62%, #fde68a 92%, transparent 92%); }
+.hero p.lead { font-size: 17px; color: var(--graphite); max-width: 56ch; margin: 0 0 18px; }
+.loop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--graphite); }
+.loop span { border: 1px solid var(--rule); background: var(--paper); padding: 2px 8px; border-radius: 999px; }
+.loop i { font-style: normal; color: var(--faint); }
+.livebox { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+.livebox h2 { margin: 0 0 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.livebox ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.livebox li a { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 4px; border-radius: 6px; text-decoration: none; color: var(--ink); }
+.livebox li a:hover { background: var(--paper-2); }
+.livebox .rk { font-family: var(--mono); color: var(--faint); font-size: 12px; }
+.livebox .ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livebox small { color: var(--faint); font-size: 11px; }
+.modes { max-width: 1120px; width: 100%; margin: 18px auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.mode { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: rgba(255,255,255,.92); border: 1.5px solid var(--ink); border-radius: 12px 14px 11px 13px; padding: 16px; transition: transform .15s ease, box-shadow .15s ease; }
+.mode:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); }
+.mode .n { font-family: var(--mono); font-size: 11px; color: var(--graphite); }
+.mode h3 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; }
+.mode p { margin: 0; color: var(--graphite); font-size: 13px; }
+.mode .go { margin-top: auto; font-size: 13px; color: var(--accent); font-weight: 600; }
+.mode svg { width: 44px; height: 44px; }
+.landing footer { max-width: 1120px; width: 100%; margin: auto auto 0; padding-block: 220px 24px; position: relative; font-size: 12px; color: var(--graphite); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+@media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); } .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .landing footer { padding-block: 140px 18px; } }
+@media (max-width: 480px) { .modes { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------------- app shell ---------------- */
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.topbar { display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-bottom: 1px solid var(--rule); background: var(--paper); position: relative; z-index: 1001; flex-wrap: wrap; }
+.topbar .wordmark { font-size: 28px; text-decoration: none; color: var(--ink); }
+.tabs { display: flex; gap: 2px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 2px; }
+.tabs a { padding: 5px 12px; border-radius: 6px; text-decoration: none; color: var(--graphite); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tabs a[aria-current='page'] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { flex: 1 1 260px; min-width: 0; position: relative; max-width: 520px; }
+.search input { width: 100%; padding: 7px 12px 7px 32px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235b6068' stroke-width='1.8'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 4 4'/%3E%3C/svg%3E") 10px 50% no-repeat; }
+.search ul { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; list-style: none; margin: 0; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 320px; overflow: auto; }
+.search li button { width: 100%; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.search li button:hover, .search li button:focus { background: var(--paper-2); }
+.iconbtn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--graphite); }
+.iconbtn:hover { color: var(--ink); border-color: var(--graphite); }
+.main { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: 0; }
+.panel { overflow: auto; border-right: 1px solid var(--rule); background: var(--paper); --sketch-opacity: 0.11; }
+.panel::before { background-size: 1200px auto; background-position: 18% bottom; position: fixed; left: 0; width: 400px; top: auto; bottom: 0; height: 60%; }
+.panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
+.mapwrap { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; background: #1b1e22; }
+@media (max-width: 860px) {
+  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
+  .mapwrap { order: -1; }
+  .panel { border-right: 0; border-top: 1px solid var(--rule); }
+  .panel::before { width: 100%; }
+}
+
+/* ---------------- panel components ---------------- */
+.ph { display: grid; gap: 4px; }
+.ph h2 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; text-wrap: balance; }
+.ph p { margin: 0; color: var(--graphite); font-size: 13px; }
+.sec { display: grid; gap: 8px; }
+.sec > h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--graphite); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sec > h3 a { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; }
+.card { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
+.evt { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: start; width: 100%; text-align: left; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.evt:hover { border-color: var(--graphite); }
+.evt .rk { font-family: var(--mono); font-size: 13px; color: var(--faint); padding-top: 2px; }
+.evt .t { font-weight: 600; line-height: 1.3; }
+.evt .s { color: var(--graphite); font-size: 12px; }
+.evt .score { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--graphite); }
+.evt .score b { display: block; font-size: 16px; color: var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.EQ { color: #92400e; } .chip.TC { color: #0369a1; } .chip.FL { color: #1d4ed8; } .chip.VO { color: #b91c1c; } .chip.DR { color: #a16207; } .chip.WF { color: #c2410c; }
+.alert { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: 0; border: 1px solid rgba(0,0,0,.25); }
+.alert.Green { background: #22c55e; } .alert.Orange { background: #f97316; } .alert.Red { background: #ef4444; } .alert.na { background: #cbd5e1; }
+.prov { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); border: 1px dashed var(--faint); border-radius: 4px; padding: 0 5px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tile { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; }
+.tile .v { font-family: var(--mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: 11px; color: var(--graphite); }
+.tile .band { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+table.t { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.t th { text-align: left; font-weight: 600; color: var(--graphite); font-size: 11px; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.t td { padding: 5px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; }
+.bar { height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; min-width: 50px; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+.bar.need > i { background: var(--affected); }
+.bar.cov > i { background: #0f766e; }
+.covrow { display: grid; grid-template-columns: 74px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 12px; }
+.covrow .bar { height: 8px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.btn:hover { border-color: var(--graphite); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.on { background: #eef4ff; border-color: var(--accent); color: var(--accent); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--graphite); }
+.field input, .field select { padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 13px; width: 100%; }
+.field input[type=range] { padding: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.note { font-size: 12px; color: var(--graphite); border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; }
+.note.warn { border-color: var(--warn); color: #78350f; }
+.log { display: grid; gap: 6px; font-size: 12px; }
+.log .e { border-left: 2px solid var(--accent); padding-left: 8px; }
+.log .e b { font-weight: 600; }
+.log .e .d { color: var(--graphite); font-family: var(--mono); font-size: 11px; }
+.back { border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; font-size: 13px; justify-self: start; }
+.muted { color: var(--graphite); }
+.small { font-size: 12px; }
+.empty { color: var(--graphite); font-size: 13px; padding: 10px 0; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.8s linear infinite; vertical-align: -2px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ---------------- map overlays ---------------- */
+.toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.18); max-width: calc(100% - 32px); }
+.toast.err { border-color: #fecaca; color: #991b1b; }
+.hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--ink); color: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 32px); }
+.hint button { background: none; border: 1px solid rgba(255,255,255,.5); color: #fff; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.legend { position: absolute; right: 10px; bottom: 24px; z-index: 900; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; font-size: 12px; width: 270px; max-height: calc(100% - 120px); overflow: auto; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.legend h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); display: flex; justify-content: space-between; }
+.legend h4 button { border: 0; background: none; cursor: pointer; color: var(--graphite); font-size: 11px; }
+.legend ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.legend li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: center; }
+.legend .sw { width: 18px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.legend .dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.legend .ln { width: 18px; height: 0; border-top: 3px solid; }
+.legend .ln.dash { border-top-style: dashed; }
+.legend a { text-decoration: none; border-bottom: 1px dotted var(--accent); }
+.legend.collapsed ul, .legend.collapsed p { display: none; }
+@media (max-width: 860px) { .legend { width: 220px; bottom: 10px; right: 8px; max-height: 40%; } }
+.leaflet-tooltip.aa-tip { font: 12px/1.45 var(--sans); max-width: 320px; white-space: normal; border-radius: 8px; padding: 8px 10px; }
+.leaflet-tooltip.aa-tip .m { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); color: var(--accent); font-size: 11px; }
+.leaflet-popup-content { font: 12.5px/1.45 var(--sans); }
+.leaflet-popup-content h4 { margin: 0 0 4px; font-size: 13px; }
+.leaflet-popup-content .btns { margin-top: 8px; }
+.pulse { width: 22px; height: 22px; border-radius: 50%; background: var(--affected); border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(22,163,74,.7); animation: pl 1.8s infinite; }
+@keyframes pl { 70% { box-shadow: 0 0 0 18px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+.closure-x { color: #111; font: 700 20px/1 var(--sans); text-shadow: 0 0 3px #fff, 0 0 6px #fff; }
+.site-diamond { width: 16px; height: 16px; background: var(--storage); border: 2px solid #fff; transform: rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.airdrop-label { color: #fff; background: var(--supply); font: 600 10px/1 var(--sans); padding: 3px 5px; border-radius: 4px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } .mode { transition: none; } }
+
+/* ---------------- explainer drawer ---------------- */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: var(--paper); z-index: 2000; box-shadow: -12px 0 32px rgba(0,0,0,.18); display: grid; grid-template-rows: auto minmax(0, 1fr); transform: translateX(105%); transition: transform .25s ease; --sketch-opacity: .08; }
+.drawer.open { transform: none; }
+.drawer header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
+.drawer header h2 { font-family: var(--display); font-size: 30px; margin: 0; }
+.drawer .body { overflow: auto; padding: 8px 18px 60px; }
+.drawer nav { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
+.drawer section { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.drawer section h3 { font-family: var(--display); font-size: 26px; margin: 0 0 4px; }
+.drawer section p { margin: 6px 0; max-width: 70ch; }
+.drawer .tex { overflow-x: auto; padding: 6px 0; }
+.drawer .applied { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.drawer .applied h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); }
+.drawer .src { font-size: 11px; color: var(--graphite); }
+.drawer section:target h3, .drawer section.flash h3 { background: linear-gradient(transparent 60%, #fde68a 60%); }
+.modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
+.modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
+.modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+
+/* ---------- workspace (Phase 1) ---------- */
+.wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }
+.wsbadge.viewer { background: #fef3c7; color: #92400e; }
+.wsbadge.admin { background: #dbeafe; color: #1e3a8a; }
+.modal .box.wide { width: min(720px, 100%); }
+.modal .box section { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.plist li { border-bottom: 1px dashed var(--rule); padding-bottom: 6px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-align: left; }
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn.danger { color: var(--supply); font-size: 12px; }
+.alerthit { font-size: 12.5px; }
+.alerthit.Red { color: #b91c1c; font-weight: 600; }
+.alerthit.Orange { color: var(--warn); font-weight: 600; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+details.card > summary { cursor: pointer; }
+details.card[open] { display: grid; gap: 8px; }
+
+/* ---------------- key actions ---------------- */
+.actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.act { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; width: 100%; text-align: left; background: rgba(255,255,255,.96); border: 1px solid var(--rule); border-left: 3px solid var(--supply); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+.act:hover { border-color: var(--graphite); border-left-color: var(--supply); }
+.ai { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font: 700 12px/1 var(--sans); flex: none; }
+.actions-box { background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.2); padding: 8px 10px; width: 300px; max-width: calc(100vw - 80px); font: 12.5px/1.4 var(--sans); color: var(--ink); }
+.actions-box .ab-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.actions-box .ab-tog { border: 0; background: none; color: var(--graphite); cursor: pointer; font-size: 11px; }
+.actions-box ol { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+.actions-box li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; align-items: start; padding: 4px; border-radius: 6px; cursor: pointer; }
+.actions-box li:hover { background: var(--paper-2); }
+.actions-box .ab-rep { width: 100%; }
+.fleet-tog { display: flex; gap: 6px; align-items: center; margin: 2px 0 6px; font-weight: 500; }
+@media (max-width: 860px) { .actions-box { width: 230px; } }
+
+/* ---------------- report modal ---------------- */
+.report-modal { place-items: start center; overflow: auto; }
+.report-box { width: min(860px, 100%); max-height: none; padding: 0; margin-block: 16px; }
+.report-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--paper-2); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; }
+.landing footer span { background: rgba(255,255,255,.92); border-radius: 6px; padding: 2px 6px; position: relative; z-index: 1; }
+
+</style>
+</head>
+<body>
+<div class="landing sketch-bg">
+  <header>
+    <div class="wordmark">Aid<b>Atlas</b></div>
+    <nav aria-label="Primary">
+      <a href="app.html?mode=live">Live</a>
+      <a href="app.html?mode=plan">Plan</a>
+      <a href="app.html?mode=history">History</a>
+      <a href="app.html?mode=risk">Risk</a>
+      <a href="guide.html">User guide</a>
+      <a href="app.html?mode=live#explain">How the models work</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Forecast the need. <span class="hl">Fair-share the aid.</span> Route it fast.</h1>
+      <p class="lead">AidAtlas predicts where a disaster will hit hardest, how many people will need water, food, shelter, medical care and responders, and moves stock from the nearest supply stores to them at the lowest feasible cost. Allocation follows need, not head-count or proximity, and it re-optimises every six hours as roads close, supplies land and the disaster spreads.</p>
+      <div class="loop" aria-label="Adaptive loop">
+        <span>Predict</span><i>→</i><span>Assess need</span><i>→</i><span>Allocate fairly</span><i>→</i><span>Route efficiently</span><i>→</i><span>Dispatch</span><i>→</i><span>Monitor</span><i>↺</i>
+      </div>
+    </div>
+    <aside class="livebox" aria-live="polite">
+      <h2><span><span class="eyebrow">Live now</span> · top 5 by unified severity</span><a href="app.html?mode=live" class="small">Open map →</a></h2>
+      <ol id="live"><li class="empty"><span class="spin"></span> Reading GDACS, USGS and NASA EONET…</li></ol>
+    </aside>
+  </section>
+
+  <section class="modes" aria-label="Modes">
+    <a class="mode" href="app.html?mode=live">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="#16a34a" stroke="none"/><circle cx="24" cy="24" r="11"/><path d="M8 24a16 16 0 0 1 32 0M4 24a20 20 0 0 1 40 0" opacity=".6"/></svg>
+      <span class="n">Mode 1</span><h3>Live</h3>
+      <p>Current disasters worldwide from satellites and agencies, ranked by severity. Open one to see the affected area, supply stores and routed aid.</p>
+      <span class="go">See live events →</span>
+    </a>
+    <a class="mode" href="app.html?mode=plan">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><path d="M24 42s-12-12-12-22a12 12 0 0 1 24 0c0 10-12 22-12 22z"/><circle cx="24" cy="20" r="4" fill="#16a34a" stroke="none"/><path d="M6 44h36" opacity=".5"/></svg>
+      <span class="n">Mode 2</span><h3>Plan</h3>
+      <p>Pick any city or address, assume a disaster there, and get the full relief plan plus where to build storage before it happens.</p>
+      <span class="go">Plan a scenario →</span>
+    </a>
+    <a class="mode" href="app.html?mode=history">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="17"/><path d="M24 13v11l7 5"/><path d="M5 18l3 6 5-4" /></svg>
+      <span class="n">Mode 3</span><h3>History</h3>
+      <p>The five most recent major disasters near a place, replayed with the paths aid should have taken and the depots that would have covered them.</p>
+      <span class="go">Replay the past →</span>
+    </a>
+    <a class="mode" href="app.html?mode=risk">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><path d="M24 6 44 40H4z"/><path d="M24 18v10"/><circle cx="24" cy="33" r="1.4" fill="#23262b"/></svg>
+      <span class="n">Mode 4</span><h3>Risk</h3>
+      <p>High-risk areas around a city from seismic catalogues, river discharge, storm and fire history, population and coping capacity.</p>
+      <span class="go">Map the risk →</span>
+    </a>
+  </section>
+
+  <footer>
+    <span>Built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></span>
+    <span>Data: GDACS (UN OCHA / EC JRC) · USGS · NASA EONET · OpenStreetMap (Nominatim, Overpass, OSRM) · Open-Meteo / GloFAS · World Bank · Esri World Imagery</span>
+    <span>Forecasts are estimates with P10–P90 bands, not guarantees. Stock levels at real facilities are planning assumptions until you import your own.</span>
+  </footer>
+</div>
+<script>/* js/core.js */
+/* AidAtlas core: namespace, maths utilities, configuration. Skill: orchestrator */
+(function (root) {
+  const AA = (root.AA = root.AA || {});
+
+  // ---------- maths ----------
+  const M = {};
+  M.EPS = 1e-6;
+  M.clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  // Abramowitz–Stegun 7.1.26 erf, |error| < 1.5e-7
+  M.erf = (x) => {
+    const s = Math.sign(x); x = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  };
+  M.Phi = (z) => 0.5 * (1 + M.erf(z / Math.SQRT2));
+  M.toRad = (d) => d * Math.PI / 180;
+  M.haversine = (a, b) => { // km
+    const R = 6371.0088, dLat = M.toRad(b.lat - a.lat), dLon = M.toRad(b.lon - a.lon);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(M.toRad(a.lat)) * Math.cos(M.toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  };
+  M.destination = (p, bearingDeg, km) => {
+    const R = 6371.0088, d = km / R, br = M.toRad(bearingDeg);
+    const la1 = M.toRad(p.lat), lo1 = M.toRad(p.lon);
+    const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(br));
+    const lo2 = lo1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+    return { lat: la2 * 180 / Math.PI, lon: ((lo2 * 180 / Math.PI + 540) % 360) - 180 };
+  };
+  // point-to-segment distance (km) using local equirectangular projection
+  M.pointSegDist = (p, a, b) => {
+    const k = Math.cos(M.toRad(p.lat)) * 111.32, kl = 110.57;
+    const ax = (a.lon - p.lon) * k, ay = (a.lat - p.lat) * kl, bx = (b.lon - p.lon) * k, by = (b.lat - p.lat) * kl;
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let t = L ? -(ax * dx + ay * dy) / L : 0; t = M.clamp(t, 0, 1);
+    const x = ax + t * dx, y = ay + t * dy; return Math.sqrt(x * x + y * y);
+  };
+  M.mulberry32 = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  M.gauss = (rng) => { // Box–Muller
+    let u = 0, v = 0; while (u === 0) u = rng(); while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  M.quantile = (arr, q) => {
+    const a = [...arr].sort((x, y) => x - y); if (!a.length) return 0;
+    const pos = (a.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return a[lo] + (a[hi] - a[lo]) * (pos - lo);
+  };
+  M.minmax = (vals) => {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    return vals.map((v) => (v - lo) / (hi - lo + M.EPS));
+  };
+  M.sum = (a) => a.reduce((s, x) => s + x, 0);
+  M.mean = (a) => (a.length ? M.sum(a) / a.length : 0);
+  M.std = (a) => { const m = M.mean(a); return Math.sqrt(M.mean(a.map((x) => (x - m) ** 2))); };
+  M.round = (x, d = 0) => { const f = 10 ** d; return Math.round(x * f) / f; };
+  // ---------- polygons (GeoJSON lon/lat rings) ----------
+  /** Ray-casting point-in-ring; holes are ignored (flood outlines rarely have meaningful holes). */
+  M.inRing = (p, ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > p.lat) !== (yj > p.lat) && p.lon < ((xj - xi) * (p.lat - yi)) / (yj - yi + 1e-12) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  /** polys = array of polygons, each an array of rings (GeoJSON MultiPolygon coordinates). */
+  M.inPolys = (p, polys) => (polys || []).some((poly) => poly[0] && M.inRing(p, poly[0]));
+  M.polysBBox = (polys) => {
+    let w = 180, s = 90, e = -180, n = -90;
+    (polys || []).forEach((poly) => (poly[0] || []).forEach(([x, y]) => { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); }));
+    return { w, s, e, n, c: { lat: (s + n) / 2, lon: (w + e) / 2 } };
+  };
+  /** Distance (km) from p to the nearest polygon edge; 0 when inside. */
+  M.distToPolys = (p, polys) => {
+    if (M.inPolys(p, polys)) return 0;
+    let d = Infinity;
+    (polys || []).forEach((poly) => { const r = poly[0] || []; for (let i = 1; i < r.length; i++) d = Math.min(d, M.pointSegDist(p, { lon: r[i - 1][0], lat: r[i - 1][1] }, { lon: r[i][0], lat: r[i][1] })); });
+    return d;
+  };
+  /** Approximate circle as a closed GeoJSON polygon ring (n vertices). */
+  M.circleRing = (c, km, n = 16) => { const r = []; for (let k = 0; k <= n; k++) { const p = M.destination(c, (k % n) * (360 / n), km); r.push([+p.lon.toFixed(5), +p.lat.toFixed(5)]); } return r; };
+  AA.math = M;
+
+  // ---------- configuration (all editable in Settings) ----------
+  AA.config = {
+    epochHours: 6,
+    horizonEpochs: 4,
+    scenarioWeights: { low: 0.3, base: 0.4, high: 0.3 }, // Swanson–Megill
+    mcDraws: 400,
+    seed: 20261001,
+    needWeights: { sev: 0.35, pop: 0.2, vul: 0.2, acc: 0.15, recv: 0.1 },
+    objective: { alpha: 1, delta: 2, beta: 1, mu: 3, phi: 0.5 },
+    criticality: { water: 3, medical: 3, food: 2, staff: 2, shelter: 1.5 },
+    commodities: [
+      { key: 'water', label: 'Water', unit: 'kL', kg: 1000, critical: true, cls: 'truck' },
+      { key: 'food', label: 'Food', unit: 't', kg: 1000, critical: false, cls: 'truck' },
+      { key: 'shelter', label: 'Shelter', unit: 'tents', kg: 35, critical: false, cls: 'truck' },
+      { key: 'medical', label: 'Medical', unit: 'modules', kg: 50, critical: true, cls: 'truck' },
+      { key: 'staff', label: 'Personnel', unit: 'staff', kg: 1, critical: false, cls: 'bus' },
+    ],
+    vehicles: {
+      truck: { label: 'Truck', cap: 8000, cD: 1.2, cT: 40, cF: 150, speedFactor: 1.0, color: '#f59e0b' },
+      bus: { label: 'Responder bus', cap: 30, cD: 0.9, cT: 35, cF: 100, speedFactor: 1.0, color: '#38bdf8' },
+    },
+    loadCostPerKg: 0.02,
+    serviceHours: 0.5,
+    bprCapacityPerEpoch: 12,
+    roadAlpha: 0.7,
+    thetaMax: 0.95,
+    roadRecovery: 0.08,
+    closureBufferKm: 0.25,
+    circuity: 1.35,
+    fallbackSpeedKmh: 40,
+    coverageMinutes: 90,
+    warehouses: 3,
+    tomtomKey: '',
+    showFleet: false,
+  };
+
+  AA.fmt = {
+    n: (x, d = 0) => (x == null || isNaN(x) ? '–' : Number(x).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })),
+    k: (x) => (x >= 1e6 ? (x / 1e6).toFixed(1) + 'M' : x >= 1e3 ? (x / 1e3).toFixed(1) + 'k' : Math.round(x) + ''),
+    usd: (x) => '$' + AA.fmt.n(x, 0),
+    min: (h) => Math.round(h * 60) + ' min',
+  };
+  AA.HAZARDS = {
+    EQ: { label: 'Earthquake', lethal: 1.0, icon: '〰' },
+    TC: { label: 'Tropical cyclone', lethal: 0.9, icon: '🌀' },
+    FL: { label: 'Flood', lethal: 0.8, icon: '≈' },
+    VO: { label: 'Volcano', lethal: 0.7, icon: '▲' },
+    DR: { label: 'Drought', lethal: 0.6, icon: '☀' },
+    WF: { label: 'Wildfire', lethal: 0.5, icon: '🔥' },
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/data.js */
+/* Data ingestion. Skill: skills/data-ingestion/SKILL.md
+   All endpoints are free, keyless and CORS-enabled (verified 2026-10-01). */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const D = {};
+  const cache = new Map();
+
+  D.fetchJSON = async (url, { timeout = 15000, cacheTtl = 5 * 60e3, ...init } = {}) => {
+    const key = url + (init.body || '');
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.t < cacheTtl) return hit.v;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeout);
+    try {
+      const r = await fetch(url, { ...init, signal: ctl.signal });
+      if (!r.ok) throw new Error(`${r.status} ${r.statusText} from ${new URL(url).host}`);
+      const v = await r.json();
+      cache.set(key, { t: Date.now(), v });
+      return v;
+    } finally { clearTimeout(timer); }
+  };
+
+  // ---------------- live hazards ----------------
+  const GDACS = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist';
+  D.gdacsLive = async () => {
+    const j = await D.fetchJSON(`${GDACS}/EVENTS4APP`, { cacheTtl: 60e3 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat] = f.geometry.coordinates;
+      return {
+        src: 'GDACS', prov: 'live', id: `${p.eventtype}-${p.eventid}`, hazard: p.eventtype, lat, lon,
+        name: p.name, country: p.country || (p.affectedcountries || []).map((c) => c.countryname).join(', ') || 'Offshore',
+        iso2: (p.affectedcountries || [])[0]?.iso2 || '', alertscore: p.alertscore, alertlevel: p.alertlevel, episodealertscore: p.episodealertscore, episodealertlevel: p.episodealertlevel,
+        severity: p.severitydata?.severity, severityUnit: p.severitydata?.severityunit, severityText: p.severitydata?.severitytext,
+        from: p.fromdate, to: p.todate, current: p.iscurrent === 'true' || p.iscurrent === true,
+        url: p.url?.report, eventid: p.eventid, episodeid: p.episodeid,
+      };
+    });
+  };
+  D.usgsLive = async () => {
+    const j = await D.fetchJSON('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson', { cacheTtl: 60e3 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat, depth] = f.geometry.coordinates;
+      return { src: 'USGS', prov: 'live', id: f.id, hazard: 'EQ', lat, lon, depth, magnitude: p.mag, mmi: p.mmi, pager: p.alert, tsunami: p.tsunami, name: p.title, country: (p.place || '').split(', ').pop(), from: new Date(p.time).toISOString(), to: new Date(p.time).toISOString(), current: true, url: p.url };
+    });
+  };
+  const EONET_MAP = { severeStorms: 'TC', wildfires: 'WF', volcanoes: 'VO', floods: 'FL', earthquakes: 'EQ', drought: 'DR' };
+  D.eonetLive = async () => {
+    const j = await D.fetchJSON('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=20', { cacheTtl: 60e3 });
+    return (j.events || []).map((e) => {
+      const hz = EONET_MAP[e.categories?.[0]?.id]; if (!hz) return null;
+      const g = e.geometry[e.geometry.length - 1];
+      const c = g.type === 'Point' ? g.coordinates : g.coordinates[0][0];
+      if (hz === 'WF' && /prescribed|\bRX\b/i.test(e.title)) return null; // planned burns are not disasters
+      let sev = g.magnitudeValue, unit = g.magnitudeUnit;
+      if (hz === 'TC' && unit === 'kts') { sev = sev * 1.852; unit = 'km/h'; }
+      if (hz === 'WF' && /acre/i.test(unit || '')) { sev = sev * 0.4047; unit = 'ha'; }
+      return { src: 'NASA EONET', prov: 'live', id: e.id, hazard: hz, lat: c[1], lon: c[0], name: e.title, country: '', severity: sev, severityUnit: unit, from: e.geometry[0].date, to: g.date, current: true, url: e.sources?.[0]?.url, alertscore: null };
+    }).filter(Boolean);
+  };
+
+  /** Unified Severity Index (skill: modes). */
+  D.usi = (e) => {
+    const PAGER = { green: 0, yellow: 0.33, orange: 0.67, red: 1 };
+    // agency alert: GDACS blends the event alert with the current episode (a decayed storm keeps its old Red),
+    // USGS PAGER (absent = below alert threshold), EONET has no alert → small prior
+    let A;
+    if (e.alertscore != null) {
+      const ev = M.clamp((e.alertscore - 1) / 2, 0, 1), ep = e.episodealertscore != null ? M.clamp((e.episodealertscore - 1) / 2, 0, 1) : ev;
+      A = 0.3 * ev + 0.7 * ep;
+    } else if (e.src === 'USGS') A = e.pager ? PAGER[e.pager] : 0;
+    else A = 0.1;
+    let m = 0;
+    const s = e.severity;
+    if (e.hazard === 'EQ') m = M.clamp(((e.magnitude ?? s) - 4) / 5, 0, 1);
+    else if (e.hazard === 'TC') m = M.clamp((s || 0) / 300, 0, 1);
+    else if (e.hazard === 'WF') m = M.clamp(Math.log10(Math.max(1, s || 1)) / 6, 0, 1);
+    else if (e.hazard === 'DR') m = M.clamp(Math.log10(Math.max(1, s || 1)) / 6.5, 0, 1);
+    else m = A;
+    const h = AA.HAZARDS[e.hazard]?.lethal ?? 0.5;
+    const usi = 0.5 * A + 0.35 * m + 0.15 * h;
+    return { usi, A, m, h };
+  };
+
+  D.liveEvents = async () => {
+    const [g, u, n] = await Promise.allSettled([D.gdacsLive(), D.usgsLive(), D.eonetLive()]);
+    const gd = g.status === 'fulfilled' ? g.value : [];
+    const us = u.status === 'fulfilled' ? u.value : [];
+    const eo = n.status === 'fulfilled' ? n.value : [];
+    const errors = [g, u, n].map((x, k) => (x.status === 'rejected' ? ['GDACS', 'USGS', 'EONET'][k] + ': ' + x.reason.message : null)).filter(Boolean);
+    const now = Date.now();
+    const age = (e) => (e.to ? now - new Date(e.to.endsWith('Z') ? e.to : e.to + 'Z').getTime() : 0);
+    const recent = (e) => (e.current && age(e) < 14 * 864e5) || age(e) < 7 * 864e5; // GDACS marks long droughts not-current while still updating them
+    let all = gd.filter(recent).map((e) => ({ ...e, magnitude: e.hazard === 'EQ' ? parseFloat(e.severity) : undefined }));
+    us.forEach((q) => { // merge USGS detail into GDACS EQ, or add
+      const twin = all.find((e) => e.hazard === 'EQ' && M.haversine(e, q) < 100 && Math.abs(new Date(e.from + (e.from.endsWith('Z') ? '' : 'Z')) - new Date(q.from)) < 2 * 36e5);
+      if (twin) Object.assign(twin, { magnitude: q.magnitude, depth: q.depth, mmi: q.mmi, pager: q.pager, usgsUrl: q.url, src: 'GDACS + USGS' });
+      else all.push(q);
+    });
+    eo.forEach((e) => { if (!all.some((x) => x.hazard === e.hazard && M.haversine(x, e) < 150)) all.push(e); });
+    all.forEach((e) => Object.assign(e, D.usi(e)));
+    all.sort((a, b) => b.usi - a.usi || new Date(b.to) - new Date(a.to));
+    return { events: all, errors, counts: { gdacs: gd.length, usgs: us.length, eonet: eo.length } };
+  };
+
+  /** Agency-reported human impact for a GDACS event (Sendai-framework entries in geteventdata).
+   *  Each entry is a running total for one place and one kind, so take the maximum per (kind, place, wording)
+   *  and add across places. "Out of contact" / "missing" count as missing; "evacuated" as displaced. */
+  D.parseSendai = (list) => {
+    const best = new Map();
+    (list || []).forEach((x) => {
+      const v = parseFloat(String(x.sendaivalue).replace(/[^0-9.]/g, '')); if (!(v > 0)) return;
+      const name = (x.sendainame || '').toLowerCase(), desc = (x.description || '').toLowerCase();
+      if (!/\[people\]|people|persons/.test(desc) && !/death|injur|missing|displac|affect|evacu/.test(name)) return;
+      let kind = null;
+      if (/death|dead|fatalit|killed/.test(name + ' ' + desc)) kind = 'deaths';
+      else if (/missing|out of contact/.test(name + ' ' + desc)) kind = 'missing';
+      else if (/injur/.test(name)) kind = 'injured';
+      else if (/displac|evacu|homeless|shelter/.test(name + ' ' + desc)) kind = 'displaced';
+      else if (/affect/.test(name)) kind = 'affected';
+      if (!kind) return;
+      const wording = desc.replace(/^[\d,.\s]+/, '').replace(/\s+in\s+.*$/, '');
+      const key = [kind, x.country, x.region, wording].join('|');
+      best.set(key, Math.max(best.get(key) || 0, v));
+    });
+    const out = { deaths: 0, missing: 0, injured: 0, displaced: 0, affected: 0 };
+    best.forEach((v, key) => (out[key.split('|')[0]] += v));
+    const dates = (list || []).map((x) => x.dateinsert).filter(Boolean).sort();
+    out.asOf = dates.length ? dates[dates.length - 1].slice(0, 10) : null;
+    return out.deaths + out.missing + out.injured + out.displaced + out.affected > 0 ? out : null;
+  };
+  D.gdacsImpacts = async (type, id) => {
+    const j = await D.fetchJSON(`https://www.gdacs.org/gdacsapi/api/events/geteventdata?eventtype=${type}&eventid=${id}`, { timeout: 15000, cacheTtl: 30 * 60e3 });
+    const r = D.parseSendai(j?.properties?.sendai);
+    if (r) { r.source = 'GDACS (Sendai impact reports)'; r.url = j?.properties?.url?.report; }
+    return r;
+  };
+  /** Terrain relief (m) within ~20 km: max − min of a 5×5 elevation grid (Open-Meteo, Copernicus DEM). */
+  D.relief = async (c) => {
+    const la = [], lo = [];
+    for (let i = -2; i <= 2; i++) for (let k = -2; k <= 2; k++) { la.push((c.lat + i * 0.09).toFixed(3)); lo.push((c.lon + k * 0.1).toFixed(3)); }
+    const j = await D.elevation(la, lo);
+    const e = (j.elevation || []).filter((x) => x != null && x > -100);
+    return e.length ? Math.max(...e) - Math.min(...e) : null;
+  };
+
+  /** GDACS event outline (MultiPolygon/Polygon features only) → array of polygons in GeoJSON order. */
+  D.gdacsGeometry = async (type, id, episode = 1) => {
+    const j = await D.fetchJSON(`https://www.gdacs.org/gdacsapi/api/polygons/getgeometry?eventtype=${type}&eventid=${id}&episodeid=${episode || 1}`, { timeout: 20000, cacheTtl: 30 * 60e3 });
+    const polys = [];
+    (j.features || []).forEach((f) => {
+      const g = f.geometry || {};
+      if (g.type === 'Polygon') polys.push(g.coordinates);
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach((p) => polys.push(p));
+    });
+    return polys.length ? polys : null;
+  };
+
+  /** River-flow ratio at many points (GloFAS via Open-Meteo): max daily discharge in the last 7 days + next 7 days
+   *  ÷ median daily discharge over the previous 365 days. ratio ≥ 2 ≈ out-of-bank flow. */
+  D.flowRatios = async (pts) => {
+    if (!pts.length) return [];
+    const day = (d) => d.toISOString().slice(0, 10), now = new Date();
+    const start = day(new Date(now - 372 * 864e5)), end = day(new Date(+now + 7 * 864e5));
+    const j = await D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${pts.map((p) => p.lat.toFixed(3)).join(',')}&longitude=${pts.map((p) => p.lon.toFixed(3)).join(',')}&daily=river_discharge&start_date=${start}&end_date=${end}`, { timeout: 40000, cacheTtl: 30 * 60e3 });
+    const arr = Array.isArray(j) ? j : [j];
+    return arr.map((loc) => D.flowRatio(loc?.daily?.time || [], loc?.daily?.river_discharge || [], day(new Date(now - 7 * 864e5))));
+  };
+  D.flowRatio = (time, q, recentFrom) => {
+    const past = [], recent = [];
+    time.forEach((t, i) => { const v = q[i]; if (v == null || !(v >= 0)) return; (t >= recentFrom ? recent : past).push(v); });
+    if (past.length < 60 || !recent.length) return null;
+    const med = M.quantile(past, 0.5);
+    if (!(med > 0.5)) return null; // dry channel or no river at this cell: ratio meaningless
+    return { ratio: Math.max(...recent) / med, median: med, peak: Math.max(...recent) };
+  };
+
+  /** WorldPop 2020 population inside a polygon ring (sync call; falls back to polling the task). */
+  D.worldpop = async (ring, year = 2020) => {
+    const gj = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring] } }] });
+    const base = 'https://api.worldpop.org/v1';
+    let j = await D.fetchJSON(`${base}/services/stats?dataset=wpgppop&year=${year}&geojson=${encodeURIComponent(gj)}&runasync=false`, { timeout: 35000, cacheTtl: 864e5 });
+    for (let k = 0; k < 6 && j && j.status !== 'finished' && j.taskid; k++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      j = await D.fetchJSON(`${base}/tasks/${j.taskid}`, { timeout: 15000, cacheTtl: 0 });
+    }
+    const v = j?.data?.total_population;
+    if (!(v >= 0)) throw new Error('WorldPop: no result');
+    return v;
+  };
+
+  /** USGS PAGER loss estimate for an earthquake: fatality probability bins, median fatalities, population exposure by MMI. */
+  D.pagerLosses = async (usgsId) => {
+    const det = await D.fetchJSON(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/${usgsId}.geojson`, { timeout: 20000, cacheTtl: 30 * 60e3 });
+    const pr = det?.properties?.products?.losspager?.[0];
+    const c = pr?.contents || {};
+    const url = (k) => c[k]?.url;
+    if (!url('json/alerts.json')) return null;
+    const [al, lo, ex] = await Promise.allSettled([D.fetchJSON(url('json/alerts.json'), { timeout: 20000 }), url('json/losses.json') ? D.fetchJSON(url('json/losses.json'), { timeout: 20000 }) : null, url('json/exposures.json') ? D.fetchJSON(url('json/exposures.json'), { timeout: 20000 }) : null]);
+    const fat = al.status === 'fulfilled' ? al.value?.fatality : null;
+    if (!fat?.bins) return null;
+    const out = { level: fat.level, bins: fat.bins.map((b) => ({ min: +b.min, max: +b.max, p: +b.probability })), source: 'USGS PAGER', url: det?.properties?.url ? det.properties.url + '/pager' : null };
+    if (lo.status === 'fulfilled' && lo.value?.empirical_fatality) out.median = +lo.value.empirical_fatality.total_fatalities;
+    const pe = ex.status === 'fulfilled' ? ex.value?.population_exposure : null;
+    if (pe?.mmi && pe?.aggregated_exposure) out.exposure = pe.mmi.map((m, i) => ({ mmi: +m, pop: +pe.aggregated_exposure[i] || 0 }));
+    return out;
+  };
+  /** USGS event id from a USGS event page URL or id. */
+  D.usgsIdOf = (e) => (e?.src === 'USGS' && e.id) || (/eventpage\/([a-z0-9]+)/i.exec(e?.usgsUrl || e?.url || '') || [])[1] || null;
+
+  /** Text fetch (CSV inventories, published Google Sheets). */
+  D.fetchText = async (url, timeout = 20000) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+    try { const r = await fetch(url, { signal: ctl.signal, cache: 'no-store' }); if (!r.ok) throw new Error(`${r.status} from ${new URL(url).host}`); return await r.text(); }
+    finally { clearTimeout(t); }
+  };
+  /** Turn a Google Sheets link into its CSV export link (sheet must be shared "anyone with the link" or published). */
+  D.sheetCsvUrl = (u) => {
+    const m = /docs\.google\.com\/spreadsheets\/d\/(e\/)?([\w-]+)/.exec(u || ''); if (!m) return u;
+    if (m[1]) return /output=csv/.test(u) ? u : `https://docs.google.com/spreadsheets/d/e/${m[2]}/pub?output=csv`;
+    const gid = (/[#&?]gid=(\d+)/.exec(u) || [])[1];
+    return `https://docs.google.com/spreadsheets/d/${m[2]}/export?format=csv${gid ? `&gid=${gid}` : ''}`;
+  };
+
+  // ---------------- history ----------------
+  D.usgsHistory = async (lat, lon, radiusKm = 300, minMag = 5.5, start = '1900-01-01') => {
+    const j = await D.fetchJSON(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${lat}&longitude=${lon}&maxradiuskm=${radiusKm}&minmagnitude=${minMag}&starttime=${start}&orderby=time&limit=200`, { timeout: 25000 });
+    return (j.features || []).map((f) => ({ src: 'USGS', prov: 'historical', id: f.id, hazard: 'EQ', lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], depth: f.geometry.coordinates[2], magnitude: f.properties.mag, mmi: f.properties.mmi, pager: f.properties.alert, name: f.properties.title, from: new Date(f.properties.time).toISOString(), url: f.properties.url }));
+  };
+  D.gdacsHistory = async (country, from = '2000-01-01') => {
+    const to = new Date().toISOString().slice(0, 10);
+    const j = await D.fetchJSON(`${GDACS}/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF&fromDate=${from}&toDate=${to}&alertlevel=Orange;Red&country=${encodeURIComponent(country)}`, { timeout: 25000 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat] = f.geometry.coordinates;
+      return { src: 'GDACS', prov: 'historical', id: `${p.eventtype}-${p.eventid}`, hazard: p.eventtype, lat, lon, name: p.name, country: p.country, alertscore: p.alertscore, alertlevel: p.alertlevel, severity: p.severitydata?.severity, severityUnit: p.severitydata?.severityunit, from: p.fromdate, to: p.todate, url: p.url?.report, magnitude: p.eventtype === 'EQ' ? p.severitydata?.severity : undefined };
+    });
+  };
+  D.eonetHistory = async (bbox, start = '2000-01-01') => {
+    const [w, s, e, n] = bbox; // minLon,minLat,maxLon,maxLat
+    const j = await D.fetchJSON(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&bbox=${w},${n},${e},${s}&start=${start}&limit=300`, { timeout: 30000 });
+    return (j.events || []).map((ev) => {
+      const hz = EONET_MAP[ev.categories?.[0]?.id]; if (!hz) return null;
+      const g = ev.geometry[0]; const c = g.type === 'Point' ? g.coordinates : g.coordinates[0][0];
+      let sev = g.magnitudeValue; if (hz === 'TC' && g.magnitudeUnit === 'kts') sev *= 1.852;
+      return { src: 'NASA EONET', prov: 'historical', id: ev.id, hazard: hz, lat: c[1], lon: c[0], name: ev.title, severity: sev, severityUnit: g.magnitudeUnit, from: g.date, url: ev.sources?.[0]?.url };
+    }).filter(Boolean);
+  };
+
+  // ---------------- geocoding (Nominatim, ≤ 1 req/s) ----------------
+  let lastNom = 0;
+  const nomThrottle = async () => { const w = 1100 - (Date.now() - lastNom); if (w > 0) await new Promise((r) => setTimeout(r, w)); lastNom = Date.now(); };
+  D.geocode = async (q) => {
+    await nomThrottle();
+    const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`, { cacheTtl: 36e5 });
+    return j.map((r) => ({ name: r.display_name, short: r.name || r.display_name.split(',')[0], lat: +r.lat, lon: +r.lon, country: r.address?.country, iso2: (r.address?.country_code || '').toUpperCase(), bbox: r.boundingbox?.map(Number) }));
+  };
+  D.reverse = async (lat, lon) => {
+    await nomThrottle();
+    const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&addressdetails=1`, { cacheTtl: 36e5 });
+    return { name: r.display_name || `${lat.toFixed(3)}, ${lon.toFixed(3)}`, short: r.address?.city || r.address?.town || r.address?.county || r.address?.state || r.name || 'Selected point', country: r.address?.country || '', iso2: (r.address?.country_code || '').toUpperCase() };
+  };
+
+  // ---------------- OSM Overpass (raced mirrors) ----------------
+  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  D.overpass = async (ql, timeout = 30000) => {
+    const key = 'ovp:' + ql; const hit = cache.get(key); if (hit) return hit.v;
+    const body = 'data=' + encodeURIComponent(ql);
+    const v = await Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; })));
+    cache.set(key, { t: Date.now(), v }); return v;
+  };
+  const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
+  D.bboxOf = bboxOf;
+  D.places = async (c, km) => {
+    const b = bboxOf(c, km).join(',');
+    const types = km > 80 ? 'city|town' : 'city|town|village';
+    const j = await D.overpass(`[out:json][timeout:25];node["place"~"^(${types})$"](${b});out 400;`);
+    return j.elements.map((e) => ({ name: e.tags?.name || e.tags?.['name:en'] || 'Unnamed', lat: e.lat, lon: e.lon, type: e.tags.place, population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0, src: 'OSM' }));
+  };
+  /** Fallback facility search via Nominatim (bounded viewbox), used when Overpass is slow or down. */
+  D.facilitiesNominatim = async (c, km) => {
+    const [s, w, n, e] = bboxOf(c, km);
+    const kinds = [['hospital', 'hospital'], ['fire station', 'fire_station'], ['police', 'police'], ['warehouse', 'warehouse']];
+    const out = [];
+    for (const [q, type] of kinds) {
+      await nomThrottle();
+      try {
+        const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=25&bounded=1&viewbox=${w},${n},${e},${s}`, { cacheTtl: 36e5, timeout: 12000 });
+        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
+      } catch (err) { /* keep what we have */ }
+    }
+    return out;
+  };
+  D.facilitiesAny = async (c, km) => {
+    try { const f = await D.facilities(c, km, 20000); if (f.length) return f; } catch (e) { /* fall through */ }
+    return D.facilitiesNominatim(c, km);
+  };
+  D.facilities = async (c, km, timeout = 30000) => {
+    const b = bboxOf(c, km).join(',');
+    const q = `[out:json][timeout:25];(nwr["amenity"~"^(hospital|fire_station|police)$"](${b});nwr["building"="warehouse"]["name"](${b});nwr["industrial"="warehouse"](${b});nwr["shop"="wholesale"](${b}););out center 300;`;
+    const j = await D.overpass(q, timeout);
+    return j.elements.map((e) => {
+      const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (lat == null) return null;
+      const t = e.tags || {};
+      const type = t.amenity === 'hospital' ? 'hospital' : t.amenity === 'fire_station' ? 'fire_station' : t.amenity === 'police' ? 'police' : 'warehouse';
+      return { name: t.name || t['name:en'] || ({ hospital: 'Hospital', fire_station: 'Fire station', police: 'Police station', warehouse: 'Warehouse' })[type], type, lat, lon, beds: parseInt(t.beds, 10) || 0, src: 'OSM', osm: `${e.type}/${e.id}` };
+    }).filter(Boolean);
+  };
+
+  // ---------------- OSRM ----------------
+  const OSRM = 'https://router.project-osrm.org';
+  const pts = (ps) => ps.map((p) => `${p.lon.toFixed(5)},${p.lat.toFixed(5)}`).join(';');
+  D.osrmTable = async (points) => {
+    const j = await D.fetchJSON(`${OSRM}/table/v1/driving/${pts(points)}?annotations=duration,distance`, { timeout: 20000, cacheTtl: 10 * 60e3 });
+    if (j.code !== 'Ok') throw new Error('OSRM table: ' + j.code);
+    return { dur: j.durations, dist: j.distances, snapped: j.sources.map((s) => ({ lat: s.location[1], lon: s.location[0], offKm: s.distance / 1000 })) };
+  };
+  let osrmQueue = Promise.resolve();
+  D.osrmRoute = (points) => { // serialised, ≥ 250 ms apart, to respect the public demo server
+    const run = async () => {
+      const alt = points.length === 2 ? '&alternatives=2' : '';
+      const j = await D.fetchJSON(`${OSRM}/route/v1/driving/${pts(points)}?overview=full&geometries=geojson${alt}`, { timeout: 20000, cacheTtl: 10 * 60e3 });
+      if (j.code !== 'Ok') throw new Error('OSRM route: ' + j.code);
+      return j.routes;
+    };
+    const p = osrmQueue.then(() => new Promise((r) => setTimeout(r, 250))).then(run);
+    osrmQueue = p.catch(() => {});
+    return p;
+  };
+  D.osrmNearest = async (p) => {
+    const j = await D.fetchJSON(`${OSRM}/nearest/v1/driving/${p.lon.toFixed(5)},${p.lat.toFixed(5)}?number=1`, { timeout: 10000, cacheTtl: 36e5 });
+    const w = j.waypoints?.[0]; if (!w) return null;
+    return { lat: w.location[1], lon: w.location[0], offKm: w.distance / 1000 };
+  };
+
+  // ---------------- weather, floods, elevation ----------------
+  D.forecast = (lat, lon) => D.fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,wind_gusts_10m_max&forecast_days=7&timezone=auto`, { cacheTtl: 30 * 60e3 });
+  D.floodSeries = (lats, lons, start, end) => D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${lats.join(',')}&longitude=${lons.join(',')}&daily=river_discharge&start_date=${start}&end_date=${end}`, { timeout: 40000, cacheTtl: 36e5 });
+  D.floodNow = (lat, lon) => D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lon}&daily=river_discharge,river_discharge_median,river_discharge_max&past_days=3&forecast_days=7`, { cacheTtl: 30 * 60e3 });
+  D.elevation = (lats, lons) => D.fetchJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lons.join(',')}`, { cacheTtl: 36e5 });
+
+  // ---------------- socio-economic (World Bank) ----------------
+  D.countryIndex = async (iso2) => {
+    const out = { beds: null, gdppc: null, vul: 0.5, lcc: 0.5, prov: 'assumed' };
+    if (!iso2) return out;
+    try {
+      const get = async (ind) => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); return j?.[1]?.[0]?.value ?? null; };
+      const [beds, gdppc] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD')]);
+      out.beds = beds; out.gdppc = gdppc;
+      const gN = gdppc ? M.clamp((Math.log10(gdppc) - 2.6) / 2.4, 0, 1) : 0.5;
+      const bN = beds != null ? M.clamp(beds / 8, 0, 1) : 0.5;
+      out.vul = M.clamp(0.5 * (1 - gN) + 0.5 * (1 - bN), 0.05, 0.95);
+      out.lcc = M.clamp(1 - bN, 0.05, 0.95);
+      out.prov = 'World Bank';
+    } catch (e) { /* keep defaults */ }
+    return out;
+  };
+
+  AA.data = D;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(async () => {
+  const ol = document.getElementById('live');
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  try {
+    const { events } = await AA.data.liveEvents();
+    const top = events.slice(0, 5);
+    if (!top.length) { ol.innerHTML = '<li class="empty">No current events reported.</li>'; return; }
+    ol.innerHTML = top.map((e, k) => `<li><a href="app.html?mode=live&event=${encodeURIComponent(e.id)}">
+      <span class="rk">${k + 1}</span><span class="chip ${e.hazard}">${e.hazard}</span>
+      <span class="ttl">${esc(e.name)}<br><small>${esc(e.country || '')}</small></span>
+      <span class="num small">${e.usi.toFixed(2)}</span></a></li>`).join('');
+  } catch (err) {
+    ol.innerHTML = `<li class="empty">Live feeds could not be reached (${esc(err.message)}). Open the map to retry.</li>`;
+  }
+})();
+</script>
+</body>
+</html>

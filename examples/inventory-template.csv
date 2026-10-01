@@ -1,0 +1,4 @@
+name,lat,lon,type,water_l,food_kg,tents,medkits,staff,trucks,buses,ambulances,beds
+Example warehouse A (replace with yours),28.5012,77.0821,warehouse,400000,90000,2500,150,30,12,2,0,0
+Example hospital B (replace with yours),28.4590,77.0290,hospital,30000,4000,0,350,90,2,2,6,320
+Example fire station C (replace with yours),28.4682,77.0645,fire_station,120000,5000,200,40,40,4,1,2,0

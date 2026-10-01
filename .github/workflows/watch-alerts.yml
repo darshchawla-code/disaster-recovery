@@ -1,0 +1,30 @@
+name: Watch-area alerts
+# Checks live disasters against watch-areas.json every hour and posts new matches to a chat webhook.
+# Set repository secret ALERT_WEBHOOK_URL (Slack / Teams / Google Chat / Discord incoming webhook).
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore list of alerts already sent
+        uses: actions/cache@v4
+        with:
+          path: .watch-state.json
+          key: watch-state-${{ github.run_id }}
+          restore-keys: watch-state-
+      - name: Check watch areas
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          if [ -f watch-areas.json ]; then node tools/watch-alerts.js watch-areas.json; else echo "No watch-areas.json yet: export it from the app (Live → Watch areas → Export) and commit it."; fi
