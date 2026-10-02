@@ -92,6 +92,21 @@ button, input, select { font: inherit; color: inherit; }
 .panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
 .mapwrap { position: relative; min-height: 0; }
 #map { position: absolute; inset: 0; background: #1b1e22; }
+#map3d { position: absolute; inset: 0; z-index: 450; background: #1b1e22; }
+/* keep the 3D canvas laid out while hidden: collapsing it to 0×0 makes MapLibre re-render mid-frame */
+#map3d[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#map.is3d .leaflet-pane, #map.is3d .leaflet-control-zoom, #map.is3d .leaflet-control-layers, #map.is3d .leaflet-control-scale, #map.is3d .leaflet-control-attribution { visibility: hidden; }
+.maplibregl-popup.aa-tip3d { pointer-events: none; }
+/* 2D | 3D switch, top right of the map; the map's own top-right controls sit below it */
+.viewtoggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: inline-flex; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.viewtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 5px 14px; font: 600 12.5px/1 var(--sans); color: var(--graphite); cursor: pointer; min-width: 44px; min-height: 30px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.viewtoggle button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.viewtoggle.busy button[data-view="3d"] { opacity: .6; cursor: progress; }
+.mapwrap .leaflet-top.leaflet-right, .mapwrap .maplibregl-ctrl-top-right { top: 48px; }
+.maplibregl-popup.aa-tip3d .maplibregl-popup-content { font: 12.5px/1.45 var(--sans); padding: 6px 9px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.maplibregl-popup.aa-pop3d .maplibregl-popup-content { font: 13px/1.45 var(--sans); padding: 10px 12px; border-radius: 8px; }
+.maplibregl-popup.aa-pop3d h4 { margin: 0 0 4px; }
 @media (max-width: 860px) {
   .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
   .mapwrap { order: -1; }
@@ -206,6 +221,12 @@ table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); fo
 .modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
 .modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
 .modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+.aa-tip .addr, .addr { display: inline-block; margin-top: 2px; color: #374151; font-size: 12px; }
+.where { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); }
+.maplabel { display: inline-block; white-space: nowrap; font: 600 11.5px/1.2 var(--sans); color: #111; background: rgba(255,255,255,.88); border: 1px solid rgba(0,0,0,.18); border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.maplabel.zone { border-left: 3px solid var(--affected); }
+.maplabel.store { border-left: 3px solid var(--supply); }
+.maplabel.site { border-left: 3px solid var(--storage); }
 
 /* ---------- workspace (Phase 1) ---------- */
 .wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }

@@ -41,7 +41,7 @@
       ${L('<span class="closure-x" style="font-size:14px">✕</span>', 'Road closure')}
       ${L(dot('#fdba74'), 'Risk cell', ['m-risk', 'INFORM risk'])}
       ${L(dot('#16a34a'), 'Live ranking', ['m-usi', 'Unified Severity Index'])}
-    </ul><label class="small fleet-tog"><input type="checkbox" id="fleetTog" ${AA.config.showFleet ? 'checked' : ''}> Show vehicles in transit</label>
+    </ul><p class="small muted" style="margin:0 0 6px"><b>3D map:</b> drag to move, right-drag or Ctrl+drag to tilt and rotate (two fingers on phones). Green column height = people affected; purple columns = storage sites; risk squares rise with risk.</p><label class="small fleet-tog"><input type="checkbox" id="fleetTog" ${AA.config.showFleet ? 'checked' : ''}> Show vehicles in transit</label>
     <p class="small muted" style="margin:0">When on, each moving dot is one dispatched vehicle (orange = truck, blue = responder bus) shown along its planned route. Positions are simulated, not GPS. Hover a dot for its cargo. ${AA.config.tomtomKey ? 'Live traffic: TomTom.' : 'Add a free TomTom key in Settings to see real traffic.'} <a href="guide.html#map-symbols" target="_blank" rel="noopener">All symbols explained</a></p>`;
     $('#fleetTog').addEventListener('change', (e) => { AA.config.showFleet = e.target.checked; MAP.animate(); });
     $('#legend').querySelectorAll('[data-x]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); AA.explain.open(a.dataset.x); }));
@@ -209,6 +209,11 @@
     res.cells.forEach((c) => { const near = pl.slice().sort((a, b) => M.haversine(c, a) - M.haversine(c, b))[0]; c.name = near && M.haversine(c, near) < 15 ? `Around ${near.name}` : `Cell ${c.id.slice(1)} (${c.lat.toFixed(2)}, ${c.lon.toFixed(2)})`; });
     const top = res.cells.slice().sort((a, b) => b.R - a.R).slice(0, 5);
     const compass = (c) => { const b = (Math.atan2(c.lon - place.lon, c.lat - place.lat) * 180 / Math.PI + 360) % 360; return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(b / 45) % 8]; };
+    // name each of the top 5 after the locality at its centre (reverse geocoding), keep "Around <town>" as context
+    step('Naming the high-risk areas…');
+    for (const c of top) {
+      try { const a = await D.reverseDetail(c.lat, c.lon, 14); if (a.locality) { c.name = `${a.locality}${a.city && a.city !== a.locality ? `, ${a.city}` : ''}`; c.address = a.address; } } catch (e) { /* keep the fallback name */ }
+    }
     top.forEach((c) => { if (top.filter((o) => o.name === c.name).length > 1) c.name = `${c.name} (${compass(c)}, ${Math.round(M.haversine(place, c))} km)`; });
     app.riskResult = { place: place.short || place.name, gr: res.gr, top, cells: res.cells, counts: `${eq.length} earthquakes, ${events.length} other events, ${q100 ? 'GloFAS discharge' : 'no discharge data'}`, places: pl, facs: fac, country: ci };
     MAP.drawRisk(res.cells, top, (c) => openRiskCell(c));
@@ -247,13 +252,17 @@
     catch (e) { tau = cand.map((c) => zones.map((z) => (M.haversine(c, z) * AA.config.circuity) / AA.config.fallbackSpeedKmh)); }
     const sol = FL.mclp(zones, cand, tau, AA.config.warehouses);
     r.sites = sol.sites.map((j) => ({ lat: cand[j].lat, lon: cand[j].lon, serves: zones.filter((_, i) => sol.assign[i] === j).map((z) => z.name) }));
+    app.toast('<span class="spin"></span> Looking up the address of each storage site…', { sticky: true });
+    for (const site of r.sites) { try { const a = await D.reverseDetail(site.lat, site.lon, 18); site.address = a.address; site.locality = a.locality; } catch (e) { site.addressPending = false; } }
     MAP.clear('sites');
     sol.sites.forEach((j, k) => {
       const c = cand[j], served = zones.filter((_, i) => sol.assign[i] === j).map((z) => z.id + ' ' + z.name);
       L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="site-diamond"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: 600 })
-        .bindTooltip(`<b>Recommended storage S${k + 1}</b><br>Covers: ${served.map(esc).join('<br>')}<br>within ${AA.config.coverageMinutes} min by road<span class="m">Model: MCLP over risk-weighted areas (${esc(sol.method)})</span>`, { className: 'aa-tip' }).addTo(MAP.layer('sites'));
+        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${MAP.addrLine(r.sites[k])}<br>Covers: ${served.map(esc).join('<br>')}<br>within ${AA.config.coverageMinutes} min by road<br><i>Click for address and directions</i><span class="m">Model: MCLP over risk-weighted areas (${esc(sol.method)})</span>`, { className: 'aa-tip' })
+        .bindPopup(`<h4>Recommended storage S${k + 1}</h4><div class="small">Covers ${served.map(esc).join(', ')} within ${AA.config.coverageMinutes} min by road. Look for a warehouse, school, hall or open ground at or near this point.</div>${MAP.whereHtml(r.sites[k])}`).addTo(MAP.layer('sites'));
       zones.filter((_, i) => sol.assign[i] === j).forEach((z) => L.polyline([[c.lat, c.lon], [z.lat, z.lon]], { color: '#7c3aed', weight: 2, dashArray: '3 6' }).bindTooltip(`S${k + 1} → ${esc(z.name)} · ${AA.fmt.min(tau[j][zones.indexOf(z)])}<span class="m">Model: MCLP assignment</span>`, { className: 'aa-tip', sticky: true }).addTo(MAP.layer('sites')));
     });
+    AA.map3d.setRiskSites(r.sites);
     app.toast(`Storage sites placed: ${sol.sites.length}, covering ${Math.round((100 * sol.covered) / Math.max(1e-9, sol.total))} % of risk-weighted population within ${AA.config.coverageMinutes} min.`);
   };
 
@@ -308,12 +317,12 @@
     const evMeta = sit.event ? `${hz(sit.hazard)} ${alertDot(sit.event.alertlevel)} ${esc(sit.country || '')} · ${magText(sit.event)}${sit.windNote ? ` (planning ${Math.round(sit.magnitude)} km/h)` : ''} · ${esc(sit.event.src)}${sit.event.url ? ` · <a href="${esc(sit.event.url)}" target="_blank" rel="noopener">source report</a>` : ''}` : `${hz(sit.hazard)} ${esc(sit.country || '')} · <span class="prov">planning scenario</span>`;
     const zrows = st.zones.slice().sort((a, b) => b.need - a.need).map((z) => {
       const i = st.zones.indexOf(z), c = MAP.coverage(st, i);
-      return `<tr><td><a href="#" data-z="${z.id}">${z.id}</a> ${esc(z.name)}${z.served ? ' <span class="prov">served</span>' : ''}${z.spread ? ' <span class="prov">spread</span>' : ''}</td><td class="num">${z.need.toFixed(2)}<div class="bar need"><i style="width:${Math.round(z.need * 100)}%"></i></div></td><td class="num">${f.k(z.fc.aff.p50)}</td><td class="num">${Math.round(c * 100)}%<div class="bar cov"><i style="width:${Math.round(c * 100)}%"></i></div></td></tr>`;
+      return `<tr><td><a href="#" data-z="${z.id}">${z.id}</a> ${esc(z.name)}${z.served ? ' <span class="prov">served</span>' : ''}${z.spread ? ' <span class="prov">spread</span>' : ''}${z.address ? `<br><span class="small muted">${esc(z.address)}</span>` : ''}</td><td class="num">${z.need.toFixed(2)}<div class="bar need"><i style="width:${Math.round(z.need * 100)}%"></i></div></td><td class="num">${f.k(z.fc.aff.p50)}</td><td class="num">${Math.round(c * 100)}%<div class="bar cov"><i style="width:${Math.round(c * 100)}%"></i></div></td></tr>`;
     }).join('');
     const drows = st.depots.map((d, j) => {
       const used = M.sum(K.map((k) => (run.alloc.util[j]?.used[k.key] || 0) * k.kg)), have = M.sum(K.map((k) => (d.stock[k.key] || 0) * k.kg));
       const hrs = run.alloc.util[j]?.hours.truck || 0, cap = (d.fleet.truck || 0) * AA.config.epochHours;
-      return `<tr><td><a href="#" data-d="${d.id}">${d.id}</a> ${esc(d.name)}<br><span class="small muted">${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}</span></td><td class="num">${have ? Math.round((100 * used) / have) : 0}%</td><td class="num">${cap ? Math.round((100 * hrs) / cap) : 0}%</td></tr>`;
+      return `<tr><td><a href="#" data-d="${d.id}">${d.id}</a> ${esc(d.name)}<br><span class="small muted">${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.address ? ` · ${esc(d.address)}` : ''}</span></td><td class="num">${have ? Math.round((100 * used) / have) : 0}%</td><td class="num">${cap ? Math.round((100 * hrs) / cap) : 0}%</td></tr>`;
     }).join('');
     const ob = { ...AA.config.objective, ...(st.objective || {}) };
     const gap = AA.report.gap(st);
@@ -340,7 +349,7 @@
       <div class="sec"><h3>Demand zones by need <a href="#m-need" data-x="m-need">need score</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Zone</th><th class="num">Need</th><th class="num">Affected</th><th class="num">Critical cov.</th></tr></thead><tbody>${zrows}</tbody></table></div></div>
       <div class="sec"><h3>Supply stores <a href="#m-milp" data-x="m-milp">stock & fleet use</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Store</th><th class="num">Stock used</th><th class="num">Truck hours</th></tr></thead><tbody>${drows}</tbody></table></div><p class="small muted" style="margin:0">Facility locations are real (OpenStreetMap). Stock and fleet are planning assumptions by facility type, scaled by the supply level, until you import your own inventory.</p>
         ${AA.workspace.can('inventory') ? '<label class="field">Import your inventory (CSV: name, lat, lon, type, water_l, food_kg, tents, medkits, staff, trucks, buses, ambulances, beds)<input id="csvIn" type="file" accept=".csv,text/csv"></label>' : ''}</div>
-      ${st.warehouses ? `<div class="sec"><h3>Recommended storage <a href="#m-mclp" data-x="m-mclp">MCLP</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Site</th><th class="num">Water kL</th><th class="num">Food t</th><th class="num">Tents</th><th class="num">Med</th></tr></thead><tbody>${st.warehouses.sizes.map((s, k) => `<tr><td>S${k + 1} · ${s.zones.join(', ')}</td><td class="num">${f.n(s.stock.water)}</td><td class="num">${f.n(s.stock.food, 1)}</td><td class="num">${f.n(s.stock.shelter)}</td><td class="num">${f.n(s.stock.medical)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin:0">${Math.round((100 * st.warehouses.sol.covered) / Math.max(1e-9, st.warehouses.sol.total))} % of need covered within ${AA.config.coverageMinutes} min · 72 h of P90 demand per site.</p></div>` : ''}
+      ${st.warehouses ? `<div class="sec"><h3>Recommended storage <a href="#m-mclp" data-x="m-mclp">MCLP</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Site</th><th class="num">Water kL</th><th class="num">Food t</th><th class="num">Tents</th><th class="num">Med</th></tr></thead><tbody>${st.warehouses.sizes.map((s, k) => { const c = st.warehouses.cand[s.j]; return `<tr><td><b>S${k + 1}</b> ${c.address ? esc(c.address) : `<span class="mono">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span>`} · <a href="${D.mapsUrl(c)}" target="_blank" rel="noopener">map</a><br><span class="small muted">serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))}</span></td><td class="num">${f.n(s.stock.water)}</td><td class="num">${f.n(s.stock.food, 1)}</td><td class="num">${f.n(s.stock.shelter)}</td><td class="num">${f.n(s.stock.medical)}</td></tr>`; }).join('')}</tbody></table></div><p class="small muted" style="margin:0">${Math.round((100 * st.warehouses.sol.covered) / Math.max(1e-9, st.warehouses.sol.total))} % of need covered within ${AA.config.coverageMinutes} min · 72 h of P90 demand per site.</p></div>` : ''}
       <div class="sec"><h3>Change log</h3><div class="log">${st.log.slice(0, 10).map((e) => `<div class="e"><b>T+${e.epoch * AA.config.epochHours} h</b> · ${esc(e.reason)}<div class="d">cost ${f.usd(e.cost)}${e.diff ? ` (${e.diff.cost.after >= e.diff.cost.before ? '+' : '−'}${f.usd(Math.abs(e.diff.cost.after - e.diff.cost.before))})` : ''}${e.diff && e.diff.redirected.length ? ` · trips ${e.diff.redirected.slice(0, 4).map((r) => `${r.id} ${r.before}→${r.after}`).join(', ')}` : ''}${e.diff ? ` · unmet water ${f.n(e.diff.unmet[0].before, 0)}→${f.n(e.diff.unmet[0].after, 0)} kL` : ''}</div></div>`).join('')}</div></div>
       ${st.notes.length ? `<div class="sec"><h3>Data notes</h3>${st.notes.map((n) => `<p class="note warn">${esc(n)}</p>`).join('')}</div>` : ''}
       <div class="sec"><h3>Sources</h3><p class="small muted" style="margin:0">Population & facilities: OpenStreetMap (Overpass) · roads: OSRM · vulnerability: ${esc(sit.countryIdx?.prov || 'assumed')}${sit.countryIdx?.gdppc ? ` (GDP pc $${f.n(sit.countryIdx.gdppc)}, ${sit.countryIdx.beds ?? '–'} beds/1000)` : ''} · hazard: ${esc(sit.src)}</p></div>`;
@@ -370,7 +379,7 @@
 
   const zonePopup = (z) => {
     const el = document.createElement('div');
-    el.innerHTML = `<h4>${z.id} · ${esc(z.name)}</h4><div class="small">Need ${z.need.toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}${z.sevSd ? ` ± ${z.sevSd.toFixed(2)}` : ''}<br>Population ${f.k(z.pop)} <span class="prov">${z.popProv}</span><br>Affected ${f.k(z.fc.aff.p50)}, displaced ${f.k(z.fc.dis.p50)}, injured ${f.n(z.fc.inj.p50)}</div>
+    el.innerHTML = `<h4>${z.id} · ${esc(z.name)}</h4><div class="small">Need ${z.need.toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}${z.sevSd ? ` ± ${z.sevSd.toFixed(2)}` : ''}<br>Population ${f.k(z.pop)} <span class="prov">${z.popProv}</span><br>Affected ${f.k(z.fc.aff.p50)}, displaced ${f.k(z.fc.dis.p50)}, injured ${f.n(z.fc.inj.p50)}${z.covers?.length ? `<br>Also covers: ${esc(z.covers.join(', '))}` : ''}</div>${MAP.whereHtml(z)}
       <div class="btns"><button class="btn" data-a="surge">Demand surge</button><button class="btn" data-a="${z.served ? 'unserved' : 'served'}">${z.served ? 'Needs aid again' : 'Mark served'}</button></div>
       <div class="field" style="margin-top:8px">Field report: observed severity <span class="mono" id="rv">0.80</span><input type="range" min="0" max="1" step="0.05" value="0.8" id="rr"><select id="rs"><option value="0.1">Trained assessor (σ 0.10)</option><option value="0.2">Crowd report (σ 0.20)</option></select><button class="btn" data-a="report">Apply Bayesian update</button></div>`;
     el.querySelector('#rr').addEventListener('input', (e) => (el.querySelector('#rv').textContent = (+e.target.value).toFixed(2)));
@@ -381,7 +390,7 @@
   const depotPopup = (d) => {
     const el = document.createElement('div');
     const K = AA.config.commodities;
-    el.innerHTML = `<h4>${d.id} · ${esc(d.name)}</h4><div class="small">${d.typeLabel}${d.damaged ? ' · inside heavy-damage zone' : ''}<br>${K.map((k) => `${k.label}: ${f.n(d.stock[k.key], d.stock[k.key] < 10 ? 1 : 0)} ${k.unit}`).join('<br>')}<br>Fleet: ${d.fleet.truck} trucks, ${d.fleet.bus} buses, ${d.fleet.amb || 0} ambulances<br><span class="prov">${esc(d.prov)}</span>${d.osm ? ` <a href="https://www.openstreetmap.org/${d.osm}" target="_blank" rel="noopener">OSM</a>` : ''}</div>
+    el.innerHTML = `<h4>${d.id} · ${esc(d.name)}</h4><div class="small">${d.typeLabel}${d.damaged ? ' · inside heavy-damage zone' : ''}<br>${K.map((k) => `${k.label}: ${f.n(d.stock[k.key], d.stock[k.key] < 10 ? 1 : 0)} ${k.unit}`).join('<br>')}<br>Fleet: ${d.fleet.truck} trucks, ${d.fleet.bus} buses, ${d.fleet.amb || 0} ambulances<br><span class="prov">${esc(d.prov)}</span>${d.osm ? ` <a href="https://www.openstreetmap.org/${d.osm}" target="_blank" rel="noopener">OSM</a>` : ''}</div>${MAP.whereHtml(d)}
       <div class="btns"><button class="btn" data-a="depot">${d.open ? 'Take offline' : 'Bring online'}</button><button class="btn" data-a="breakdown">Truck breakdown</button></div>`;
     el.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => { MAP.map().closePopup(); AA.wsui.act(b.dataset.a, { depotId: d.id }); }));
     if (!AA.workspace.can('edit')) el.querySelectorAll('.btns').forEach((x) => x.remove());
@@ -397,6 +406,7 @@
     if (type === 'leg') MAP.drawLeg(ENG.state, data);
     if (type === 'routed') { MAP.animate(data.legs); renderPlanPanel(); AA.explain.refreshIfOpen(); }
     if (type === 'warehouses') MAP.drawSites(ENG.state);
+    if (type === 'addresses' && ENG.state) { const st = ENG.state; MAP.drawPlan(st, handlers); (st.lastRun?.legs || []).forEach((l) => MAP.drawLeg(st, l)); if (st.lastRun?.routing === 'done') MAP.animate(st.lastRun.legs); renderPlanPanel(); }
   });
 
   // ---------------- search ----------------
@@ -452,13 +462,23 @@
     MAP.init('map');
     legend();
     if (root.innerWidth < 860) { $('#legend').classList.add('collapsed'); $('#legendToggle').textContent = 'show'; }
-    MAP.map().on('click', async (e) => {
-      if (pick) { const cb = pick; endPick(); cb(e.latlng); return; }
+    /** One click handler for the 2D and 3D maps. latlng = { lat, lng }. */
+    app.mapClick = async (latlng) => {
+      if (pick) { const cb = pick; endPick(); cb(latlng); return; }
       if (app.view === 'plan') return;
-      const p = { lat: e.latlng.lat, lon: e.latlng.lng };
+      const p = { lat: latlng.lat, lon: latlng.lng };
       if (app.mode === 'plan') setPlanPlace(p);
       else if (app.mode === 'history' || app.mode === 'risk') { try { const r = await D.reverse(p.lat, p.lon); Object.assign(p, r); } catch (er) {} onPlace(p); }
-    });
+    };
+    app.picking = () => !!pick;
+    MAP.map().on('click', (e) => app.mapClick(e.latlng));
+    // Map view: 2D by default (fast to load). The 2D | 3D switch on the map loads the 3D engine only when asked;
+    // the choice is remembered per browser; ?view=2d / ?view=3d in a link override it.
+    AA.map3d.hook();
+    $('#viewToggle').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; if (b.dataset.view === '3d') AA.map3d.enter(); else AA.map3d.exit(); });
+    AA.map3d.updateButton();
+    const want3d = new URLSearchParams(location.search).get('view');
+    if (want3d === '3d' || (want3d !== '2d' && AA.workspace.get('view3d', false) === true && AA.map3d.supported())) AA.map3d.enter();
     $('#hintCancel').addEventListener('click', endPick);
     $('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); if (e.key === 'Escape') $('#qres').hidden = true; });
     document.addEventListener('click', (e) => { if (!e.target.closest('.search')) $('#qres').hidden = true; });

@@ -11,7 +11,7 @@ close, depots fail, supplies land and the disaster spreads.
 
 Double-click **`index.html`** (or `app.html` to go straight to the map). Both are single,
 self-contained files: they keep working if you copy, email or flatten them into one folder.
-They need an internet connection for the live data, map imagery and three CDN libraries.
+They need an internet connection for the live data, map imagery and four CDN libraries.
 
 Deep links you can bookmark or share:
 
@@ -28,7 +28,16 @@ enable it in the repo under Settings → Pages → Deploy from a branch → `mai
 Sources live in `src/` (page shells), `js/`, `css/` and `assets/`. After any change run
 `node tools/build-standalone.js` to regenerate the root `index.html` and `app.html`.
 
-## Phase 1: workspace and accuracy (new)
+## 3D map (new)
+
+The map opens in 2D (fastest to load); the **2D | 3D** switch at the top right of the map turns on 3D: a spinning globe of live disasters, then
+satellite imagery on real terrain with 3D buildings, affected areas as columns (height = people
+affected, colour = need), storage sites as purple columns and the risk grid as rising squares.
+Drag to move, right-drag or Ctrl+drag (two fingers on phones) to tilt and rotate; hover and click
+work as in 2D. The 3D engine is only downloaded when 3D is chosen; the choice is remembered; `&view=2d` / `&view=3d` in a
+link forces either. Built on MapLibre GL 5 (`js/ui/map3d.js`), Mapzen/AWS terrain and OpenFreeMap buildings.
+
+## Phase 1: workspace and accuracy
 
 - **Roles**: viewer, planner, admin (Workspace button). Local by default; real access control with the optional Supabase back end (`supabase/schema.sql`, row-level security).
 - **Saved plans**: save, version, reopen exactly (offline replay of recorded inputs and decisions), or share as a `.json` plan file.
@@ -101,4 +110,4 @@ node tests/models.test.js   # 24 acceptance tests from the SKILL.md files
 
 GDACS (UN OCHA / EC JRC), USGS Earthquake Hazards Program, NASA EONET, OpenStreetMap via
 Nominatim / Overpass / OSRM, Open-Meteo (forecast, elevation, GloFAS flood), World Bank Open Data,
-Esri World Imagery. Respect each provider's terms and rate limits.
+Esri World Imagery, Mapzen Terrain Tiles (AWS Open Data), OpenFreeMap; 3D rendering by MapLibre GL. Respect each provider's terms and rate limits.

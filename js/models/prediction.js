@@ -146,37 +146,53 @@
     return 1 / (1 + Math.exp(-(hoursFromNow - Tp) / 6));
   };
 
-  const PLACE_DEFAULT_POP = { city: 250000, town: 20000, suburb: 30000, village: 1500, hamlet: 150 };
-  const RURAL = { city: 0.3, town: 0.6, suburb: 0.4, village: 1, hamlet: 1, sector: 0.7 };
+  const PLACE_DEFAULT_POP = { city: 250000, town: 20000, suburb: 30000, quarter: 15000, neighbourhood: 8000, village: 1500, hamlet: 150 };
+  const RURAL = { city: 0.3, town: 0.6, suburb: 0.4, quarter: 0.4, neighbourhood: 0.4, village: 1, hamlet: 1, sector: 0.7 };
+  const LOCAL = new Set(['suburb', 'quarter', 'neighbourhood']);
+  const DIRS = ['north', 'east', 'south', 'west'];
 
   /** Build demand zones from OSM places (or modelled sectors when none). */
-  P.buildZones = (sit, places, maxZones = 10) => {
+  P.buildZones = (sit, places, maxZones = 12) => {
     const R = sit.radiusKm;
     const src = { lat: sit.lat, lon: sit.lon };
     const c = sit.focus || src; // planning focus (land point) may differ from an offshore source
     let zones = [];
-    (places || []).forEach((pl) => {
-      const d = M.haversine(c, pl);
-      if (d > R) return;
+    const all = (places || []).filter((pl) => M.haversine(c, pl) <= R);
+    all.forEach((pl) => {
       const tagged = pl.population > 0;
       const pop = tagged ? pl.population : PLACE_DEFAULT_POP[pl.type] || 1000;
-      if (pop >= 300000) { // split large cities into four quadrants so routing works inside them
-        const rc = Math.sqrt(pop / 4000 / Math.PI);
-        ['N', 'E', 'S', 'W'].forEach((q, k) => {
-          const p = M.destination(pl, k * 90, 0.45 * rc);
-          zones.push({ name: `${pl.name} ${q}`, lat: p.lat, lon: p.lon, pop: pop / 4, type: pl.type, popProv: tagged ? 'osm' : 'modelled' });
-        });
-      } else zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop, type: pl.type, popProv: tagged ? 'osm' : 'modelled' });
+      if (pl.type === 'city' || (pl.type === 'town' && pop >= 300000)) {
+        const rc = Math.max(3, Math.sqrt(pop / 4000 / Math.PI)); // urban radius at ~4,000 people/km²
+        const locals = all.filter((o) => LOCAL.has(o.type) && M.haversine(pl, o) <= rc * 1.2);
+        if (locals.length >= 3) { // the city is represented by its own sectors/suburbs (added below)
+          locals.forEach((o) => { o.parent = o.parent || pl.name; o.cityPop = pop / locals.length; });
+          return;
+        }
+        if (pop >= 300000) { // no localities mapped: four quarters, named from the map later
+          DIRS.forEach((q, k) => {
+            const p = M.destination(pl, k * 90, 0.45 * rc);
+            zones.push({ name: `${pl.name} (${q})`, lat: p.lat, lon: p.lon, pop: pop / 4, type: pl.type, popProv: tagged ? 'osm' : 'modelled', needsName: true, parent: pl.name });
+          });
+          return;
+        }
+      }
+      if (LOCAL.has(pl.type)) {
+        const p2 = pl.population > 0 ? pl.population : pl.cityPop ? Math.min(pl.cityPop, 60000) : PLACE_DEFAULT_POP[pl.type];
+        zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop: p2, type: pl.type, popProv: pl.population > 0 ? 'osm' : 'modelled', parent: pl.parent || '' });
+        return;
+      }
+      zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop, type: pl.type, popProv: tagged ? 'osm' : 'modelled', parent: pl.parent || '' });
     });
     // merge near-duplicates (< 1.5 km)
-    zones = zones.filter((z, i) => !zones.some((o, j) => j < i && M.haversine(z, o) < 1.5));
+    zones = zones.filter((z, i) => { const o = zones.find((x, j) => j < i && M.haversine(z, x) < 1.5); if (o) (o.covers = o.covers || []).push(z.name); return !o; });
     if (zones.length < 4) { // modelled sectors (center + 6 ring)
       const dens = sit.popDensity || 400; // persons/km² assumption, labelled
       const ringR = 0.45 * R, areaCore = Math.PI * (0.3 * R) ** 2, areaSector = (Math.PI * R * R - areaCore) / 6;
-      zones.push({ name: 'Core', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled' });
+      // modelled areas: named from the map (reverse geocoding) by the engine; these labels are only a fallback
+      zones.push({ name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
       for (let k = 0; k < 6; k++) {
         const p = M.destination(c, k * 60 + 30, ringR);
-        zones.push({ name: `Sector ${['NE', 'E', 'SE', 'SW', 'W', 'NW'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled' });
+        zones.push({ name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
       }
     }
     zones.forEach((z) => {
@@ -187,7 +203,12 @@
       z.rural = RURAL[z.type] ?? 0.7;
     });
     zones.sort((a, b) => b.affEst - a.affEst);
-    zones = zones.filter((z) => z.affEst > 1).slice(0, maxZones);
+    // pick the worst-hit areas but keep them ≥ 2 km apart, so a dense city is covered across its extent;
+    // each skipped locality is listed under the nearest chosen area ("also covers …")
+    const cand = zones.filter((z) => z.affEst > 1), chosen = [];
+    cand.forEach((z) => { if (chosen.length < maxZones && !chosen.some((o) => M.haversine(o, z) < 2)) chosen.push(z); });
+    cand.forEach((z) => { if (chosen.includes(z)) return; const near = chosen.reduce((b, o) => (M.haversine(o, z) < M.haversine(b, z) ? o : b), chosen[0]); if (near && M.haversine(near, z) < 6) (near.covers = near.covers || []).push(z.name); });
+    zones = chosen;
     zones.forEach((z, i) => { z.id = 'Z' + (i + 1); z.recv = {}; z.surge = 1; });
     return zones;
   };

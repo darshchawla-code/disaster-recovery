@@ -259,6 +259,24 @@
     return { name: r.display_name || `${lat.toFixed(3)}, ${lon.toFixed(3)}`, short: r.address?.city || r.address?.town || r.address?.county || r.address?.state || r.name || 'Selected point', country: r.address?.country || '', iso2: (r.address?.country_code || '').toUpperCase() };
   };
 
+  /** Street-level reverse geocode (Nominatim, throttled to 1 request/s, cached).
+   *  Returns { locality, area, road, city, address } — locality = the neighbourhood/sector/village name. */
+  D.reverseDetail = async (lat, lon, zoom = 18) => {
+    await nomThrottle();
+    const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${(+lat).toFixed(5)}&lon=${(+lon).toFixed(5)}&format=json&zoom=${zoom}&addressdetails=1&accept-language=en`, { cacheTtl: 864e5, timeout: 12000 });
+    return D.parseReverse(r);
+  };
+  D.parseReverse = (r) => {
+    const a = r?.address || {};
+    const locality = a.neighbourhood || a.quarter || a.suburb || a.residential || a.village || a.hamlet || a.city_district || a.town || a.city || '';
+    const area = a.suburb && a.suburb !== locality ? a.suburb : a.city_district && a.city_district !== locality ? a.city_district : '';
+    const city = a.city || a.town || a.county || a.state_district || '';
+    const road = [a.house_number, a.road || a.pedestrian || a.footway].filter(Boolean).join(' ');
+    const named = a.amenity || a.building || a.shop || a.office || '';
+    const address = [named, road, locality, area, city !== locality ? city : '', a.postcode].filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i).join(', ');
+    return { locality, area, road, city, postcode: a.postcode || '', address: address || r?.display_name || '' };
+  };
+
   // ---------------- OSM Overpass (raced mirrors) ----------------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
   D.overpass = async (ql, timeout = 30000) => {
@@ -269,12 +287,32 @@
   };
   const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
   D.bboxOf = bboxOf;
+  /** Populated places: cities and towns across the whole impact radius, plus the named sectors, suburbs,
+   *  neighbourhoods and villages in the core (≤ 35 km), so a city is planned by its real localities
+   *  (e.g. "Sector 29", "DLF Phase 3") instead of anonymous compass sectors. */
   D.places = async (c, km) => {
-    const b = bboxOf(c, km).join(',');
-    const types = km > 80 ? 'city|town' : 'city|town|village';
-    const j = await D.overpass(`[out:json][timeout:25];node["place"~"^(${types})$"](${b});out 400;`);
-    return j.elements.map((e) => ({ name: e.tags?.name || e.tags?.['name:en'] || 'Unnamed', lat: e.lat, lon: e.lon, type: e.tags.place, population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0, src: 'OSM' }));
+    const b = bboxOf(c, km).join(','), core = bboxOf(c, Math.min(km, 35)).join(',');
+    const j = await D.overpass(`[out:json][timeout:25];(node["place"~"^(city|town)$"](${b});node["place"~"^(suburb|quarter|neighbourhood|village)$"](${core}););out 600;`);
+    return j.elements.filter((e) => e.tags && (e.tags.name || e.tags['name:en'])).map((e) => ({
+      name: D.placeName(e.tags), lat: e.lat, lon: e.lon, type: e.tags.place,
+      population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0,
+      parent: e.tags['is_in:city'] || e.tags['addr:city'] || '', src: 'OSM',
+    }));
   };
+  /** English name where OSM has one (Devanagari-only names are hard to act on for many responders). */
+  D.placeName = (t) => {
+    const n = t.name || '', en = t['name:en'] || '';
+    return en && /[^\u0000-\u024f]/.test(n) ? `${en} (${n})` : n || en || 'Unnamed';
+  };
+  /** Postal-style address from OSM addr:* tags, or '' when the object has none. */
+  D.addressOf = (t = {}) => {
+    if (t['addr:full']) return t['addr:full'];
+    const street = [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' ');
+    const parts = [street || t['addr:place'], t['addr:suburb'] || t['addr:neighbourhood'], t['addr:city'] || t['addr:district'], t['addr:postcode']].filter(Boolean);
+    return parts.length >= 2 ? parts.join(', ') : '';
+  };
+  /** Google Maps link for a point (opens directions on phones). */
+  D.mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`;
   /** Fallback facility search via Nominatim (bounded viewbox), used when Overpass is slow or down. */
   D.facilitiesNominatim = async (c, km) => {
     const [s, w, n, e] = bboxOf(c, km);
@@ -284,7 +322,7 @@
       await nomThrottle();
       try {
         const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=25&bounded=1&viewbox=${w},${n},${e},${s}`, { cacheTtl: 36e5, timeout: 12000 });
-        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
+        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, address: r.display_name.split(',').slice(1, 5).join(',').trim(), src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
       } catch (err) { /* keep what we have */ }
     }
     return out;
@@ -301,7 +339,7 @@
       const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (lat == null) return null;
       const t = e.tags || {};
       const type = t.amenity === 'hospital' ? 'hospital' : t.amenity === 'fire_station' ? 'fire_station' : t.amenity === 'police' ? 'police' : 'warehouse';
-      return { name: t.name || t['name:en'] || ({ hospital: 'Hospital', fire_station: 'Fire station', police: 'Police station', warehouse: 'Warehouse' })[type], type, lat, lon, beds: parseInt(t.beds, 10) || 0, src: 'OSM', osm: `${e.type}/${e.id}` };
+      return { name: (t.name || t['name:en']) ? D.placeName(t) : '', type, lat, lon, beds: parseInt(t.beds, 10) || 0, address: D.addressOf(t), src: 'OSM', osm: `${e.type}/${e.id}` };
     }).filter(Boolean);
   };
 

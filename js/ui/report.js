@@ -117,20 +117,26 @@
     const dis = st.fcast.summary.dis.p50;
     if (dis >= 1) out.push({ icon: '⌂', text: `Open shelter for ${people(dis)} (up to ${about(st.fcast.summary.dis.p90)} in the worst case).`, detail: `About ${about(dis / 5)} family tents or equivalent space in schools and halls.`, at: top[0] });
     const flows = run.casualty.flows.slice().sort((a, b) => b.n - a.n);
-    if (flows.length) { const fl = flows[0]; out.push({ icon: '+', text: `Send ambulances: ${about(M.sum(flows.map((x) => x.n)))} seriously injured patients to ${list([...new Set(flows.map((x) => st.hospitals[x.h].name))].slice(0, 3))}.`, detail: `First run: ${about(fl.n)} patients from ${st.zones[fl.i].name} to ${st.hospitals[fl.h].name} (${mins(fl.tau)}).`, at: st.hospitals[fl.h] }); }
+    if (flows.length) { const fl = flows[0]; out.push({ icon: '+', text: `Send ambulances: ${about(M.sum(flows.map((x) => x.n)))} seriously injured patients to ${list([...new Set(flows.map((x) => st.hospitals[x.h].name))].slice(0, 3))}.`, detail: `First run: ${about(fl.n)} patients from ${st.zones[fl.i].name} to ${st.hospitals[fl.h].name} (${mins(fl.tau)})${st.hospitals[fl.h].address ? `, ${st.hospitals[fl.h].address}` : ''}.`, at: st.hospitals[fl.h] }); }
     const d = R.dispatches(st).filter((x) => !x.air)[0];
-    if (d) out.push({ icon: '→', text: `Dispatch supplies: ${d.trucks + d.buses || 1} vehicle${(d.trucks + d.buses) > 1 ? 's' : ''} from ${d.depot.name} to ${d.zone.name} first.`, detail: Object.entries(d.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join('; '), at: d.zone });
+    if (d) out.push({ icon: '→', text: `Dispatch supplies: ${d.trucks + d.buses || 1} vehicle${(d.trucks + d.buses) > 1 ? 's' : ''} from ${d.depot.name} to ${d.zone.name} first.`, detail: `${Object.entries(d.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join('; ')}.${d.depot.address ? ` Pick up at ${d.depot.address}.` : ''}`, at: d.zone });
     const air = run.legs.filter((l) => l.airdrop);
     if (air.length) out.push({ icon: '✈', text: `Arrange helicopter or air drops for ${list([...new Set(air.map((l) => l.b.name))])}: no road gets through.`, detail: 'All road routes cross a closure or a badly damaged stretch.', at: air[0].b });
     const g = R.gap(st);
     if (g.short.length || g.trucks) out.push({ icon: '⇪', text: `Ask for outside help: ${[g.trucks ? plural(g.trucks, 'more truck') : '', ...g.short.slice(0, 3).map((x) => qty(x.k.key, x.n))].filter(Boolean).join(', ')}.`, detail: 'Local stock and vehicles cannot cover this 6-hour period.', at: null });
-    if (st.warehouses?.sizes?.length) { const s = st.warehouses.sizes[0], c = st.warehouses.cand[s.j]; out.push({ icon: '◆', text: `Pre-position stock at ${st.warehouses.sizes.length} storage site${st.warehouses.sizes.length > 1 ? 's' : ''} (purple diamonds).`, detail: `Site S1 should hold ${qty('water', s.stock.water)} and ${qty('food', s.stock.food)} for 3 days.`, at: c }); }
+    if (st.warehouses?.sizes?.length) { const s = st.warehouses.sizes[0], c = st.warehouses.cand[s.j]; out.push({ icon: '◆', text: `Pre-position stock at ${st.warehouses.sizes.length} storage site${st.warehouses.sizes.length > 1 ? 's' : ''} (purple diamonds).`, detail: `Site S1${c.address ? ` (${c.address})` : ''} should hold ${qty('water', s.stock.water)} and ${qty('food', s.stock.food)} for 3 days.`, at: c }); }
     return out;
   };
 
   // ---------- report builders ----------
   const head = (title, sub) => ({ title, sub, created: new Date() });
   const section = (h, html) => ({ h, html });
+  /** "Name (address)" for a place; coordinates when no street address is known. */
+  const at = (p) => (p.address ? ` (${esc(p.address)})` : ` (${(+p.lat).toFixed(4)}, ${(+p.lon).toFixed(4)})`);
+  const mapLink = (p) => `<a href="${AA.data.mapsUrl(p)}" target="_blank" rel="noopener">map</a>`;
+  /** Every place the plan names, with its address, coordinates and a directions link. */
+  const placesTable = (rows) => `<table class="rt"><thead><tr><th>Place</th><th>What</th><th>Address</th><th>Coordinates</th><th>Map</th></tr></thead><tbody>${rows.map(([n, what, p]) => `<tr><td>${esc(n)}</td><td>${esc(what)}</td><td>${p.address ? esc(p.address) : '<i>no street address in map data</i>'}</td><td>${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}</td><td>${mapLink(p)}</td></tr>`).join('')}</tbody></table>`;
+  R.placesTable = placesTable;
   const steps = (arr) => `<ol class="steps">${arr.filter(Boolean).map((s) => `<li>${s}</li>`).join('')}</ol>`;
   const bullets = (arr) => `<ul>${arr.filter(Boolean).map((s) => `<li>${s}</li>`).join('')}</ul>`;
   const severityWord = (st) => {
@@ -160,19 +166,25 @@
         `<b>Activate the control room</b> and bring in district officials, police, fire service, health and the ${A.word === 'cyclone' || A.word === 'flood' ? 'Met department and irrigation department' : 'Met department'}. Re-check this plan every 6 hours.`,
         ...A.first.map((x) => `<b>${x.split('.')[0]}.</b>${x.split('.').slice(1).join('.')}`),
         sm.dis.p50 >= 1 ? `<b>Open shelters</b> for ${people(sm.dis.p50)} (keep space for ${about(sm.dis.p90)}). That is about ${about(sm.dis.p50 / 5)} family tents, or schools and community halls.` : '',
-        flows.length ? `<b>Move the seriously injured.</b> ${flows.slice(0, 4).map((x) => `${about(x.n)} from ${esc(st.zones[x.i].name)} to ${esc(st.hospitals[x.h].name)} (${mins(x.tau)} away)`).join('; ')}. Ask these hospitals to clear beds now.` : '',
-        disp.length ? `<b>Send these supplies first</b> (largest loads first):${bullets(disp.filter((x) => !x.air).slice(0, 8).map((x) => `From <b>${esc(x.depot.name)}</b> to <b>${esc(x.zone.name)}</b>: ${x.trucks ? plural(x.trucks, 'truck') : ''}${x.trucks && x.buses ? ' and ' : ''}${x.buses ? plural(x.buses, 'bus', 'buses') : ''}${x.milk ? ' (shared truck, also stopping at another area)' : ''}, carrying ${Object.entries(x.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join(', ')}. Drive time about ${mins(x.hours)}.`))}` : '',
+        flows.length ? `<b>Move the seriously injured.</b> ${flows.slice(0, 4).map((x) => `${about(x.n)} from ${esc(st.zones[x.i].name)} to <b>${esc(st.hospitals[x.h].name)}</b>${at(st.hospitals[x.h])}, ${mins(x.tau)} away`).join('; ')}. Ask these hospitals to clear beds now.` : '',
+        disp.length ? `<b>Send these supplies first</b> (largest loads first):${bullets(disp.filter((x) => !x.air).slice(0, 8).map((x) => `From <b>${esc(x.depot.name)}</b>${at(x.depot)} to <b>${esc(x.zone.name)}</b>${at(x.zone)}: ${x.trucks ? plural(x.trucks, 'truck') : ''}${x.trucks && x.buses ? ' and ' : ''}${x.buses ? plural(x.buses, 'bus', 'buses') : ''}${x.milk ? ' (shared truck, also stopping at another area)' : ''}, carrying ${Object.entries(x.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join(', ')}. Drive time about ${mins(x.hours)}.`))}` : '',
         air.length ? `<b>Arrange air drops</b> for ${list([...new Set(air.map((l) => esc(l.b.name)))])}. No road route is safe or open.` : '',
         st.closures.length ? `<b>Keep traffic away from the ${st.closures.length} closed road${st.closures.length > 1 ? 's' : ''}</b> marked ✕ on the map; trucks have been sent round them.` : '',
         (g.trucks || g.short.length) ? `<b>Ask the state or national authority for more help:</b> ${[g.trucks ? `${plural(g.trucks, 'more truck')}${g.buses ? ` and ${plural(g.buses, 'bus', 'buses')}` : ''} (our vehicles are ${Math.round(g.util * 100)}% busy)` : '', ...g.short.map((x) => qty(x.k.key, x.n))].filter(Boolean).join('; ')}.` : '',
       ])),
       section('Next 1 to 3 days', steps([
         ...A.later,
-        st.warehouses?.sizes?.length ? `<b>Stock the recommended storage sites</b> (purple diamonds on the map) so each can supply its areas within ${AA.config.coverageMinutes} minutes for 3 days:${bullets(st.warehouses.sizes.map((s, k) => `S${k + 1} (serves ${s.zones.map((id) => esc(st.zones.find((z) => z.id === id)?.name || id)).join(', ')}): ${qty('water', s.stock.water)}, ${qty('food', s.stock.food)}, ${qty('shelter', s.stock.shelter)}, ${qty('medical', s.stock.medical)}.`))}` : '',
+        st.warehouses?.sizes?.length ? `<b>Stock the recommended storage sites</b> (purple diamonds on the map) so each can supply its areas within ${AA.config.coverageMinutes} minutes for 3 days:${bullets(st.warehouses.sizes.map((s, k) => `<b>S${k + 1}</b> at ${(() => { const c = st.warehouses.cand[s.j]; return c.address ? esc(c.address) : `${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}`; })()} (serves ${s.zones.map((id) => esc(st.zones.find((z) => z.id === id)?.name || id)).join(', ')}): ${qty('water', s.stock.water)}, ${qty('food', s.stock.food)}, ${qty('shelter', s.stock.shelter)}, ${qty('medical', s.stock.medical)}.`))}` : '',
         'Re-run AidAtlas every 6 hours with field reports. Mark areas that have enough so supplies move to the next area in need.',
         'Keep one lane open on main roads for relief trucks and ambulances; send other traffic away.',
       ])),
       section('Supplies needed in the next 6 hours', `<table class="rt"><thead><tr><th>Item</th><th>Needed</th><th>We can deliver</th><th>Still short</th></tr></thead><tbody>${K.map((k) => { const d = M.sum(st.zones.map((z) => z.d[k.key] || 0)), u = M.sum(run.alloc.unmet.map((x) => x[k.key] || 0)); return `<tr><td>${k.label}</td><td>${qty(k.key, d)}</td><td>${qty(k.key, d - u)}</td><td>${u > 1e-6 ? qty(k.key, u) : 'none'}</td></tr>`; }).join('')}</tbody></table><p class="small">Daily amounts follow the Sphere humanitarian standards: 15 litres of water and 2,100 kcal of food per displaced person per day, and one family tent per 5 people.</p>`),
+      section('Where everything is', `<p>Addresses come from OpenStreetMap. Where the map has no street address, use the coordinates or the map link (opens Google Maps for directions).</p>${placesTable([
+        ...zones.map((z) => [`${z.id} ${z.name}`, `Affected area${z.covers?.length ? ` (also ${z.covers.slice(0, 4).join(', ')})` : ''}`, z]),
+        ...[...new Set(disp.map((x) => x.depot))].map((d) => [`${d.id} ${d.name}`, d.typeLabel, d]),
+        ...[...new Set(flows.map((x) => st.hospitals[x.h]))].map((h) => [`${h.id} ${h.name}`, 'Receiving hospital', h]),
+        ...(st.warehouses?.sizes || []).map((s, k) => [`S${k + 1}`, 'Recommended storage site', st.warehouses.cand[s.j]]),
+      ])}`),
       section('What could change this plan', bullets([`<b>Watch:</b> ${A.watch}`, 'If an area gets worse, use “Demand surge”. If it has enough, use “Mark served”. If a road or store is lost, mark it on the map: AidAtlas re-plans immediately.', `The forecast range is wide (${about(sm.aff.p10)}–${about(sm.aff.p90)} people affected). Keep about a third of the stock in reserve until field teams confirm.`])),
       section('How these numbers were made', `<p class="small">Hazard data: ${esc(sit.src || 'scenario')}. Towns, hospitals and stores: OpenStreetMap. Roads and drive times: OSRM. Country vulnerability: ${esc(sit.countryIdx?.prov || 'assumed')}. Forecast: 400 computer simulations with damage curves of the kind used by the USGS PAGER system. Allocation: an optimisation model that gives each area a share by need at the lowest transport cost. Stock levels at real facilities are planning assumptions unless your own inventory was loaded. Full calculations are in the app under <i>Models</i>.</p>`),
     ];
@@ -221,7 +233,7 @@
       section('Highest-risk areas', `<table class="rt"><thead><tr><th>#</th><th>Area</th><th>Main danger</th><th>Risk (0–1)</th><th>Why</th></tr></thead><tbody>${rr.top.map((c, k) => { const why = [c.H > 0.6 ? 'frequent hazards' : '', c.E > 0.6 ? 'many people' : '', c.V > 0.6 ? 'vulnerable homes and incomes' : '', c.LCC > 0.6 ? 'far from hospitals / low capacity' : ''].filter(Boolean); return `<tr><td>${k + 1}</td><td>${esc(c.name)}</td><td>${AA.HAZARDS[c.dominant].label}</td><td>${c.R.toFixed(2)}</td><td>${why.length ? why.join(', ') : 'combination of factors'}</td></tr>`; }).join('')}</tbody></table>`),
       section('Prepare now', steps([
         ...[...new Set(rr.top.map((c) => c.dominant))].map((h) => `<b>${AA.HAZARDS[h].label}:</b> ${adv(h).first[0]} ${adv(h).warn}`),
-        rr.sites?.length ? `<b>Build or rent storage</b> at the ${rr.sites.length} purple sites on the map. Each reaches its high-risk areas within ${AA.config.coverageMinutes} minutes by road: ${rr.sites.map((s, k) => `S${k + 1} serves ${s.serves.map(esc).join(', ')}`).join('; ')}.` : 'Press “Plan storage for all five” to get recommended storage sites.',
+        rr.sites?.length ? `<b>Build or rent storage</b> at the ${rr.sites.length} purple sites on the map. Each reaches its high-risk areas within ${AA.config.coverageMinutes} minutes by road: ${rr.sites.map((s, k) => `<b>S${k + 1}</b>${at(s)} serves ${s.serves.map(esc).join(', ')}`).join('; ')}.` : 'Press “Plan storage for all five” to get recommended storage sites.',
         'Run a drill: open each high-risk area in Plan mode and check that its supplies and routes work.',
         'Make sure every high-risk area has a warning system (sirens, SMS, radio) and a known evacuation route.',
       ])),
@@ -234,7 +246,7 @@
   const toText = (r) => {
     const tmp = document.createElement('div');
     const parts = [r.title, r.sub, `Prepared ${r.created.toLocaleString()} by AidAtlas`, ''];
-    r.sections.forEach((s) => { tmp.innerHTML = s.html.replace(/<ul>/g, '\n<ul>').replace(/<li>/g, '<li>• ').replace(/<\/(p|li|tr|h\d)>/g, '\n').replace(/<\/t[dh]>/g, ' | '); parts.push(s.h.toUpperCase(), tmp.textContent.replace(/\n\s*\n+/g, '\n').trim(), ''); });
+    r.sections.forEach((s) => { tmp.innerHTML = s.html.replace(/<a href="([^"]+)"[^>]*>[^<]*<\/a>/g, '$1').replace(/<ul>/g, '\n<ul>').replace(/<li>/g, '<li>• ').replace(/<\/(p|li|tr|h\d)>/g, '\n').replace(/<\/t[dh]>/g, ' | '); parts.push(s.h.toUpperCase(), tmp.textContent.replace(/\n\s*\n+/g, '\n').trim(), ''); });
     return parts.join('\n');
   };
   const docHtml = (r) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(r.title)}</title><style>${R.CSS}</style></head><body><article class="rep">${R.inner(r)}</article></body></html>`;

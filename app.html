@@ -104,6 +104,21 @@ button, input, select { font: inherit; color: inherit; }
 .panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
 .mapwrap { position: relative; min-height: 0; }
 #map { position: absolute; inset: 0; background: #1b1e22; }
+#map3d { position: absolute; inset: 0; z-index: 450; background: #1b1e22; }
+/* keep the 3D canvas laid out while hidden: collapsing it to 0×0 makes MapLibre re-render mid-frame */
+#map3d[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#map.is3d .leaflet-pane, #map.is3d .leaflet-control-zoom, #map.is3d .leaflet-control-layers, #map.is3d .leaflet-control-scale, #map.is3d .leaflet-control-attribution { visibility: hidden; }
+.maplibregl-popup.aa-tip3d { pointer-events: none; }
+/* 2D | 3D switch, top right of the map; the map's own top-right controls sit below it */
+.viewtoggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: inline-flex; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.viewtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 5px 14px; font: 600 12.5px/1 var(--sans); color: var(--graphite); cursor: pointer; min-width: 44px; min-height: 30px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.viewtoggle button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.viewtoggle.busy button[data-view="3d"] { opacity: .6; cursor: progress; }
+.mapwrap .leaflet-top.leaflet-right, .mapwrap .maplibregl-ctrl-top-right { top: 48px; }
+.maplibregl-popup.aa-tip3d .maplibregl-popup-content { font: 12.5px/1.45 var(--sans); padding: 6px 9px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.maplibregl-popup.aa-pop3d .maplibregl-popup-content { font: 13px/1.45 var(--sans); padding: 10px 12px; border-radius: 8px; }
+.maplibregl-popup.aa-pop3d h4 { margin: 0 0 4px; }
 @media (max-width: 860px) {
   .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
   .mapwrap { order: -1; }
@@ -218,6 +233,12 @@ table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); fo
 .modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
 .modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
 .modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+.aa-tip .addr, .addr { display: inline-block; margin-top: 2px; color: #374151; font-size: 12px; }
+.where { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); }
+.maplabel { display: inline-block; white-space: nowrap; font: 600 11.5px/1.2 var(--sans); color: #111; background: rgba(255,255,255,.88); border: 1px solid rgba(0,0,0,.18); border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.maplabel.zone { border-left: 3px solid var(--affected); }
+.maplabel.store { border-left: 3px solid var(--supply); }
+.maplabel.site { border-left: 3px solid var(--storage); }
 
 /* ---------- workspace (Phase 1) ---------- */
 .wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }
@@ -284,6 +305,10 @@ details.card[open] { display: grid; gap: 8px; }
     <aside class="panel sketch-bg" id="panel"><div class="panel-inner" id="panelInner"></div></aside>
     <div class="mapwrap">
       <div id="map" aria-label="Satellite map"></div>
+      <div class="viewtoggle" id="viewToggle" role="group" aria-label="Map view">
+        <button type="button" data-view="2d" aria-pressed="true" title="Flat map: fastest">2D</button>
+        <button type="button" data-view="3d" aria-pressed="false" title="Globe, terrain, 3D buildings and columns (downloads the 3D engine the first time)">3D</button>
+      </div>
       <div class="toast" id="toast" hidden></div>
       <div class="hint" id="hint" hidden><span id="hintText"></span><button type="button" id="hintCancel">Cancel</button></div>
       <div class="legend" id="legend"></div>
@@ -704,6 +729,24 @@ details.card[open] { display: grid; gap: 8px; }
     return { name: r.display_name || `${lat.toFixed(3)}, ${lon.toFixed(3)}`, short: r.address?.city || r.address?.town || r.address?.county || r.address?.state || r.name || 'Selected point', country: r.address?.country || '', iso2: (r.address?.country_code || '').toUpperCase() };
   };
 
+  /** Street-level reverse geocode (Nominatim, throttled to 1 request/s, cached).
+   *  Returns { locality, area, road, city, address } — locality = the neighbourhood/sector/village name. */
+  D.reverseDetail = async (lat, lon, zoom = 18) => {
+    await nomThrottle();
+    const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${(+lat).toFixed(5)}&lon=${(+lon).toFixed(5)}&format=json&zoom=${zoom}&addressdetails=1&accept-language=en`, { cacheTtl: 864e5, timeout: 12000 });
+    return D.parseReverse(r);
+  };
+  D.parseReverse = (r) => {
+    const a = r?.address || {};
+    const locality = a.neighbourhood || a.quarter || a.suburb || a.residential || a.village || a.hamlet || a.city_district || a.town || a.city || '';
+    const area = a.suburb && a.suburb !== locality ? a.suburb : a.city_district && a.city_district !== locality ? a.city_district : '';
+    const city = a.city || a.town || a.county || a.state_district || '';
+    const road = [a.house_number, a.road || a.pedestrian || a.footway].filter(Boolean).join(' ');
+    const named = a.amenity || a.building || a.shop || a.office || '';
+    const address = [named, road, locality, area, city !== locality ? city : '', a.postcode].filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i).join(', ');
+    return { locality, area, road, city, postcode: a.postcode || '', address: address || r?.display_name || '' };
+  };
+
   // ---------------- OSM Overpass (raced mirrors) ----------------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
   D.overpass = async (ql, timeout = 30000) => {
@@ -714,12 +757,32 @@ details.card[open] { display: grid; gap: 8px; }
   };
   const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
   D.bboxOf = bboxOf;
+  /** Populated places: cities and towns across the whole impact radius, plus the named sectors, suburbs,
+   *  neighbourhoods and villages in the core (≤ 35 km), so a city is planned by its real localities
+   *  (e.g. "Sector 29", "DLF Phase 3") instead of anonymous compass sectors. */
   D.places = async (c, km) => {
-    const b = bboxOf(c, km).join(',');
-    const types = km > 80 ? 'city|town' : 'city|town|village';
-    const j = await D.overpass(`[out:json][timeout:25];node["place"~"^(${types})$"](${b});out 400;`);
-    return j.elements.map((e) => ({ name: e.tags?.name || e.tags?.['name:en'] || 'Unnamed', lat: e.lat, lon: e.lon, type: e.tags.place, population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0, src: 'OSM' }));
+    const b = bboxOf(c, km).join(','), core = bboxOf(c, Math.min(km, 35)).join(',');
+    const j = await D.overpass(`[out:json][timeout:25];(node["place"~"^(city|town)$"](${b});node["place"~"^(suburb|quarter|neighbourhood|village)$"](${core}););out 600;`);
+    return j.elements.filter((e) => e.tags && (e.tags.name || e.tags['name:en'])).map((e) => ({
+      name: D.placeName(e.tags), lat: e.lat, lon: e.lon, type: e.tags.place,
+      population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0,
+      parent: e.tags['is_in:city'] || e.tags['addr:city'] || '', src: 'OSM',
+    }));
   };
+  /** English name where OSM has one (Devanagari-only names are hard to act on for many responders). */
+  D.placeName = (t) => {
+    const n = t.name || '', en = t['name:en'] || '';
+    return en && /[^\u0000-\u024f]/.test(n) ? `${en} (${n})` : n || en || 'Unnamed';
+  };
+  /** Postal-style address from OSM addr:* tags, or '' when the object has none. */
+  D.addressOf = (t = {}) => {
+    if (t['addr:full']) return t['addr:full'];
+    const street = [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' ');
+    const parts = [street || t['addr:place'], t['addr:suburb'] || t['addr:neighbourhood'], t['addr:city'] || t['addr:district'], t['addr:postcode']].filter(Boolean);
+    return parts.length >= 2 ? parts.join(', ') : '';
+  };
+  /** Google Maps link for a point (opens directions on phones). */
+  D.mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`;
   /** Fallback facility search via Nominatim (bounded viewbox), used when Overpass is slow or down. */
   D.facilitiesNominatim = async (c, km) => {
     const [s, w, n, e] = bboxOf(c, km);
@@ -729,7 +792,7 @@ details.card[open] { display: grid; gap: 8px; }
       await nomThrottle();
       try {
         const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=25&bounded=1&viewbox=${w},${n},${e},${s}`, { cacheTtl: 36e5, timeout: 12000 });
-        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
+        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, address: r.display_name.split(',').slice(1, 5).join(',').trim(), src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
       } catch (err) { /* keep what we have */ }
     }
     return out;
@@ -746,7 +809,7 @@ details.card[open] { display: grid; gap: 8px; }
       const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (lat == null) return null;
       const t = e.tags || {};
       const type = t.amenity === 'hospital' ? 'hospital' : t.amenity === 'fire_station' ? 'fire_station' : t.amenity === 'police' ? 'police' : 'warehouse';
-      return { name: t.name || t['name:en'] || ({ hospital: 'Hospital', fire_station: 'Fire station', police: 'Police station', warehouse: 'Warehouse' })[type], type, lat, lon, beds: parseInt(t.beds, 10) || 0, src: 'OSM', osm: `${e.type}/${e.id}` };
+      return { name: (t.name || t['name:en']) ? D.placeName(t) : '', type, lat, lon, beds: parseInt(t.beds, 10) || 0, address: D.addressOf(t), src: 'OSM', osm: `${e.type}/${e.id}` };
     }).filter(Boolean);
   };
 
@@ -938,11 +1001,11 @@ details.card[open] { display: grid; gap: 8px; }
     return rows.filter((r) => r.some((x) => x.trim() !== '')).map((r) => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
   };
   /** Accept common column spellings so a team's own sheet works without renaming everything. */
-  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'] };
+  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'], address: ['address', 'location', 'addr'] };
   W.normaliseRows = (rows) => (rows || []).map((r) => {
     const low = Object.fromEntries(Object.entries(r).map(([k, v]) => [String(k).trim().toLowerCase().replace(/\s+/g, '_'), v]));
     const o = {};
-    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
+    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' || k === 'address' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
     return o;
   }).filter((r) => isFinite(r.lat) && isFinite(r.lon) && Math.abs(r.lat) <= 90 && Math.abs(r.lon) <= 180);
 
@@ -1189,37 +1252,53 @@ details.card[open] { display: grid; gap: 8px; }
     return 1 / (1 + Math.exp(-(hoursFromNow - Tp) / 6));
   };
 
-  const PLACE_DEFAULT_POP = { city: 250000, town: 20000, suburb: 30000, village: 1500, hamlet: 150 };
-  const RURAL = { city: 0.3, town: 0.6, suburb: 0.4, village: 1, hamlet: 1, sector: 0.7 };
+  const PLACE_DEFAULT_POP = { city: 250000, town: 20000, suburb: 30000, quarter: 15000, neighbourhood: 8000, village: 1500, hamlet: 150 };
+  const RURAL = { city: 0.3, town: 0.6, suburb: 0.4, quarter: 0.4, neighbourhood: 0.4, village: 1, hamlet: 1, sector: 0.7 };
+  const LOCAL = new Set(['suburb', 'quarter', 'neighbourhood']);
+  const DIRS = ['north', 'east', 'south', 'west'];
 
   /** Build demand zones from OSM places (or modelled sectors when none). */
-  P.buildZones = (sit, places, maxZones = 10) => {
+  P.buildZones = (sit, places, maxZones = 12) => {
     const R = sit.radiusKm;
     const src = { lat: sit.lat, lon: sit.lon };
     const c = sit.focus || src; // planning focus (land point) may differ from an offshore source
     let zones = [];
-    (places || []).forEach((pl) => {
-      const d = M.haversine(c, pl);
-      if (d > R) return;
+    const all = (places || []).filter((pl) => M.haversine(c, pl) <= R);
+    all.forEach((pl) => {
       const tagged = pl.population > 0;
       const pop = tagged ? pl.population : PLACE_DEFAULT_POP[pl.type] || 1000;
-      if (pop >= 300000) { // split large cities into four quadrants so routing works inside them
-        const rc = Math.sqrt(pop / 4000 / Math.PI);
-        ['N', 'E', 'S', 'W'].forEach((q, k) => {
-          const p = M.destination(pl, k * 90, 0.45 * rc);
-          zones.push({ name: `${pl.name} ${q}`, lat: p.lat, lon: p.lon, pop: pop / 4, type: pl.type, popProv: tagged ? 'osm' : 'modelled' });
-        });
-      } else zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop, type: pl.type, popProv: tagged ? 'osm' : 'modelled' });
+      if (pl.type === 'city' || (pl.type === 'town' && pop >= 300000)) {
+        const rc = Math.max(3, Math.sqrt(pop / 4000 / Math.PI)); // urban radius at ~4,000 people/km²
+        const locals = all.filter((o) => LOCAL.has(o.type) && M.haversine(pl, o) <= rc * 1.2);
+        if (locals.length >= 3) { // the city is represented by its own sectors/suburbs (added below)
+          locals.forEach((o) => { o.parent = o.parent || pl.name; o.cityPop = pop / locals.length; });
+          return;
+        }
+        if (pop >= 300000) { // no localities mapped: four quarters, named from the map later
+          DIRS.forEach((q, k) => {
+            const p = M.destination(pl, k * 90, 0.45 * rc);
+            zones.push({ name: `${pl.name} (${q})`, lat: p.lat, lon: p.lon, pop: pop / 4, type: pl.type, popProv: tagged ? 'osm' : 'modelled', needsName: true, parent: pl.name });
+          });
+          return;
+        }
+      }
+      if (LOCAL.has(pl.type)) {
+        const p2 = pl.population > 0 ? pl.population : pl.cityPop ? Math.min(pl.cityPop, 60000) : PLACE_DEFAULT_POP[pl.type];
+        zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop: p2, type: pl.type, popProv: pl.population > 0 ? 'osm' : 'modelled', parent: pl.parent || '' });
+        return;
+      }
+      zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop, type: pl.type, popProv: tagged ? 'osm' : 'modelled', parent: pl.parent || '' });
     });
     // merge near-duplicates (< 1.5 km)
-    zones = zones.filter((z, i) => !zones.some((o, j) => j < i && M.haversine(z, o) < 1.5));
+    zones = zones.filter((z, i) => { const o = zones.find((x, j) => j < i && M.haversine(z, x) < 1.5); if (o) (o.covers = o.covers || []).push(z.name); return !o; });
     if (zones.length < 4) { // modelled sectors (center + 6 ring)
       const dens = sit.popDensity || 400; // persons/km² assumption, labelled
       const ringR = 0.45 * R, areaCore = Math.PI * (0.3 * R) ** 2, areaSector = (Math.PI * R * R - areaCore) / 6;
-      zones.push({ name: 'Core', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled' });
+      // modelled areas: named from the map (reverse geocoding) by the engine; these labels are only a fallback
+      zones.push({ name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
       for (let k = 0; k < 6; k++) {
         const p = M.destination(c, k * 60 + 30, ringR);
-        zones.push({ name: `Sector ${['NE', 'E', 'SE', 'SW', 'W', 'NW'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled' });
+        zones.push({ name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
       }
     }
     zones.forEach((z) => {
@@ -1230,7 +1309,12 @@ details.card[open] { display: grid; gap: 8px; }
       z.rural = RURAL[z.type] ?? 0.7;
     });
     zones.sort((a, b) => b.affEst - a.affEst);
-    zones = zones.filter((z) => z.affEst > 1).slice(0, maxZones);
+    // pick the worst-hit areas but keep them ≥ 2 km apart, so a dense city is covered across its extent;
+    // each skipped locality is listed under the nearest chosen area ("also covers …")
+    const cand = zones.filter((z) => z.affEst > 1), chosen = [];
+    cand.forEach((z) => { if (chosen.length < maxZones && !chosen.some((o) => M.haversine(o, z) < 2)) chosen.push(z); });
+    cand.forEach((z) => { if (chosen.includes(z)) return; const near = chosen.reduce((b, o) => (M.haversine(o, z) < M.haversine(b, z) ? o : b), chosen[0]); if (near && M.haversine(near, z) < 6) (near.covers = near.covers || []).push(z.name); });
+    zones = chosen;
     zones.forEach((z, i) => { z.id = 'Z' + (i + 1); z.recv = {}; z.surge = 1; });
     return zones;
   };
@@ -1984,7 +2068,7 @@ details.card[open] { display: grid; gap: 8px; }
     const I = AA.prediction.intensity(sit, M.haversine(sit, f));
     const sev = AA.prediction.impact(sit.hazard, I, sit.countryVul).sev;
     const stock = {}; Object.entries(t.stock).forEach(([k, v]) => (stock[k] = v * scale));
-    return { id: '', name: f.name, type: kind, typeLabel: TYPE_LABEL[kind], lat: f.lat, lon: f.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { ...t.fleet }, repl: t.repl, prov: kind === 'staging' ? 'modelled' : kind === 'airlift' ? 'event' : 'osm-location / assumed-stock', osm: f.osm, beds: f.beds };
+    return { id: '', name: f.name, type: kind, typeLabel: TYPE_LABEL[kind], lat: f.lat, lon: f.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { ...t.fleet }, repl: t.repl, prov: kind === 'staging' ? 'modelled' : kind === 'airlift' ? 'event' : 'osm-location / assumed-stock', osm: f.osm, beds: f.beds, address: f.address || '', unnamed: !!f.unnamed || kind === 'staging' };
   };
   ENG.pickDepots = (sit, facs, scale = 1) => {
     const c = sit.focus || sit, R = sit.radiusKm;
@@ -2060,7 +2144,25 @@ details.card[open] { display: grid; gap: 8px; }
       sit.floodKind = P.floodKind(sit.name, sit.reliefM);
       notes.push(`Flood type: ${P.FLOOD[sit.floodKind].label}${sit.reliefM != null ? ` (terrain relief ${Math.round(sit.reliefM)} m within 20 km)` : ''}. Deaths are modelled at ${sit.floodKind === 'flash' ? '1 in 100' : '1 in 10,000'} people affected.`);
     }
-    const zones = P.buildZones({ ...sit, lat: sit.lat, lon: sit.lon, focus }, places, 10);
+    facs.forEach((f) => { if (!f.name) { f.name = `${TYPE_LABEL[f.type] || 'Facility'} (unnamed on the map)`; f.unnamed = true; } });
+    const zones = P.buildZones({ ...sit, lat: sit.lat, lon: sit.lon, focus }, places, 12);
+    // name modelled areas and city quarters after the real locality at that spot (Nominatim reverse geocoding)
+    const addrCache = (snap && snap.addr) || {};
+    inputs.addr = addrCache;
+    const toName = zones.filter((z) => z.needsName);
+    if (toName.length) {
+      progress('Naming areas from the map (OpenStreetMap)');
+      const used = new Set(zones.filter((z) => !z.needsName).map((z) => z.name));
+      for (const z of toName) {
+        const a = await ENG.lookup(z, 16, addrCache);
+        if (a && a.locality) {
+          let n = z.parent && a.locality !== z.parent ? `${a.locality}, ${z.parent}` : a.locality;
+          if (used.has(n)) n = `${n} (${compass(focus, z)})`;
+          z.name = n; z.address = a.address; z.locality = a.locality;
+        }
+        used.add(z.name);
+      }
+    }
     // population: WorldPop 100 m grid counts people around each zone (replaces OSM tags / defaults)
     if (AA.config.worldpop !== false && zones.length) {
       progress('Counting people around each area (WorldPop 100 m grid)');
@@ -2119,6 +2221,7 @@ details.card[open] { display: grid; gap: 8px; }
     if (opts.warehouses) await ENG.planWarehouses();
     ENG.decide('build', {}, `Plan created: ${sit.name || 'scenario'}`);
     await ENG.solve('Initial plan');
+    ENG.enrichAddresses();
     return ENG.state;
   };
 
@@ -2130,6 +2233,49 @@ details.card[open] { display: grid; gap: 8px; }
     await Promise.all([worker(), worker(), worker()]);
     if (!out.some((v) => v > 0)) throw new Error('WorldPop: no counts');
     return { counts: out, radii };
+  };
+
+  // ---------------- addresses ----------------
+  const compass = (c, p) => { const b = (Math.atan2((p.lon - c.lon) * Math.cos(M.toRad(c.lat)), p.lat - c.lat) * 180 / Math.PI + 360) % 360; return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(b / 45) % 8]; };
+  ENG.compass = compass;
+  /** Reverse-geocode a point once; results kept in the plan (state.inputs.addr) so saved plans reopen without lookups. */
+  ENG.lookup = async (p, zoom = 18, cache = ENG.state?.inputs?.addr || {}) => {
+    const key = `${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)},${zoom}`;
+    if (key in cache) return cache[key];
+    try { const a = await AA.data.reverseDetail(p.lat, p.lon, zoom); cache[key] = a; return a; } catch (e) { return null; }
+  };
+  /** Fill in street addresses for storage sites, supply stores, hospitals and areas (in that order), in the background.
+   *  Uses OSM address tags when present; otherwise Nominatim at ≤ 1 request/s. Emits 'addresses' after each group. */
+  let enriching = null, enrichAgain = false;
+  ENG.enrichAddresses = () => {
+    if (enriching) { enrichAgain = true; return enriching; }
+    enriching = (async () => {
+      do {
+        enrichAgain = false;
+        const st = ENG.state; if (!st) break;
+        const sites = st.warehouses ? st.warehouses.sizes.map((x) => st.warehouses.cand[x.j]) : [];
+        const groups = [['storage', sites], ['stores', st.depots], ['hospitals', st.hospitals], ['areas', st.zones]];
+        for (const [g, items] of groups) {
+          let changed = false;
+          for (const it of items) {
+            if (ENG.state !== st) return;
+            if (it.address && !it.unnamed) continue;
+            const a = await ENG.lookup(it, g === 'areas' ? 17 : 18, st.inputs.addr);
+            if (!a) { it.addressPending = false; changed = true; continue; }
+            if (!it.address) it.address = a.address;
+            it.locality = it.locality || a.locality;
+            if (it.unnamed) {
+              const where = a.road ? `${a.road}${a.locality ? `, ${a.locality}` : ''}` : a.locality;
+              it.name = it.type === 'staging' ? `${it.name.split(' near ')[0]}${where ? ` near ${where}` : ''}` : `${TYPE_LABEL[it.type] || 'Facility'}${where ? ` on ${where}` : ''}`;
+              it.unnamed = false;
+            }
+            changed = true;
+          }
+          if (changed) emit('addresses', g);
+        }
+      } while (enrichAgain);
+    })().finally(() => { enriching = null; });
+    return enriching;
   };
 
   // ---------------- decision log ----------------
@@ -2334,7 +2480,7 @@ details.card[open] { display: grid; gap: 8px; }
           Object.entries(scaleOf).forEach(([col, [key, f]]) => (stock[key] = (+r[col] || 0) * f));
           const I = AA.prediction.intensity(st.sit, M.haversine(st.sit, r));
           const sev = AA.prediction.impact(st.sit.hazard, I, st.sit.countryVul).sev;
-          return { id: 'D' + (k + 1), name: r.name || `Store ${k + 1}`, type: r.type || 'warehouse', typeLabel: `${TYPE_LABEL[r.type] || 'Store'} (your inventory)`, lat: +r.lat, lon: +r.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { truck: +r.trucks || 0, bus: +r.buses || 0, amb: +r.ambulances || 0 }, repl: 0, prov: 'imported inventory', beds: +r.beds || 0 };
+          return { id: 'D' + (k + 1), name: r.name || `Store ${k + 1}`, type: r.type || 'warehouse', typeLabel: `${TYPE_LABEL[r.type] || 'Store'} (your inventory)`, lat: +r.lat, lon: +r.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { truck: +r.trucks || 0, bus: +r.buses || 0, amb: +r.ambulances || 0 }, repl: 0, prov: 'imported inventory', beds: +r.beds || 0, address: r.address || '' };
         }).filter((d) => isFinite(d.lat) && isFinite(d.lon));
         if (!nd.length) return;
         st.depots = nd; st.blocked.clear(); await ENG.refreshTable();
@@ -2352,7 +2498,9 @@ details.card[open] { display: grid; gap: 8px; }
     }
     st.routeCache.clear();
     if (!meta.replay) ENG.decide(type, p, reason, meta.note);
-    return ENG.solve(reason);
+    const done = ENG.solve(reason);
+    if (['supply', 'importDepots', 'spread'].includes(type)) done.then(() => ENG.enrichAddresses());
+    return done;
   };
 
   /** Rolling-horizon step: execute first-epoch decisions only, then re-optimise. */
@@ -2397,6 +2545,10 @@ details.card[open] { display: grid; gap: 8px; }
     MAP.control = L.control.layers({ Satellite: sat, Streets: streets }, MAP.overlays, { position: 'topright', collapsed: true }).addTo(map);
     L.control.scale({ imperial: false }).addTo(map);
     ['base', 'impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'sites', 'closures', 'risk', 'events'].forEach((k) => (layers[k] = L.layerGroup().addTo(map)));
+    // name labels for areas, stores and storage sites: shown when zoomed in far enough to read them
+    layers.labels = L.layerGroup();
+    const toggleLabels = () => { if (map.getZoom() >= 12) layers.labels.addTo(map); else map.removeLayer(layers.labels); };
+    map.on('zoomend', toggleLabels); toggleLabels();
     MAP.setTraffic(AA.config.tomtomKey);
     return map;
   };
@@ -2430,9 +2582,16 @@ details.card[open] { display: grid; gap: 8px; }
     }
   };
 
+  /** Address line for tooltips/popups: street address when known, else coordinates (always shown, so a team can navigate). */
+  const addrLine = (p) => `<br><span class="addr">${p.address ? esc(p.address) : `${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}${p.addressPending === false ? '' : ' · address loading…'}`}</span>`;
+  MAP.addrLine = addrLine;
+  /** Popup footer: address, coordinates and a Google Maps link for directions. */
+  MAP.whereHtml = (p) => `<div class="where small">${p.address ? `<b>Address:</b> ${esc(p.address)}<br>` : ''}<span class="mono">${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}</span> · <a href="${AA.data.mapsUrl(p)}" target="_blank" rel="noopener">Open in Google Maps</a></div>`;
+  const label = (p, text, cls) => L.marker([p.lat, p.lon], { icon: L.divIcon({ className: '', html: `<div class="maplabel ${cls || ''}">${esc(text)}</div>`, iconSize: null, iconAnchor: [-12, 8] }), interactive: false, keyboard: false }).addTo(layers.labels);
+
   /** Draw the whole planning state (everything except routed legs). */
   MAP.drawPlan = (st, handlers) => {
-    MAP.clear('impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'closures');
+    MAP.clear('impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'closures', 'labels');
     layers.events.clearLayers();
     const sit = st.sit, focus = sit.focus || sit;
     L.circle([focus.lat, focus.lon], { radius: sit.radiusKm * 1000, color: '#16a34a', weight: 1.5, dashArray: '6 6', fill: true, fillOpacity: 0.06, interactive: false }).addTo(layers.impact);
@@ -2445,21 +2604,25 @@ details.card[open] { display: grid; gap: 8px; }
       const s = 10 + 14 * ((z.need || 0) / maxNeed);
       const cov = coverage(st, i);
       const m = L.marker([z.lat, z.lon], { icon: dotIcon(z.served ? '#86efac' : '#16a34a', s, z.id.slice(1)), zIndexOffset: 400 });
-      m.bindTooltip(`<b>${z.id} · ${esc(z.name)}</b><br>Need ${(z.need || 0).toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}<br>Affected ${AA.fmt.k(z.fc.aff.p50)} (P10–P90 ${AA.fmt.k(z.fc.aff.p10)}–${AA.fmt.k(z.fc.aff.p90)})<br>Critical coverage this epoch ${Math.round(cov * 100)} %<span class="m">Need score · fairness model</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${z.id} · ${esc(z.name)}</b><br>Need ${(z.need || 0).toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}<br>Affected ${AA.fmt.k(z.fc.aff.p50)} (P10–P90 ${AA.fmt.k(z.fc.aff.p10)}–${AA.fmt.k(z.fc.aff.p90)})<br>Critical coverage this epoch ${Math.round(cov * 100)} %${z.covers?.length ? `<br>Also covers: ${esc(z.covers.slice(0, 6).join(', '))}${z.covers.length > 6 ? '…' : ''}` : ''}${addrLine(z)}<span class="m">Need score · fairness model</span>`, { className: 'aa-tip' });
       m.bindPopup(() => handlers.zonePopup(z));
       m.addTo(layers.zones);
+      label(z, `${z.id} ${z.name}`, 'zone');
     });
     st.depots.forEach((d) => {
       const m = L.marker([d.lat, d.lon], { icon: dotIcon(d.open ? '#dc2626' : '#6b7280', 14, d.type === 'hospital' ? 'H' : ''), zIndexOffset: 300 });
-      m.bindTooltip(`<b>${d.id} · ${esc(d.name)}</b><br>${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.damaged ? ' · inside heavy-damage zone' : ''}<span class="m">Supply store · stock ${d.type === 'staging' ? 'modelled' : 'assumed by type'}</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${d.id} · ${esc(d.name)}</b><br>${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.damaged ? ' · inside heavy-damage zone' : ''}${addrLine(d)}<span class="m">Supply store · stock ${d.prov === 'imported inventory' ? 'from your inventory' : d.type === 'staging' ? 'modelled' : 'assumed by type'}</span>`, { className: 'aa-tip' });
       m.bindPopup(() => handlers.depotPopup(d));
       m.addTo(layers.depots);
+      label(d, `${d.id} ${d.name}`, 'store');
     });
     st.hospitals.forEach((h) => {
       if (st.depots.some((d) => M.haversine(d, h) < 0.05)) return;
       const m = L.marker([h.lat, h.lon], { icon: dotIcon('#dc2626', 12, 'H'), zIndexOffset: 250 });
-      m.bindTooltip(`<b>${h.id} · ${esc(h.name)}</b><br>Receiving hospital · ${h.beds} free beds (${h.bedsProv})<span class="m">Casualty transport LP</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${h.id} · ${esc(h.name)}</b><br>Receiving hospital · ${h.beds} free beds (${h.bedsProv})${addrLine(h)}<span class="m">Casualty transport LP</span>`, { className: 'aa-tip' });
+      m.bindPopup(`<h4>${h.id} · ${esc(h.name)}</h4><div class="small">Receiving hospital · ${h.beds} free beds</div>${MAP.whereHtml(h)}`);
       m.addTo(layers.hosp);
+      label(h, `${h.id} ${h.name}`, 'store');
     });
     st.closures.forEach((c) => L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="closure-x">✕</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).bindTooltip('Road closed').addTo(layers.closures));
     // casualty flows
@@ -2547,15 +2710,19 @@ details.card[open] { display: grid; gap: 8px; }
 
   MAP.drawSites = (st) => {
     layers.sites.clearLayers();
+    layers.labels.eachLayer((l) => { if (l.options.icon?.options?.html?.includes('maplabel site')) layers.labels.removeLayer(l); });
     const w = st.warehouses; if (!w) return;
     w.cand.forEach((c) => { if (!c.safe && c.kind === 'grid') L.circleMarker([c.lat, c.lon], { radius: 3, color: '#7c3aed', weight: 1, opacity: 0.5, fillOpacity: 0, interactive: false }).addTo(layers.sites); });
     w.sizes.forEach((s, k) => {
       const c = w.cand[s.j];
       const stock = AA.config.commodities.map((cm) => `${AA.fmt.n(s.stock[cm.key], s.stock[cm.key] < 10 ? 1 : 0)} ${cm.unit} ${cm.label.toLowerCase()}`).join('<br>');
+      const where = c.address ? c.address.split(',').slice(0, 2).join(',') : '';
       L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="site-diamond"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: 600 })
-        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${c.name ? ` (existing: ${esc(c.name)})` : ''}<br>Serves ${s.zones.join(', ')} within ${AA.config.coverageMinutes} min<br>Pre-position for 72 h at P90:<br>${stock}<span class="m">Model: hazard-safe MCLP (${esc(w.sol.method)}) + 72 h P90 sizing</span>`, { className: 'aa-tip' })
-        .on('click', () => AA.explain.open('m-mclp'))
+        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${c.name ? ` (existing: ${esc(c.name)})` : ''}${addrLine(c)}<br>Serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))} within ${AA.config.coverageMinutes} min<br>Pre-position for 72 h at P90:<br>${stock}<br><i>Click for address and directions</i><span class="m">Model: hazard-safe MCLP (${esc(w.sol.method)}) + 72 h P90 sizing</span>`, { className: 'aa-tip' })
+        .bindPopup(() => `<h4>Recommended storage S${k + 1}</h4><div class="small">${c.name ? `Existing facility: ${esc(c.name)}<br>` : 'Suggested location: look for a warehouse, school, hall or open ground at or near this point that is safe from the hazard.<br>'}Serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))} within ${AA.config.coverageMinutes} min by road<br>Stock for 72 h at P90: ${stock.replace(/<br>/g, ', ')}</div>${MAP.whereHtml(c)}<div class="small"><a href="#m-mclp" class="x-mclp">How this site was chosen</a></div>`)
+        .on('popupopen', (e) => { const a = e.popup.getElement()?.querySelector('.x-mclp'); if (a) a.onclick = (ev) => { ev.preventDefault(); AA.explain.open('m-mclp'); }; })
         .addTo(layers.sites);
+      label(c, `S${k + 1} storage${where ? ` · ${where}` : ''}`, 'site');
     });
   };
 
@@ -2595,6 +2762,281 @@ details.card[open] { display: grid; gap: 8px; }
   };
 
   AA.map = MAP;
+})(window);
+
+</script>
+<script>/* js/ui/map3d.js */
+/* 3D map: MapLibre GL — a globe for the world view, then satellite imagery, real terrain, 3D buildings and the plan drawn as 3D columns.
+   Mirrors whatever the 2D (Leaflet) map shows — live events, a plan, risk cells — so every mode works in 3D.
+   Tilt/rotate: right-drag or Ctrl+drag (two fingers on phones). Falls back to 2D when WebGL or the library is unavailable.
+   Skill: skills/ui-sketch/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const V = { active: false, data: {} };
+  const VER = '5.24.0';
+  const LIB = `https://cdn.jsdelivr.net/npm/maplibre-gl@${VER}/dist/maplibre-gl.js`;
+  const CSS = `https://cdn.jsdelivr.net/npm/maplibre-gl@${VER}/dist/maplibre-gl.css`;
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services';
+  const DEM = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  let ready = false, gl = null, m3 = null, el = null, hover = null, popup = null, syncing = false, renderTimer = null, loading = null;
+
+  let probe = null;
+  const glInfo = () => {
+    if (probe) return probe;
+    probe = { ok: false, software: false, renderer: '' };
+    try {
+      const c = document.createElement('canvas'), g = c.getContext('webgl2') || c.getContext('webgl');
+      if (g) {
+        const ext = g.getExtension('WEBGL_debug_renderer_info');
+        probe.renderer = String(ext ? g.getParameter(ext.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER) || '');
+        probe.ok = true;
+        probe.software = /swiftshader|llvmpipe|softpipe|software|microsoft basic render/i.test(probe.renderer);
+        g.getExtension('WEBGL_lose_context')?.loseContext();
+      }
+    } catch (e) { /* no WebGL */ }
+    return probe;
+  };
+  V.supported = () => glInfo().ok;
+  /** 3D by default only with a real graphics chip: software WebGL works but is too slow to be the default. */
+  V.recommended = () => glInfo().ok && !glInfo().software;
+  const loadLib = () => loading || (loading = new Promise((res, rej) => {
+    if (root.maplibregl) return res(root.maplibregl);
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = CSS; document.head.appendChild(l);
+    const s = document.createElement('script'); s.src = LIB; s.async = true;
+    const t = setTimeout(() => rej(new Error('3D library timed out')), 20000);
+    s.onload = () => { clearTimeout(t); root.maplibregl ? res(root.maplibregl) : rej(new Error('3D library did not load')); };
+    s.onerror = () => { clearTimeout(t); rej(new Error('3D library could not be downloaded')); };
+    document.head.appendChild(s);
+  }).catch((e) => { loading = null; throw e; }));
+
+  const style = () => ({
+    version: 8,
+    glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+    sources: {
+      sat: { type: 'raster', tiles: [`${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics' },
+      roads: { type: 'raster', tiles: [`${ESRI}/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19 },
+      places: { type: 'raster', tiles: [`${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`], tileSize: 256, maxzoom: 19 },
+      dem: { type: 'raster-dem', tiles: [DEM], encoding: 'terrarium', tileSize: 256, maxzoom: 15, attribution: 'Terrain: Mapzen / AWS Open Data' },
+      demhs: { type: 'raster-dem', tiles: [DEM], encoding: 'terrarium', tileSize: 256, maxzoom: 15 },
+      ofm: { type: 'vector', url: 'https://tiles.openfreemap.org/planet', attribution: '© OpenFreeMap, OpenMapTiles, OpenStreetMap contributors' },
+    },
+    layers: [
+      { id: 'sat', type: 'raster', source: 'sat' },
+      { id: 'hillshade', type: 'hillshade', source: 'demhs', paint: { 'hillshade-exaggeration': 0.3, 'hillshade-shadow-color': '#2a2a2a' } },
+      { id: 'roads', type: 'raster', source: 'roads', paint: { 'raster-opacity': 0.75 } },
+      { id: 'places', type: 'raster', source: 'places', paint: { 'raster-opacity': 0.9 } },
+      { id: 'buildings', type: 'fill-extrusion', source: 'ofm', 'source-layer': 'building', minzoom: 13.5,
+        paint: { 'fill-extrusion-color': '#ece8df', 'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 9], 'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': 0.82 } },
+    ],
+    terrain: { source: 'dem', exaggeration: 1.4 },
+    // globe for the world view; flat (mercator) from zoom 5 so 3D columns stay clickable when you look at a region
+    projection: { type: ['interpolate', ['linear'], ['zoom'], 4, 'vertical-perspective', 5, 'mercator'] },
+    sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0] },
+  });
+  /** Tilt that suits the zoom: a flat-on globe for the world view, a 3D tilt once you are looking at a region. */
+  const pitchFor = (z) => (z < 4 ? 0 : z < 7 ? 35 : 55);
+
+  const FC = (features) => ({ type: 'FeatureCollection', features });
+  const pt = (p, props) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [+p.lon, +p.lat] }, properties: props });
+  const poly = (ring, props) => ({ type: 'Feature', geometry: { type: 'Polygon', coordinates: [ring] }, properties: props });
+  const line = (coords, props) => ({ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: props });
+  const SRC = ['aa-impact', 'aa-zones', 'aa-sites', 'aa-risk', 'aa-legs', 'aa-cas', 'aa-points', 'aa-labels'];
+
+  const addOverlays = () => {
+    SRC.forEach((id) => m3.addSource(id, { type: 'geojson', data: FC([]) }));
+    const font = ['Noto Sans Regular'];
+    m3.addLayer({ id: 'aa-risk', type: 'fill-extrusion', source: 'aa-risk', paint: { 'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 0.72 } });
+    m3.addLayer({ id: 'aa-impact-fill', type: 'fill', source: 'aa-impact', paint: { 'fill-color': '#16a34a', 'fill-opacity': 0.07 } });
+    m3.addLayer({ id: 'aa-impact-line', type: 'line', source: 'aa-impact', paint: { 'line-color': '#16a34a', 'line-width': 1.5, 'line-dasharray': [3, 3] } });
+    m3.addLayer({ id: 'aa-legs', type: 'line', source: 'aa-legs', filter: ['==', ['get', 'kind'], 'road'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': ['get', 'w'], 'line-opacity': 0.95 } });
+    m3.addLayer({ id: 'aa-legs-milk', type: 'line', source: 'aa-legs', filter: ['==', ['get', 'kind'], 'milk'], paint: { 'line-color': ['get', 'color'], 'line-width': ['get', 'w'], 'line-dasharray': [2, 1.2] } });
+    m3.addLayer({ id: 'aa-legs-air', type: 'line', source: 'aa-legs', filter: ['==', ['get', 'kind'], 'air'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#dc2626', 'line-width': 3, 'line-dasharray': [0.2, 2] } });
+    m3.addLayer({ id: 'aa-cas', type: 'line', source: 'aa-cas', paint: { 'line-color': '#db2777', 'line-width': 2.5, 'line-dasharray': [2, 2] } });
+    m3.addLayer({ id: 'aa-zones', type: 'fill-extrusion', source: 'aa-zones', paint: { 'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 0.85 } });
+    m3.addLayer({ id: 'aa-sites', type: 'fill-extrusion', source: 'aa-sites', paint: { 'fill-extrusion-color': '#7c3aed', 'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-opacity': 0.9 } });
+    m3.addLayer({ id: 'aa-points', type: 'circle', source: 'aa-points', paint: { 'circle-color': ['get', 'color'], 'circle-radius': ['get', 'r'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2, 'circle-pitch-alignment': 'viewport' } });
+    m3.addLayer({ id: 'aa-points-tag', type: 'symbol', source: 'aa-points', filter: ['!=', ['get', 'tag'], ''], layout: { 'text-field': ['get', 'tag'], 'text-font': font, 'text-size': 11, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
+    m3.addLayer({ id: 'aa-labels', type: 'symbol', source: 'aa-labels', minzoom: 9, layout: { 'text-field': ['get', 'label'], 'text-font': font, 'text-size': 12.5, 'text-offset': [0, -1.6], 'text-anchor': 'bottom', 'text-max-width': 14, 'text-optional': true }, paint: { 'text-color': '#111111', 'text-halo-color': '#ffffff', 'text-halo-width': 1.8 } });
+  };
+
+  // ---------------- data → GeoJSON ----------------
+  const ramp = (t) => `rgb(255,${Math.round(237 - 180 * t)},${Math.round(160 - 140 * t)})`;
+  const needColor = (t) => { const a = [187, 247, 208], b = [21, 128, 61]; return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; };
+  const build = () => {
+    const d = V.data, out = Object.fromEntries(SRC.map((k) => [k, []]));
+    // live events
+    (d.events || []).forEach((e, k) => {
+      const top = k < (d.eventsTop ?? 5);
+      const lvl = e.episodealertlevel || e.alertlevel || (e.pager ? { green: 'Green', yellow: 'Orange', orange: 'Red', red: 'Red' }[e.pager] : '');
+      out['aa-points'].push(pt(e, { kind: 'event', k, color: lvl === 'Red' ? '#dc2626' : lvl === 'Orange' ? '#ea580c' : '#16a34a', r: top ? 11 : 5, tag: top ? String(k + 1) : '' }));
+      if (top) out['aa-labels'].push(pt(e, { label: e.name }));
+    });
+    // risk grid
+    if (d.risk) {
+      const cells = d.risk.cells, maxR = Math.max(0.01, ...cells.map((c) => c.R));
+      cells.forEach((c, k) => {
+        const dLat = c.sizeKm / 2 / 110.57, dLon = c.sizeKm / 2 / (111.32 * Math.cos(M.toRad(c.lat)));
+        const ring = [[c.lon - dLon, c.lat - dLat], [c.lon + dLon, c.lat - dLat], [c.lon + dLon, c.lat + dLat], [c.lon - dLon, c.lat + dLat], [c.lon - dLon, c.lat - dLat]];
+        out['aa-risk'].push(poly(ring, { kind: 'risk', k, color: ramp(M.clamp(c.R / maxR, 0, 1)), h: 200 + (c.R / maxR) * c.sizeKm * 600 }));
+        if (d.risk.top.includes(c)) out['aa-labels'].push(pt(c, { label: `${d.risk.top.indexOf(c) + 1}. ${c.name}` }));
+      });
+      (d.riskSites || []).forEach((s, k) => { out['aa-sites'].push(poly(M.circleRing(s, 1.2, 4), { kind: 'rsite', k, h: 2500 })); out['aa-labels'].push(pt(s, { label: `S${k + 1} storage` })); });
+    }
+    // plan
+    const st = d.st;
+    if (st && st.zones) {
+      const sit = st.sit, f = sit.focus || sit;
+      out['aa-impact'].push(poly(M.circleRing(f, sit.radiusKm, 64), {}));
+      const rKm = M.clamp(sit.radiusKm / 40, 0.25, 2.5), H = M.clamp(sit.radiusKm * 120, 2000, 12000);
+      const maxAff = Math.max(1, ...st.zones.map((z) => z.fc?.aff?.p50 || 0)), maxNeed = Math.max(0.01, ...st.zones.map((z) => z.need || 0));
+      st.zones.forEach((z, i) => {
+        out['aa-zones'].push(poly(M.circleRing(z, rKm, 28), { kind: 'zone', i, h: 150 + ((z.fc?.aff?.p50 || 0) / maxAff) * H, color: z.served ? '#86efac' : needColor((z.need || 0) / maxNeed) }));
+        out['aa-labels'].push(pt(z, { label: `${z.id} ${z.name}` }));
+      });
+      st.depots.forEach((dp, j) => { out['aa-points'].push(pt(dp, { kind: 'depot', j, color: dp.open ? '#dc2626' : '#6b7280', r: 8, tag: dp.type === 'hospital' ? 'H' : '' })); out['aa-labels'].push(pt(dp, { label: `${dp.id} ${dp.name}` })); });
+      st.hospitals.forEach((h, j) => { if (st.depots.some((dp) => M.haversine(dp, h) < 0.05)) return; out['aa-points'].push(pt(h, { kind: 'hosp', j, color: '#dc2626', r: 7, tag: 'H' })); out['aa-labels'].push(pt(h, { label: `${h.id} ${h.name}` })); });
+      (st.closures || []).forEach((c) => out['aa-points'].push(pt(c, { kind: 'closure', color: '#111111', r: 7, tag: '×' })));
+      if (st.warehouses) st.warehouses.sizes.forEach((s, k) => { const c = st.warehouses.cand[s.j]; out['aa-sites'].push(poly(M.circleRing(c, rKm * 0.7, 4), { kind: 'site', k, h: H * 0.45 })); out['aa-labels'].push(pt(c, { label: `S${k + 1} storage${c.address ? ` · ${c.address.split(',').slice(0, 2).join(',')}` : ''}` })); });
+      const run = st.lastRun;
+      if (run) {
+        (run.legs || []).forEach((leg, n) => {
+          if (leg.airdrop) { out['aa-legs'].push(line([[leg.a.lon, leg.a.lat], [leg.b.lon, leg.b.lat]], { kind: 'air', n })); return; }
+          const veh = AA.config.vehicles[leg.cls], milk = leg.tours.some((ti) => run.cons.tours[ti]?.kind === 'milk-run');
+          out['aa-legs'].push(line(leg.best.coords, { kind: milk ? 'milk' : 'road', n, color: veh.color, w: Math.min(7, 2.5 + leg.tours.length * 0.6) }));
+        });
+        (run.casualty?.flows || []).forEach((fl) => { const z = st.zones[fl.i], h = st.hospitals[fl.h]; if (z && h) out['aa-cas'].push(line([[z.lon, z.lat], [h.lon, h.lat]], {})); });
+      }
+    }
+    return out;
+  };
+  V.render = () => {
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(() => { if (!m3 || !ready) return; const g = build(); SRC.forEach((k) => m3.getSource(k)?.setData(FC(g[k]))); }, 120);
+  };
+
+  // ---------------- interaction ----------------
+  const LAYERS = ['aa-points', 'aa-zones', 'aa-sites', 'aa-risk', 'aa-legs', 'aa-legs-milk', 'aa-legs-air', 'aa-cas'];
+  const tipFor = (f) => {
+    const p = f.properties, st = V.data.st;
+    switch (p.kind) {
+      case 'event': { const e = V.data.events[p.k]; return `<b>${esc(e.name)}</b><br>${AA.HAZARDS[e.hazard]?.label || e.hazard} · ${esc(e.country || '')}${e.usi != null ? `<br>USI ${e.usi.toFixed(2)}` : ''}<br><i>Click to open its plan</i>`; }
+      case 'zone': { const z = st.zones[p.i]; return `<b>${z.id} · ${esc(z.name)}</b><br>Need ${(z.need || 0).toFixed(2)} · affected ${AA.fmt.k(z.fc.aff.p50)} (column height)${MAP().addrLine(z)}`; }
+      case 'depot': { const d = st.depots[p.j]; return `<b>${d.id} · ${esc(d.name)}</b><br>${d.typeLabel}${d.open ? '' : ' · offline'}${MAP().addrLine(d)}`; }
+      case 'hosp': { const h = st.hospitals[p.j]; return `<b>${h.id} · ${esc(h.name)}</b><br>Receiving hospital · ${h.beds} free beds${MAP().addrLine(h)}`; }
+      case 'site': { const c = st.warehouses.cand[st.warehouses.sizes[p.k].j]; return `<b>Recommended storage S${p.k + 1}</b>${MAP().addrLine(c)}<br><i>Click for address and directions</i>`; }
+      case 'rsite': { const s = V.data.riskSites[p.k]; return `<b>Recommended storage S${p.k + 1}</b>${MAP().addrLine(s)}`; }
+      case 'risk': { const c = V.data.risk.cells[p.k]; return `<b>${esc(c.name || c.id)}</b><br>Risk ${c.R.toFixed(2)} (column height) · ${AA.HAZARDS[c.dominant]?.label || ''}`; }
+      case 'closure': return 'Road closed';
+      default: return f.layer.id.startsWith('aa-legs') ? 'Aid route · click for how routes are chosen' : f.layer.id === 'aa-cas' ? 'Ambulance flow to hospital' : '';
+    }
+  };
+  const MAP = () => AA.map;
+  const onClick = (e) => {
+    const f = m3.queryRenderedFeatures(e.point, { layers: LAYERS })[0];
+    const ll = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+    if (!f || (AA.app && AA.app.picking && AA.app.picking())) { if (AA.app?.mapClick) AA.app.mapClick(ll); return; }
+    const p = f.properties, st = V.data.st, h = V.data.handlers || {};
+    const show = (content) => { popup?.remove(); popup = new gl.Popup({ maxWidth: '340px', closeButton: true, className: 'aa-pop3d' }).setLngLat(e.lngLat); typeof content === 'string' ? popup.setHTML(content) : popup.setDOMContent(content); popup.addTo(m3); };
+    switch (p.kind) {
+      case 'event': V.data.onEvent?.(V.data.events[p.k]); break;
+      case 'zone': if (h.zonePopup) show(h.zonePopup(st.zones[p.i])); break;
+      case 'depot': if (h.depotPopup) show(h.depotPopup(st.depots[p.j])); break;
+      case 'hosp': { const x = st.hospitals[p.j]; show(`<h4>${x.id} · ${esc(x.name)}</h4><div class="small">Receiving hospital · ${x.beds} free beds</div>${MAP().whereHtml(x)}`); break; }
+      case 'site': { const s = st.warehouses.sizes[p.k], c = st.warehouses.cand[s.j]; show(`<h4>Recommended storage S${p.k + 1}</h4><div class="small">Serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))}</div>${MAP().whereHtml(c)}`); break; }
+      case 'rsite': show(`<h4>Recommended storage S${p.k + 1}</h4>${MAP().whereHtml(V.data.riskSites[p.k])}`); break;
+      case 'risk': V.data.onRisk?.(V.data.risk.cells[p.k]); break;
+      default: if (f.layer.id.startsWith('aa-legs')) AA.explain.open('m-route');
+    }
+  };
+  const onMove = (e) => {
+    const f = m3.queryRenderedFeatures(e.point, { layers: LAYERS })[0];
+    m3.getCanvas().style.cursor = AA.app?.picking?.() ? 'crosshair' : f ? 'pointer' : '';
+    if (!f) { hover?.remove(); return; }
+    const html = tipFor(f); if (!html) { hover?.remove(); return; }
+    if (!hover) hover = new gl.Popup({ closeButton: false, closeOnClick: false, offset: 12, className: 'aa-tip3d', maxWidth: '300px' });
+    hover.setLngLat(e.lngLat).setHTML(html).addTo(m3);
+  };
+
+  // ---------------- camera sync with the 2D map ----------------
+  const fromLeaflet = (animate) => {
+    const lm = MAP().map(); if (!lm || !m3) return;
+    const c = lm.getCenter(), z = Math.max(0, lm.getZoom() - 1);
+    syncing = true;
+    const tilt = (z >= 4 && m3.getPitch() < 20) || z < 4 ? { pitch: pitchFor(z) } : {};
+    (animate ? m3.easeTo.bind(m3) : m3.jumpTo.bind(m3))({ center: [c.lng, c.lat], zoom: z, ...tilt, ...(animate ? { duration: 900 } : {}) });
+    setTimeout(() => (syncing = false), animate ? 950 : 0);
+  };
+  const toLeaflet = () => {
+    if (syncing || !m3) return;
+    const lm = MAP().map(), c = m3.getCenter();
+    V.pushing = true; lm.setView([c.lat, c.lng], Math.round(m3.getZoom() + 1), { animate: false }); V.pushing = false;
+  };
+
+  // ---------------- public API ----------------
+  V.enter = async () => {
+    if (V.active) return true;
+    if (!V.supported()) { AA.app?.toast('3D needs WebGL, which this browser does not offer. Showing 2D.', { err: true }); return false; }
+    V.updateButton(true);
+    try { gl = await loadLib(); } catch (e) { V.updateButton(false); AA.app?.toast(`3D map unavailable (${esc(e.message)}). Showing 2D.`, { err: true }); return false; }
+    const wrap = document.querySelector('.mapwrap');
+    if (!el) { el = document.createElement('div'); el.id = 'map3d'; el.setAttribute('aria-label', '3D map'); wrap.insertBefore(el, wrap.querySelector('.toast')); }
+    el.hidden = false; document.getElementById('map').classList.add('is3d'); V.active = true;
+    if (!m3) {
+      const lm = MAP().map(), c = lm.getCenter();
+      m3 = new gl.Map({ container: el, style: style(), center: [c.lng, c.lat], zoom: Math.max(0, lm.getZoom() - 1), pitch: pitchFor(lm.getZoom() - 1), bearing: lm.getZoom() - 1 < 4 ? 0 : -15, maxPitch: 80, attributionControl: { compact: true } });
+      m3.addControl(new gl.NavigationControl({ visualizePitch: true, showCompass: true }), 'top-right');
+      m3.addControl(new gl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+      // 'style.load' fires once the style is parsed, even if an optional source (buildings, terrain) is slow or down
+      m3.on('style.load', () => { if (ready) return; addOverlays(); ready = true; V.render(); });
+      m3.on('error', (e) => { if (/terrain|dem|elevation/i.test(String(e?.error?.message || e?.sourceId || ''))) console.warn('3D terrain tile error', e?.error?.message); });
+      m3.on('click', onClick); m3.on('mousemove', onMove); m3.on('mouseout', () => hover?.remove());
+      m3.on('moveend', toLeaflet);
+      MAP().map().on('moveend', () => { if (V.active && !V.pushing) fromLeaflet(true); });
+    } else { m3.resize(); fromLeaflet(false); V.render(); }
+    try { AA.workspace?.set('view3d', true); } catch (e) { /* ignore */ }
+    V.updateButton();
+    return true;
+  };
+  V.exit = () => {
+    if (!V.active) return;
+    V.active = false; if (el) el.hidden = true; document.getElementById('map').classList.remove('is3d');
+    hover?.remove(); popup?.remove();
+    MAP().map().invalidateSize();
+    try { AA.workspace?.set('view3d', false); } catch (e) { /* ignore */ }
+    V.updateButton();
+  };
+  V.toggle = () => (V.active ? V.exit() : V.enter());
+  V.updateButton = (busy) => {
+    const t = document.getElementById('viewToggle'); if (!t) return;
+    t.classList.toggle('busy', !!busy);
+    t.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.view === '3d') === V.active)));
+  };
+  V.map = () => m3;
+  V.ready = () => ready;
+  V.flyTo = (p, zoom) => { if (m3 && V.active) m3.flyTo({ center: [p.lon ?? p.lng, p.lat], zoom: zoom ?? Math.max(m3.getZoom(), 12), pitch: 60 }); };
+
+  /** Hook the 2D drawing calls so the 3D view always shows the same thing. */
+  V.hook = () => {
+    const MP = MAP();
+    const wrap = (name, after) => { const orig = MP[name]; MP[name] = (...a) => { const r = orig.apply(MP, a); try { after(...a); } catch (e) { console.error(e); } return r; }; };
+    wrap('drawEvents', (events, onClick, opts = {}) => { V.data.events = events; V.data.onEvent = onClick; V.data.eventsTop = opts.top ?? 5; V.render(); });
+    wrap('drawPlan', (st, handlers) => { V.data.st = st; V.data.handlers = handlers; V.data.events = []; V.render(); });
+    wrap('drawLeg', () => V.render());
+    wrap('drawSites', (st) => { V.data.st = st; V.render(); });
+    wrap('drawRisk', (cells, top, onClick) => { V.data.risk = { cells, top }; V.data.onRisk = onClick; V.data.riskSites = null; V.render(); });
+    wrap('clear', (...keys) => {
+      const all = !keys.length, has = (k) => all || keys.includes(k);
+      if (has('events')) V.data.events = [];
+      if (has('zones') || has('impact')) V.data.st = null;
+      if (has('risk')) { V.data.risk = null; V.data.riskSites = null; }
+      if (has('sites') && !V.data.st) V.data.riskSites = null;
+      V.render();
+    });
+  };
+  V.setRiskSites = (sites) => { V.data.riskSites = sites; V.render(); };
+
+  AA.map3d = V;
 })(window);
 
 </script>
@@ -2868,20 +3310,26 @@ details.card[open] { display: grid; gap: 8px; }
     const dis = st.fcast.summary.dis.p50;
     if (dis >= 1) out.push({ icon: '⌂', text: `Open shelter for ${people(dis)} (up to ${about(st.fcast.summary.dis.p90)} in the worst case).`, detail: `About ${about(dis / 5)} family tents or equivalent space in schools and halls.`, at: top[0] });
     const flows = run.casualty.flows.slice().sort((a, b) => b.n - a.n);
-    if (flows.length) { const fl = flows[0]; out.push({ icon: '+', text: `Send ambulances: ${about(M.sum(flows.map((x) => x.n)))} seriously injured patients to ${list([...new Set(flows.map((x) => st.hospitals[x.h].name))].slice(0, 3))}.`, detail: `First run: ${about(fl.n)} patients from ${st.zones[fl.i].name} to ${st.hospitals[fl.h].name} (${mins(fl.tau)}).`, at: st.hospitals[fl.h] }); }
+    if (flows.length) { const fl = flows[0]; out.push({ icon: '+', text: `Send ambulances: ${about(M.sum(flows.map((x) => x.n)))} seriously injured patients to ${list([...new Set(flows.map((x) => st.hospitals[x.h].name))].slice(0, 3))}.`, detail: `First run: ${about(fl.n)} patients from ${st.zones[fl.i].name} to ${st.hospitals[fl.h].name} (${mins(fl.tau)})${st.hospitals[fl.h].address ? `, ${st.hospitals[fl.h].address}` : ''}.`, at: st.hospitals[fl.h] }); }
     const d = R.dispatches(st).filter((x) => !x.air)[0];
-    if (d) out.push({ icon: '→', text: `Dispatch supplies: ${d.trucks + d.buses || 1} vehicle${(d.trucks + d.buses) > 1 ? 's' : ''} from ${d.depot.name} to ${d.zone.name} first.`, detail: Object.entries(d.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join('; '), at: d.zone });
+    if (d) out.push({ icon: '→', text: `Dispatch supplies: ${d.trucks + d.buses || 1} vehicle${(d.trucks + d.buses) > 1 ? 's' : ''} from ${d.depot.name} to ${d.zone.name} first.`, detail: `${Object.entries(d.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join('; ')}.${d.depot.address ? ` Pick up at ${d.depot.address}.` : ''}`, at: d.zone });
     const air = run.legs.filter((l) => l.airdrop);
     if (air.length) out.push({ icon: '✈', text: `Arrange helicopter or air drops for ${list([...new Set(air.map((l) => l.b.name))])}: no road gets through.`, detail: 'All road routes cross a closure or a badly damaged stretch.', at: air[0].b });
     const g = R.gap(st);
     if (g.short.length || g.trucks) out.push({ icon: '⇪', text: `Ask for outside help: ${[g.trucks ? plural(g.trucks, 'more truck') : '', ...g.short.slice(0, 3).map((x) => qty(x.k.key, x.n))].filter(Boolean).join(', ')}.`, detail: 'Local stock and vehicles cannot cover this 6-hour period.', at: null });
-    if (st.warehouses?.sizes?.length) { const s = st.warehouses.sizes[0], c = st.warehouses.cand[s.j]; out.push({ icon: '◆', text: `Pre-position stock at ${st.warehouses.sizes.length} storage site${st.warehouses.sizes.length > 1 ? 's' : ''} (purple diamonds).`, detail: `Site S1 should hold ${qty('water', s.stock.water)} and ${qty('food', s.stock.food)} for 3 days.`, at: c }); }
+    if (st.warehouses?.sizes?.length) { const s = st.warehouses.sizes[0], c = st.warehouses.cand[s.j]; out.push({ icon: '◆', text: `Pre-position stock at ${st.warehouses.sizes.length} storage site${st.warehouses.sizes.length > 1 ? 's' : ''} (purple diamonds).`, detail: `Site S1${c.address ? ` (${c.address})` : ''} should hold ${qty('water', s.stock.water)} and ${qty('food', s.stock.food)} for 3 days.`, at: c }); }
     return out;
   };
 
   // ---------- report builders ----------
   const head = (title, sub) => ({ title, sub, created: new Date() });
   const section = (h, html) => ({ h, html });
+  /** "Name (address)" for a place; coordinates when no street address is known. */
+  const at = (p) => (p.address ? ` (${esc(p.address)})` : ` (${(+p.lat).toFixed(4)}, ${(+p.lon).toFixed(4)})`);
+  const mapLink = (p) => `<a href="${AA.data.mapsUrl(p)}" target="_blank" rel="noopener">map</a>`;
+  /** Every place the plan names, with its address, coordinates and a directions link. */
+  const placesTable = (rows) => `<table class="rt"><thead><tr><th>Place</th><th>What</th><th>Address</th><th>Coordinates</th><th>Map</th></tr></thead><tbody>${rows.map(([n, what, p]) => `<tr><td>${esc(n)}</td><td>${esc(what)}</td><td>${p.address ? esc(p.address) : '<i>no street address in map data</i>'}</td><td>${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}</td><td>${mapLink(p)}</td></tr>`).join('')}</tbody></table>`;
+  R.placesTable = placesTable;
   const steps = (arr) => `<ol class="steps">${arr.filter(Boolean).map((s) => `<li>${s}</li>`).join('')}</ol>`;
   const bullets = (arr) => `<ul>${arr.filter(Boolean).map((s) => `<li>${s}</li>`).join('')}</ul>`;
   const severityWord = (st) => {
@@ -2911,19 +3359,25 @@ details.card[open] { display: grid; gap: 8px; }
         `<b>Activate the control room</b> and bring in district officials, police, fire service, health and the ${A.word === 'cyclone' || A.word === 'flood' ? 'Met department and irrigation department' : 'Met department'}. Re-check this plan every 6 hours.`,
         ...A.first.map((x) => `<b>${x.split('.')[0]}.</b>${x.split('.').slice(1).join('.')}`),
         sm.dis.p50 >= 1 ? `<b>Open shelters</b> for ${people(sm.dis.p50)} (keep space for ${about(sm.dis.p90)}). That is about ${about(sm.dis.p50 / 5)} family tents, or schools and community halls.` : '',
-        flows.length ? `<b>Move the seriously injured.</b> ${flows.slice(0, 4).map((x) => `${about(x.n)} from ${esc(st.zones[x.i].name)} to ${esc(st.hospitals[x.h].name)} (${mins(x.tau)} away)`).join('; ')}. Ask these hospitals to clear beds now.` : '',
-        disp.length ? `<b>Send these supplies first</b> (largest loads first):${bullets(disp.filter((x) => !x.air).slice(0, 8).map((x) => `From <b>${esc(x.depot.name)}</b> to <b>${esc(x.zone.name)}</b>: ${x.trucks ? plural(x.trucks, 'truck') : ''}${x.trucks && x.buses ? ' and ' : ''}${x.buses ? plural(x.buses, 'bus', 'buses') : ''}${x.milk ? ' (shared truck, also stopping at another area)' : ''}, carrying ${Object.entries(x.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join(', ')}. Drive time about ${mins(x.hours)}.`))}` : '',
+        flows.length ? `<b>Move the seriously injured.</b> ${flows.slice(0, 4).map((x) => `${about(x.n)} from ${esc(st.zones[x.i].name)} to <b>${esc(st.hospitals[x.h].name)}</b>${at(st.hospitals[x.h])}, ${mins(x.tau)} away`).join('; ')}. Ask these hospitals to clear beds now.` : '',
+        disp.length ? `<b>Send these supplies first</b> (largest loads first):${bullets(disp.filter((x) => !x.air).slice(0, 8).map((x) => `From <b>${esc(x.depot.name)}</b>${at(x.depot)} to <b>${esc(x.zone.name)}</b>${at(x.zone)}: ${x.trucks ? plural(x.trucks, 'truck') : ''}${x.trucks && x.buses ? ' and ' : ''}${x.buses ? plural(x.buses, 'bus', 'buses') : ''}${x.milk ? ' (shared truck, also stopping at another area)' : ''}, carrying ${Object.entries(x.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join(', ')}. Drive time about ${mins(x.hours)}.`))}` : '',
         air.length ? `<b>Arrange air drops</b> for ${list([...new Set(air.map((l) => esc(l.b.name)))])}. No road route is safe or open.` : '',
         st.closures.length ? `<b>Keep traffic away from the ${st.closures.length} closed road${st.closures.length > 1 ? 's' : ''}</b> marked ✕ on the map; trucks have been sent round them.` : '',
         (g.trucks || g.short.length) ? `<b>Ask the state or national authority for more help:</b> ${[g.trucks ? `${plural(g.trucks, 'more truck')}${g.buses ? ` and ${plural(g.buses, 'bus', 'buses')}` : ''} (our vehicles are ${Math.round(g.util * 100)}% busy)` : '', ...g.short.map((x) => qty(x.k.key, x.n))].filter(Boolean).join('; ')}.` : '',
       ])),
       section('Next 1 to 3 days', steps([
         ...A.later,
-        st.warehouses?.sizes?.length ? `<b>Stock the recommended storage sites</b> (purple diamonds on the map) so each can supply its areas within ${AA.config.coverageMinutes} minutes for 3 days:${bullets(st.warehouses.sizes.map((s, k) => `S${k + 1} (serves ${s.zones.map((id) => esc(st.zones.find((z) => z.id === id)?.name || id)).join(', ')}): ${qty('water', s.stock.water)}, ${qty('food', s.stock.food)}, ${qty('shelter', s.stock.shelter)}, ${qty('medical', s.stock.medical)}.`))}` : '',
+        st.warehouses?.sizes?.length ? `<b>Stock the recommended storage sites</b> (purple diamonds on the map) so each can supply its areas within ${AA.config.coverageMinutes} minutes for 3 days:${bullets(st.warehouses.sizes.map((s, k) => `<b>S${k + 1}</b> at ${(() => { const c = st.warehouses.cand[s.j]; return c.address ? esc(c.address) : `${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}`; })()} (serves ${s.zones.map((id) => esc(st.zones.find((z) => z.id === id)?.name || id)).join(', ')}): ${qty('water', s.stock.water)}, ${qty('food', s.stock.food)}, ${qty('shelter', s.stock.shelter)}, ${qty('medical', s.stock.medical)}.`))}` : '',
         'Re-run AidAtlas every 6 hours with field reports. Mark areas that have enough so supplies move to the next area in need.',
         'Keep one lane open on main roads for relief trucks and ambulances; send other traffic away.',
       ])),
       section('Supplies needed in the next 6 hours', `<table class="rt"><thead><tr><th>Item</th><th>Needed</th><th>We can deliver</th><th>Still short</th></tr></thead><tbody>${K.map((k) => { const d = M.sum(st.zones.map((z) => z.d[k.key] || 0)), u = M.sum(run.alloc.unmet.map((x) => x[k.key] || 0)); return `<tr><td>${k.label}</td><td>${qty(k.key, d)}</td><td>${qty(k.key, d - u)}</td><td>${u > 1e-6 ? qty(k.key, u) : 'none'}</td></tr>`; }).join('')}</tbody></table><p class="small">Daily amounts follow the Sphere humanitarian standards: 15 litres of water and 2,100 kcal of food per displaced person per day, and one family tent per 5 people.</p>`),
+      section('Where everything is', `<p>Addresses come from OpenStreetMap. Where the map has no street address, use the coordinates or the map link (opens Google Maps for directions).</p>${placesTable([
+        ...zones.map((z) => [`${z.id} ${z.name}`, `Affected area${z.covers?.length ? ` (also ${z.covers.slice(0, 4).join(', ')})` : ''}`, z]),
+        ...[...new Set(disp.map((x) => x.depot))].map((d) => [`${d.id} ${d.name}`, d.typeLabel, d]),
+        ...[...new Set(flows.map((x) => st.hospitals[x.h]))].map((h) => [`${h.id} ${h.name}`, 'Receiving hospital', h]),
+        ...(st.warehouses?.sizes || []).map((s, k) => [`S${k + 1}`, 'Recommended storage site', st.warehouses.cand[s.j]]),
+      ])}`),
       section('What could change this plan', bullets([`<b>Watch:</b> ${A.watch}`, 'If an area gets worse, use “Demand surge”. If it has enough, use “Mark served”. If a road or store is lost, mark it on the map: AidAtlas re-plans immediately.', `The forecast range is wide (${about(sm.aff.p10)}–${about(sm.aff.p90)} people affected). Keep about a third of the stock in reserve until field teams confirm.`])),
       section('How these numbers were made', `<p class="small">Hazard data: ${esc(sit.src || 'scenario')}. Towns, hospitals and stores: OpenStreetMap. Roads and drive times: OSRM. Country vulnerability: ${esc(sit.countryIdx?.prov || 'assumed')}. Forecast: 400 computer simulations with damage curves of the kind used by the USGS PAGER system. Allocation: an optimisation model that gives each area a share by need at the lowest transport cost. Stock levels at real facilities are planning assumptions unless your own inventory was loaded. Full calculations are in the app under <i>Models</i>.</p>`),
     ];
@@ -2972,7 +3426,7 @@ details.card[open] { display: grid; gap: 8px; }
       section('Highest-risk areas', `<table class="rt"><thead><tr><th>#</th><th>Area</th><th>Main danger</th><th>Risk (0–1)</th><th>Why</th></tr></thead><tbody>${rr.top.map((c, k) => { const why = [c.H > 0.6 ? 'frequent hazards' : '', c.E > 0.6 ? 'many people' : '', c.V > 0.6 ? 'vulnerable homes and incomes' : '', c.LCC > 0.6 ? 'far from hospitals / low capacity' : ''].filter(Boolean); return `<tr><td>${k + 1}</td><td>${esc(c.name)}</td><td>${AA.HAZARDS[c.dominant].label}</td><td>${c.R.toFixed(2)}</td><td>${why.length ? why.join(', ') : 'combination of factors'}</td></tr>`; }).join('')}</tbody></table>`),
       section('Prepare now', steps([
         ...[...new Set(rr.top.map((c) => c.dominant))].map((h) => `<b>${AA.HAZARDS[h].label}:</b> ${adv(h).first[0]} ${adv(h).warn}`),
-        rr.sites?.length ? `<b>Build or rent storage</b> at the ${rr.sites.length} purple sites on the map. Each reaches its high-risk areas within ${AA.config.coverageMinutes} minutes by road: ${rr.sites.map((s, k) => `S${k + 1} serves ${s.serves.map(esc).join(', ')}`).join('; ')}.` : 'Press “Plan storage for all five” to get recommended storage sites.',
+        rr.sites?.length ? `<b>Build or rent storage</b> at the ${rr.sites.length} purple sites on the map. Each reaches its high-risk areas within ${AA.config.coverageMinutes} minutes by road: ${rr.sites.map((s, k) => `<b>S${k + 1}</b>${at(s)} serves ${s.serves.map(esc).join(', ')}`).join('; ')}.` : 'Press “Plan storage for all five” to get recommended storage sites.',
         'Run a drill: open each high-risk area in Plan mode and check that its supplies and routes work.',
         'Make sure every high-risk area has a warning system (sirens, SMS, radio) and a known evacuation route.',
       ])),
@@ -2985,7 +3439,7 @@ details.card[open] { display: grid; gap: 8px; }
   const toText = (r) => {
     const tmp = document.createElement('div');
     const parts = [r.title, r.sub, `Prepared ${r.created.toLocaleString()} by AidAtlas`, ''];
-    r.sections.forEach((s) => { tmp.innerHTML = s.html.replace(/<ul>/g, '\n<ul>').replace(/<li>/g, '<li>• ').replace(/<\/(p|li|tr|h\d)>/g, '\n').replace(/<\/t[dh]>/g, ' | '); parts.push(s.h.toUpperCase(), tmp.textContent.replace(/\n\s*\n+/g, '\n').trim(), ''); });
+    r.sections.forEach((s) => { tmp.innerHTML = s.html.replace(/<a href="([^"]+)"[^>]*>[^<]*<\/a>/g, '$1').replace(/<ul>/g, '\n<ul>').replace(/<li>/g, '<li>• ').replace(/<\/(p|li|tr|h\d)>/g, '\n').replace(/<\/t[dh]>/g, ' | '); parts.push(s.h.toUpperCase(), tmp.textContent.replace(/\n\s*\n+/g, '\n').trim(), ''); });
     return parts.join('\n');
   };
   const docHtml = (r) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(r.title)}</title><style>${R.CSS}</style></head><body><article class="rep">${R.inner(r)}</article></body></html>`;
@@ -3272,7 +3726,7 @@ details.card[open] { display: grid; gap: 8px; }
       ${L('<span class="closure-x" style="font-size:14px">✕</span>', 'Road closure')}
       ${L(dot('#fdba74'), 'Risk cell', ['m-risk', 'INFORM risk'])}
       ${L(dot('#16a34a'), 'Live ranking', ['m-usi', 'Unified Severity Index'])}
-    </ul><label class="small fleet-tog"><input type="checkbox" id="fleetTog" ${AA.config.showFleet ? 'checked' : ''}> Show vehicles in transit</label>
+    </ul><p class="small muted" style="margin:0 0 6px"><b>3D map:</b> drag to move, right-drag or Ctrl+drag to tilt and rotate (two fingers on phones). Green column height = people affected; purple columns = storage sites; risk squares rise with risk.</p><label class="small fleet-tog"><input type="checkbox" id="fleetTog" ${AA.config.showFleet ? 'checked' : ''}> Show vehicles in transit</label>
     <p class="small muted" style="margin:0">When on, each moving dot is one dispatched vehicle (orange = truck, blue = responder bus) shown along its planned route. Positions are simulated, not GPS. Hover a dot for its cargo. ${AA.config.tomtomKey ? 'Live traffic: TomTom.' : 'Add a free TomTom key in Settings to see real traffic.'} <a href="guide.html#map-symbols" target="_blank" rel="noopener">All symbols explained</a></p>`;
     $('#fleetTog').addEventListener('change', (e) => { AA.config.showFleet = e.target.checked; MAP.animate(); });
     $('#legend').querySelectorAll('[data-x]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); AA.explain.open(a.dataset.x); }));
@@ -3440,6 +3894,11 @@ details.card[open] { display: grid; gap: 8px; }
     res.cells.forEach((c) => { const near = pl.slice().sort((a, b) => M.haversine(c, a) - M.haversine(c, b))[0]; c.name = near && M.haversine(c, near) < 15 ? `Around ${near.name}` : `Cell ${c.id.slice(1)} (${c.lat.toFixed(2)}, ${c.lon.toFixed(2)})`; });
     const top = res.cells.slice().sort((a, b) => b.R - a.R).slice(0, 5);
     const compass = (c) => { const b = (Math.atan2(c.lon - place.lon, c.lat - place.lat) * 180 / Math.PI + 360) % 360; return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(b / 45) % 8]; };
+    // name each of the top 5 after the locality at its centre (reverse geocoding), keep "Around <town>" as context
+    step('Naming the high-risk areas…');
+    for (const c of top) {
+      try { const a = await D.reverseDetail(c.lat, c.lon, 14); if (a.locality) { c.name = `${a.locality}${a.city && a.city !== a.locality ? `, ${a.city}` : ''}`; c.address = a.address; } } catch (e) { /* keep the fallback name */ }
+    }
     top.forEach((c) => { if (top.filter((o) => o.name === c.name).length > 1) c.name = `${c.name} (${compass(c)}, ${Math.round(M.haversine(place, c))} km)`; });
     app.riskResult = { place: place.short || place.name, gr: res.gr, top, cells: res.cells, counts: `${eq.length} earthquakes, ${events.length} other events, ${q100 ? 'GloFAS discharge' : 'no discharge data'}`, places: pl, facs: fac, country: ci };
     MAP.drawRisk(res.cells, top, (c) => openRiskCell(c));
@@ -3478,13 +3937,17 @@ details.card[open] { display: grid; gap: 8px; }
     catch (e) { tau = cand.map((c) => zones.map((z) => (M.haversine(c, z) * AA.config.circuity) / AA.config.fallbackSpeedKmh)); }
     const sol = FL.mclp(zones, cand, tau, AA.config.warehouses);
     r.sites = sol.sites.map((j) => ({ lat: cand[j].lat, lon: cand[j].lon, serves: zones.filter((_, i) => sol.assign[i] === j).map((z) => z.name) }));
+    app.toast('<span class="spin"></span> Looking up the address of each storage site…', { sticky: true });
+    for (const site of r.sites) { try { const a = await D.reverseDetail(site.lat, site.lon, 18); site.address = a.address; site.locality = a.locality; } catch (e) { site.addressPending = false; } }
     MAP.clear('sites');
     sol.sites.forEach((j, k) => {
       const c = cand[j], served = zones.filter((_, i) => sol.assign[i] === j).map((z) => z.id + ' ' + z.name);
       L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="site-diamond"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: 600 })
-        .bindTooltip(`<b>Recommended storage S${k + 1}</b><br>Covers: ${served.map(esc).join('<br>')}<br>within ${AA.config.coverageMinutes} min by road<span class="m">Model: MCLP over risk-weighted areas (${esc(sol.method)})</span>`, { className: 'aa-tip' }).addTo(MAP.layer('sites'));
+        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${MAP.addrLine(r.sites[k])}<br>Covers: ${served.map(esc).join('<br>')}<br>within ${AA.config.coverageMinutes} min by road<br><i>Click for address and directions</i><span class="m">Model: MCLP over risk-weighted areas (${esc(sol.method)})</span>`, { className: 'aa-tip' })
+        .bindPopup(`<h4>Recommended storage S${k + 1}</h4><div class="small">Covers ${served.map(esc).join(', ')} within ${AA.config.coverageMinutes} min by road. Look for a warehouse, school, hall or open ground at or near this point.</div>${MAP.whereHtml(r.sites[k])}`).addTo(MAP.layer('sites'));
       zones.filter((_, i) => sol.assign[i] === j).forEach((z) => L.polyline([[c.lat, c.lon], [z.lat, z.lon]], { color: '#7c3aed', weight: 2, dashArray: '3 6' }).bindTooltip(`S${k + 1} → ${esc(z.name)} · ${AA.fmt.min(tau[j][zones.indexOf(z)])}<span class="m">Model: MCLP assignment</span>`, { className: 'aa-tip', sticky: true }).addTo(MAP.layer('sites')));
     });
+    AA.map3d.setRiskSites(r.sites);
     app.toast(`Storage sites placed: ${sol.sites.length}, covering ${Math.round((100 * sol.covered) / Math.max(1e-9, sol.total))} % of risk-weighted population within ${AA.config.coverageMinutes} min.`);
   };
 
@@ -3539,12 +4002,12 @@ details.card[open] { display: grid; gap: 8px; }
     const evMeta = sit.event ? `${hz(sit.hazard)} ${alertDot(sit.event.alertlevel)} ${esc(sit.country || '')} · ${magText(sit.event)}${sit.windNote ? ` (planning ${Math.round(sit.magnitude)} km/h)` : ''} · ${esc(sit.event.src)}${sit.event.url ? ` · <a href="${esc(sit.event.url)}" target="_blank" rel="noopener">source report</a>` : ''}` : `${hz(sit.hazard)} ${esc(sit.country || '')} · <span class="prov">planning scenario</span>`;
     const zrows = st.zones.slice().sort((a, b) => b.need - a.need).map((z) => {
       const i = st.zones.indexOf(z), c = MAP.coverage(st, i);
-      return `<tr><td><a href="#" data-z="${z.id}">${z.id}</a> ${esc(z.name)}${z.served ? ' <span class="prov">served</span>' : ''}${z.spread ? ' <span class="prov">spread</span>' : ''}</td><td class="num">${z.need.toFixed(2)}<div class="bar need"><i style="width:${Math.round(z.need * 100)}%"></i></div></td><td class="num">${f.k(z.fc.aff.p50)}</td><td class="num">${Math.round(c * 100)}%<div class="bar cov"><i style="width:${Math.round(c * 100)}%"></i></div></td></tr>`;
+      return `<tr><td><a href="#" data-z="${z.id}">${z.id}</a> ${esc(z.name)}${z.served ? ' <span class="prov">served</span>' : ''}${z.spread ? ' <span class="prov">spread</span>' : ''}${z.address ? `<br><span class="small muted">${esc(z.address)}</span>` : ''}</td><td class="num">${z.need.toFixed(2)}<div class="bar need"><i style="width:${Math.round(z.need * 100)}%"></i></div></td><td class="num">${f.k(z.fc.aff.p50)}</td><td class="num">${Math.round(c * 100)}%<div class="bar cov"><i style="width:${Math.round(c * 100)}%"></i></div></td></tr>`;
     }).join('');
     const drows = st.depots.map((d, j) => {
       const used = M.sum(K.map((k) => (run.alloc.util[j]?.used[k.key] || 0) * k.kg)), have = M.sum(K.map((k) => (d.stock[k.key] || 0) * k.kg));
       const hrs = run.alloc.util[j]?.hours.truck || 0, cap = (d.fleet.truck || 0) * AA.config.epochHours;
-      return `<tr><td><a href="#" data-d="${d.id}">${d.id}</a> ${esc(d.name)}<br><span class="small muted">${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}</span></td><td class="num">${have ? Math.round((100 * used) / have) : 0}%</td><td class="num">${cap ? Math.round((100 * hrs) / cap) : 0}%</td></tr>`;
+      return `<tr><td><a href="#" data-d="${d.id}">${d.id}</a> ${esc(d.name)}<br><span class="small muted">${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.address ? ` · ${esc(d.address)}` : ''}</span></td><td class="num">${have ? Math.round((100 * used) / have) : 0}%</td><td class="num">${cap ? Math.round((100 * hrs) / cap) : 0}%</td></tr>`;
     }).join('');
     const ob = { ...AA.config.objective, ...(st.objective || {}) };
     const gap = AA.report.gap(st);
@@ -3571,7 +4034,7 @@ details.card[open] { display: grid; gap: 8px; }
       <div class="sec"><h3>Demand zones by need <a href="#m-need" data-x="m-need">need score</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Zone</th><th class="num">Need</th><th class="num">Affected</th><th class="num">Critical cov.</th></tr></thead><tbody>${zrows}</tbody></table></div></div>
       <div class="sec"><h3>Supply stores <a href="#m-milp" data-x="m-milp">stock & fleet use</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Store</th><th class="num">Stock used</th><th class="num">Truck hours</th></tr></thead><tbody>${drows}</tbody></table></div><p class="small muted" style="margin:0">Facility locations are real (OpenStreetMap). Stock and fleet are planning assumptions by facility type, scaled by the supply level, until you import your own inventory.</p>
         ${AA.workspace.can('inventory') ? '<label class="field">Import your inventory (CSV: name, lat, lon, type, water_l, food_kg, tents, medkits, staff, trucks, buses, ambulances, beds)<input id="csvIn" type="file" accept=".csv,text/csv"></label>' : ''}</div>
-      ${st.warehouses ? `<div class="sec"><h3>Recommended storage <a href="#m-mclp" data-x="m-mclp">MCLP</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Site</th><th class="num">Water kL</th><th class="num">Food t</th><th class="num">Tents</th><th class="num">Med</th></tr></thead><tbody>${st.warehouses.sizes.map((s, k) => `<tr><td>S${k + 1} · ${s.zones.join(', ')}</td><td class="num">${f.n(s.stock.water)}</td><td class="num">${f.n(s.stock.food, 1)}</td><td class="num">${f.n(s.stock.shelter)}</td><td class="num">${f.n(s.stock.medical)}</td></tr>`).join('')}</tbody></table></div><p class="small muted" style="margin:0">${Math.round((100 * st.warehouses.sol.covered) / Math.max(1e-9, st.warehouses.sol.total))} % of need covered within ${AA.config.coverageMinutes} min · 72 h of P90 demand per site.</p></div>` : ''}
+      ${st.warehouses ? `<div class="sec"><h3>Recommended storage <a href="#m-mclp" data-x="m-mclp">MCLP</a></h3><div class="tablewrap"><table class="t"><thead><tr><th>Site</th><th class="num">Water kL</th><th class="num">Food t</th><th class="num">Tents</th><th class="num">Med</th></tr></thead><tbody>${st.warehouses.sizes.map((s, k) => { const c = st.warehouses.cand[s.j]; return `<tr><td><b>S${k + 1}</b> ${c.address ? esc(c.address) : `<span class="mono">${c.lat.toFixed(5)}, ${c.lon.toFixed(5)}</span>`} · <a href="${D.mapsUrl(c)}" target="_blank" rel="noopener">map</a><br><span class="small muted">serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))}</span></td><td class="num">${f.n(s.stock.water)}</td><td class="num">${f.n(s.stock.food, 1)}</td><td class="num">${f.n(s.stock.shelter)}</td><td class="num">${f.n(s.stock.medical)}</td></tr>`; }).join('')}</tbody></table></div><p class="small muted" style="margin:0">${Math.round((100 * st.warehouses.sol.covered) / Math.max(1e-9, st.warehouses.sol.total))} % of need covered within ${AA.config.coverageMinutes} min · 72 h of P90 demand per site.</p></div>` : ''}
       <div class="sec"><h3>Change log</h3><div class="log">${st.log.slice(0, 10).map((e) => `<div class="e"><b>T+${e.epoch * AA.config.epochHours} h</b> · ${esc(e.reason)}<div class="d">cost ${f.usd(e.cost)}${e.diff ? ` (${e.diff.cost.after >= e.diff.cost.before ? '+' : '−'}${f.usd(Math.abs(e.diff.cost.after - e.diff.cost.before))})` : ''}${e.diff && e.diff.redirected.length ? ` · trips ${e.diff.redirected.slice(0, 4).map((r) => `${r.id} ${r.before}→${r.after}`).join(', ')}` : ''}${e.diff ? ` · unmet water ${f.n(e.diff.unmet[0].before, 0)}→${f.n(e.diff.unmet[0].after, 0)} kL` : ''}</div></div>`).join('')}</div></div>
       ${st.notes.length ? `<div class="sec"><h3>Data notes</h3>${st.notes.map((n) => `<p class="note warn">${esc(n)}</p>`).join('')}</div>` : ''}
       <div class="sec"><h3>Sources</h3><p class="small muted" style="margin:0">Population & facilities: OpenStreetMap (Overpass) · roads: OSRM · vulnerability: ${esc(sit.countryIdx?.prov || 'assumed')}${sit.countryIdx?.gdppc ? ` (GDP pc $${f.n(sit.countryIdx.gdppc)}, ${sit.countryIdx.beds ?? '–'} beds/1000)` : ''} · hazard: ${esc(sit.src)}</p></div>`;
@@ -3601,7 +4064,7 @@ details.card[open] { display: grid; gap: 8px; }
 
   const zonePopup = (z) => {
     const el = document.createElement('div');
-    el.innerHTML = `<h4>${z.id} · ${esc(z.name)}</h4><div class="small">Need ${z.need.toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}${z.sevSd ? ` ± ${z.sevSd.toFixed(2)}` : ''}<br>Population ${f.k(z.pop)} <span class="prov">${z.popProv}</span><br>Affected ${f.k(z.fc.aff.p50)}, displaced ${f.k(z.fc.dis.p50)}, injured ${f.n(z.fc.inj.p50)}</div>
+    el.innerHTML = `<h4>${z.id} · ${esc(z.name)}</h4><div class="small">Need ${z.need.toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}${z.sevSd ? ` ± ${z.sevSd.toFixed(2)}` : ''}<br>Population ${f.k(z.pop)} <span class="prov">${z.popProv}</span><br>Affected ${f.k(z.fc.aff.p50)}, displaced ${f.k(z.fc.dis.p50)}, injured ${f.n(z.fc.inj.p50)}${z.covers?.length ? `<br>Also covers: ${esc(z.covers.join(', '))}` : ''}</div>${MAP.whereHtml(z)}
       <div class="btns"><button class="btn" data-a="surge">Demand surge</button><button class="btn" data-a="${z.served ? 'unserved' : 'served'}">${z.served ? 'Needs aid again' : 'Mark served'}</button></div>
       <div class="field" style="margin-top:8px">Field report: observed severity <span class="mono" id="rv">0.80</span><input type="range" min="0" max="1" step="0.05" value="0.8" id="rr"><select id="rs"><option value="0.1">Trained assessor (σ 0.10)</option><option value="0.2">Crowd report (σ 0.20)</option></select><button class="btn" data-a="report">Apply Bayesian update</button></div>`;
     el.querySelector('#rr').addEventListener('input', (e) => (el.querySelector('#rv').textContent = (+e.target.value).toFixed(2)));
@@ -3612,7 +4075,7 @@ details.card[open] { display: grid; gap: 8px; }
   const depotPopup = (d) => {
     const el = document.createElement('div');
     const K = AA.config.commodities;
-    el.innerHTML = `<h4>${d.id} · ${esc(d.name)}</h4><div class="small">${d.typeLabel}${d.damaged ? ' · inside heavy-damage zone' : ''}<br>${K.map((k) => `${k.label}: ${f.n(d.stock[k.key], d.stock[k.key] < 10 ? 1 : 0)} ${k.unit}`).join('<br>')}<br>Fleet: ${d.fleet.truck} trucks, ${d.fleet.bus} buses, ${d.fleet.amb || 0} ambulances<br><span class="prov">${esc(d.prov)}</span>${d.osm ? ` <a href="https://www.openstreetmap.org/${d.osm}" target="_blank" rel="noopener">OSM</a>` : ''}</div>
+    el.innerHTML = `<h4>${d.id} · ${esc(d.name)}</h4><div class="small">${d.typeLabel}${d.damaged ? ' · inside heavy-damage zone' : ''}<br>${K.map((k) => `${k.label}: ${f.n(d.stock[k.key], d.stock[k.key] < 10 ? 1 : 0)} ${k.unit}`).join('<br>')}<br>Fleet: ${d.fleet.truck} trucks, ${d.fleet.bus} buses, ${d.fleet.amb || 0} ambulances<br><span class="prov">${esc(d.prov)}</span>${d.osm ? ` <a href="https://www.openstreetmap.org/${d.osm}" target="_blank" rel="noopener">OSM</a>` : ''}</div>${MAP.whereHtml(d)}
       <div class="btns"><button class="btn" data-a="depot">${d.open ? 'Take offline' : 'Bring online'}</button><button class="btn" data-a="breakdown">Truck breakdown</button></div>`;
     el.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => { MAP.map().closePopup(); AA.wsui.act(b.dataset.a, { depotId: d.id }); }));
     if (!AA.workspace.can('edit')) el.querySelectorAll('.btns').forEach((x) => x.remove());
@@ -3628,6 +4091,7 @@ details.card[open] { display: grid; gap: 8px; }
     if (type === 'leg') MAP.drawLeg(ENG.state, data);
     if (type === 'routed') { MAP.animate(data.legs); renderPlanPanel(); AA.explain.refreshIfOpen(); }
     if (type === 'warehouses') MAP.drawSites(ENG.state);
+    if (type === 'addresses' && ENG.state) { const st = ENG.state; MAP.drawPlan(st, handlers); (st.lastRun?.legs || []).forEach((l) => MAP.drawLeg(st, l)); if (st.lastRun?.routing === 'done') MAP.animate(st.lastRun.legs); renderPlanPanel(); }
   });
 
   // ---------------- search ----------------
@@ -3683,13 +4147,23 @@ details.card[open] { display: grid; gap: 8px; }
     MAP.init('map');
     legend();
     if (root.innerWidth < 860) { $('#legend').classList.add('collapsed'); $('#legendToggle').textContent = 'show'; }
-    MAP.map().on('click', async (e) => {
-      if (pick) { const cb = pick; endPick(); cb(e.latlng); return; }
+    /** One click handler for the 2D and 3D maps. latlng = { lat, lng }. */
+    app.mapClick = async (latlng) => {
+      if (pick) { const cb = pick; endPick(); cb(latlng); return; }
       if (app.view === 'plan') return;
-      const p = { lat: e.latlng.lat, lon: e.latlng.lng };
+      const p = { lat: latlng.lat, lon: latlng.lng };
       if (app.mode === 'plan') setPlanPlace(p);
       else if (app.mode === 'history' || app.mode === 'risk') { try { const r = await D.reverse(p.lat, p.lon); Object.assign(p, r); } catch (er) {} onPlace(p); }
-    });
+    };
+    app.picking = () => !!pick;
+    MAP.map().on('click', (e) => app.mapClick(e.latlng));
+    // Map view: 2D by default (fast to load). The 2D | 3D switch on the map loads the 3D engine only when asked;
+    // the choice is remembered per browser; ?view=2d / ?view=3d in a link override it.
+    AA.map3d.hook();
+    $('#viewToggle').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; if (b.dataset.view === '3d') AA.map3d.enter(); else AA.map3d.exit(); });
+    AA.map3d.updateButton();
+    const want3d = new URLSearchParams(location.search).get('view');
+    if (want3d === '3d' || (want3d !== '2d' && AA.workspace.get('view3d', false) === true && AA.map3d.supported())) AA.map3d.enter();
     $('#hintCancel').addEventListener('click', endPick);
     $('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); if (e.key === 'Escape') $('#qres').hidden = true; });
     document.addEventListener('click', (e) => { if (!e.target.closest('.search')) $('#qres').hidden = true; });

@@ -52,7 +52,7 @@
     const I = AA.prediction.intensity(sit, M.haversine(sit, f));
     const sev = AA.prediction.impact(sit.hazard, I, sit.countryVul).sev;
     const stock = {}; Object.entries(t.stock).forEach(([k, v]) => (stock[k] = v * scale));
-    return { id: '', name: f.name, type: kind, typeLabel: TYPE_LABEL[kind], lat: f.lat, lon: f.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { ...t.fleet }, repl: t.repl, prov: kind === 'staging' ? 'modelled' : kind === 'airlift' ? 'event' : 'osm-location / assumed-stock', osm: f.osm, beds: f.beds };
+    return { id: '', name: f.name, type: kind, typeLabel: TYPE_LABEL[kind], lat: f.lat, lon: f.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { ...t.fleet }, repl: t.repl, prov: kind === 'staging' ? 'modelled' : kind === 'airlift' ? 'event' : 'osm-location / assumed-stock', osm: f.osm, beds: f.beds, address: f.address || '', unnamed: !!f.unnamed || kind === 'staging' };
   };
   ENG.pickDepots = (sit, facs, scale = 1) => {
     const c = sit.focus || sit, R = sit.radiusKm;
@@ -128,7 +128,25 @@
       sit.floodKind = P.floodKind(sit.name, sit.reliefM);
       notes.push(`Flood type: ${P.FLOOD[sit.floodKind].label}${sit.reliefM != null ? ` (terrain relief ${Math.round(sit.reliefM)} m within 20 km)` : ''}. Deaths are modelled at ${sit.floodKind === 'flash' ? '1 in 100' : '1 in 10,000'} people affected.`);
     }
-    const zones = P.buildZones({ ...sit, lat: sit.lat, lon: sit.lon, focus }, places, 10);
+    facs.forEach((f) => { if (!f.name) { f.name = `${TYPE_LABEL[f.type] || 'Facility'} (unnamed on the map)`; f.unnamed = true; } });
+    const zones = P.buildZones({ ...sit, lat: sit.lat, lon: sit.lon, focus }, places, 12);
+    // name modelled areas and city quarters after the real locality at that spot (Nominatim reverse geocoding)
+    const addrCache = (snap && snap.addr) || {};
+    inputs.addr = addrCache;
+    const toName = zones.filter((z) => z.needsName);
+    if (toName.length) {
+      progress('Naming areas from the map (OpenStreetMap)');
+      const used = new Set(zones.filter((z) => !z.needsName).map((z) => z.name));
+      for (const z of toName) {
+        const a = await ENG.lookup(z, 16, addrCache);
+        if (a && a.locality) {
+          let n = z.parent && a.locality !== z.parent ? `${a.locality}, ${z.parent}` : a.locality;
+          if (used.has(n)) n = `${n} (${compass(focus, z)})`;
+          z.name = n; z.address = a.address; z.locality = a.locality;
+        }
+        used.add(z.name);
+      }
+    }
     // population: WorldPop 100 m grid counts people around each zone (replaces OSM tags / defaults)
     if (AA.config.worldpop !== false && zones.length) {
       progress('Counting people around each area (WorldPop 100 m grid)');
@@ -187,6 +205,7 @@
     if (opts.warehouses) await ENG.planWarehouses();
     ENG.decide('build', {}, `Plan created: ${sit.name || 'scenario'}`);
     await ENG.solve('Initial plan');
+    ENG.enrichAddresses();
     return ENG.state;
   };
 
@@ -198,6 +217,49 @@
     await Promise.all([worker(), worker(), worker()]);
     if (!out.some((v) => v > 0)) throw new Error('WorldPop: no counts');
     return { counts: out, radii };
+  };
+
+  // ---------------- addresses ----------------
+  const compass = (c, p) => { const b = (Math.atan2((p.lon - c.lon) * Math.cos(M.toRad(c.lat)), p.lat - c.lat) * 180 / Math.PI + 360) % 360; return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(b / 45) % 8]; };
+  ENG.compass = compass;
+  /** Reverse-geocode a point once; results kept in the plan (state.inputs.addr) so saved plans reopen without lookups. */
+  ENG.lookup = async (p, zoom = 18, cache = ENG.state?.inputs?.addr || {}) => {
+    const key = `${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)},${zoom}`;
+    if (key in cache) return cache[key];
+    try { const a = await AA.data.reverseDetail(p.lat, p.lon, zoom); cache[key] = a; return a; } catch (e) { return null; }
+  };
+  /** Fill in street addresses for storage sites, supply stores, hospitals and areas (in that order), in the background.
+   *  Uses OSM address tags when present; otherwise Nominatim at ≤ 1 request/s. Emits 'addresses' after each group. */
+  let enriching = null, enrichAgain = false;
+  ENG.enrichAddresses = () => {
+    if (enriching) { enrichAgain = true; return enriching; }
+    enriching = (async () => {
+      do {
+        enrichAgain = false;
+        const st = ENG.state; if (!st) break;
+        const sites = st.warehouses ? st.warehouses.sizes.map((x) => st.warehouses.cand[x.j]) : [];
+        const groups = [['storage', sites], ['stores', st.depots], ['hospitals', st.hospitals], ['areas', st.zones]];
+        for (const [g, items] of groups) {
+          let changed = false;
+          for (const it of items) {
+            if (ENG.state !== st) return;
+            if (it.address && !it.unnamed) continue;
+            const a = await ENG.lookup(it, g === 'areas' ? 17 : 18, st.inputs.addr);
+            if (!a) { it.addressPending = false; changed = true; continue; }
+            if (!it.address) it.address = a.address;
+            it.locality = it.locality || a.locality;
+            if (it.unnamed) {
+              const where = a.road ? `${a.road}${a.locality ? `, ${a.locality}` : ''}` : a.locality;
+              it.name = it.type === 'staging' ? `${it.name.split(' near ')[0]}${where ? ` near ${where}` : ''}` : `${TYPE_LABEL[it.type] || 'Facility'}${where ? ` on ${where}` : ''}`;
+              it.unnamed = false;
+            }
+            changed = true;
+          }
+          if (changed) emit('addresses', g);
+        }
+      } while (enrichAgain);
+    })().finally(() => { enriching = null; });
+    return enriching;
   };
 
   // ---------------- decision log ----------------
@@ -402,7 +464,7 @@
           Object.entries(scaleOf).forEach(([col, [key, f]]) => (stock[key] = (+r[col] || 0) * f));
           const I = AA.prediction.intensity(st.sit, M.haversine(st.sit, r));
           const sev = AA.prediction.impact(st.sit.hazard, I, st.sit.countryVul).sev;
-          return { id: 'D' + (k + 1), name: r.name || `Store ${k + 1}`, type: r.type || 'warehouse', typeLabel: `${TYPE_LABEL[r.type] || 'Store'} (your inventory)`, lat: +r.lat, lon: +r.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { truck: +r.trucks || 0, bus: +r.buses || 0, amb: +r.ambulances || 0 }, repl: 0, prov: 'imported inventory', beds: +r.beds || 0 };
+          return { id: 'D' + (k + 1), name: r.name || `Store ${k + 1}`, type: r.type || 'warehouse', typeLabel: `${TYPE_LABEL[r.type] || 'Store'} (your inventory)`, lat: +r.lat, lon: +r.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { truck: +r.trucks || 0, bus: +r.buses || 0, amb: +r.ambulances || 0 }, repl: 0, prov: 'imported inventory', beds: +r.beds || 0, address: r.address || '' };
         }).filter((d) => isFinite(d.lat) && isFinite(d.lon));
         if (!nd.length) return;
         st.depots = nd; st.blocked.clear(); await ENG.refreshTable();
@@ -420,7 +482,9 @@
     }
     st.routeCache.clear();
     if (!meta.replay) ENG.decide(type, p, reason, meta.note);
-    return ENG.solve(reason);
+    const done = ENG.solve(reason);
+    if (['supply', 'importDepots', 'spread'].includes(type)) done.then(() => ENG.enrichAddresses());
+    return done;
   };
 
   /** Rolling-horizon step: execute first-epoch decisions only, then re-optimise. */

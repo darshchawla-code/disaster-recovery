@@ -18,6 +18,10 @@
     MAP.control = L.control.layers({ Satellite: sat, Streets: streets }, MAP.overlays, { position: 'topright', collapsed: true }).addTo(map);
     L.control.scale({ imperial: false }).addTo(map);
     ['base', 'impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'sites', 'closures', 'risk', 'events'].forEach((k) => (layers[k] = L.layerGroup().addTo(map)));
+    // name labels for areas, stores and storage sites: shown when zoomed in far enough to read them
+    layers.labels = L.layerGroup();
+    const toggleLabels = () => { if (map.getZoom() >= 12) layers.labels.addTo(map); else map.removeLayer(layers.labels); };
+    map.on('zoomend', toggleLabels); toggleLabels();
     MAP.setTraffic(AA.config.tomtomKey);
     return map;
   };
@@ -51,9 +55,16 @@
     }
   };
 
+  /** Address line for tooltips/popups: street address when known, else coordinates (always shown, so a team can navigate). */
+  const addrLine = (p) => `<br><span class="addr">${p.address ? esc(p.address) : `${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}${p.addressPending === false ? '' : ' · address loading…'}`}</span>`;
+  MAP.addrLine = addrLine;
+  /** Popup footer: address, coordinates and a Google Maps link for directions. */
+  MAP.whereHtml = (p) => `<div class="where small">${p.address ? `<b>Address:</b> ${esc(p.address)}<br>` : ''}<span class="mono">${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}</span> · <a href="${AA.data.mapsUrl(p)}" target="_blank" rel="noopener">Open in Google Maps</a></div>`;
+  const label = (p, text, cls) => L.marker([p.lat, p.lon], { icon: L.divIcon({ className: '', html: `<div class="maplabel ${cls || ''}">${esc(text)}</div>`, iconSize: null, iconAnchor: [-12, 8] }), interactive: false, keyboard: false }).addTo(layers.labels);
+
   /** Draw the whole planning state (everything except routed legs). */
   MAP.drawPlan = (st, handlers) => {
-    MAP.clear('impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'closures');
+    MAP.clear('impact', 'zones', 'depots', 'hosp', 'legs', 'cas', 'fleet', 'closures', 'labels');
     layers.events.clearLayers();
     const sit = st.sit, focus = sit.focus || sit;
     L.circle([focus.lat, focus.lon], { radius: sit.radiusKm * 1000, color: '#16a34a', weight: 1.5, dashArray: '6 6', fill: true, fillOpacity: 0.06, interactive: false }).addTo(layers.impact);
@@ -66,21 +77,25 @@
       const s = 10 + 14 * ((z.need || 0) / maxNeed);
       const cov = coverage(st, i);
       const m = L.marker([z.lat, z.lon], { icon: dotIcon(z.served ? '#86efac' : '#16a34a', s, z.id.slice(1)), zIndexOffset: 400 });
-      m.bindTooltip(`<b>${z.id} · ${esc(z.name)}</b><br>Need ${(z.need || 0).toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}<br>Affected ${AA.fmt.k(z.fc.aff.p50)} (P10–P90 ${AA.fmt.k(z.fc.aff.p10)}–${AA.fmt.k(z.fc.aff.p90)})<br>Critical coverage this epoch ${Math.round(cov * 100)} %<span class="m">Need score · fairness model</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${z.id} · ${esc(z.name)}</b><br>Need ${(z.need || 0).toFixed(2)} · severity ${(z.sevPost ?? z.sevMean).toFixed(2)}<br>Affected ${AA.fmt.k(z.fc.aff.p50)} (P10–P90 ${AA.fmt.k(z.fc.aff.p10)}–${AA.fmt.k(z.fc.aff.p90)})<br>Critical coverage this epoch ${Math.round(cov * 100)} %${z.covers?.length ? `<br>Also covers: ${esc(z.covers.slice(0, 6).join(', '))}${z.covers.length > 6 ? '…' : ''}` : ''}${addrLine(z)}<span class="m">Need score · fairness model</span>`, { className: 'aa-tip' });
       m.bindPopup(() => handlers.zonePopup(z));
       m.addTo(layers.zones);
+      label(z, `${z.id} ${z.name}`, 'zone');
     });
     st.depots.forEach((d) => {
       const m = L.marker([d.lat, d.lon], { icon: dotIcon(d.open ? '#dc2626' : '#6b7280', 14, d.type === 'hospital' ? 'H' : ''), zIndexOffset: 300 });
-      m.bindTooltip(`<b>${d.id} · ${esc(d.name)}</b><br>${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.damaged ? ' · inside heavy-damage zone' : ''}<span class="m">Supply store · stock ${d.type === 'staging' ? 'modelled' : 'assumed by type'}</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${d.id} · ${esc(d.name)}</b><br>${d.typeLabel}${d.open ? '' : ' · <b>offline</b>'}${d.damaged ? ' · inside heavy-damage zone' : ''}${addrLine(d)}<span class="m">Supply store · stock ${d.prov === 'imported inventory' ? 'from your inventory' : d.type === 'staging' ? 'modelled' : 'assumed by type'}</span>`, { className: 'aa-tip' });
       m.bindPopup(() => handlers.depotPopup(d));
       m.addTo(layers.depots);
+      label(d, `${d.id} ${d.name}`, 'store');
     });
     st.hospitals.forEach((h) => {
       if (st.depots.some((d) => M.haversine(d, h) < 0.05)) return;
       const m = L.marker([h.lat, h.lon], { icon: dotIcon('#dc2626', 12, 'H'), zIndexOffset: 250 });
-      m.bindTooltip(`<b>${h.id} · ${esc(h.name)}</b><br>Receiving hospital · ${h.beds} free beds (${h.bedsProv})<span class="m">Casualty transport LP</span>`, { className: 'aa-tip' });
+      m.bindTooltip(`<b>${h.id} · ${esc(h.name)}</b><br>Receiving hospital · ${h.beds} free beds (${h.bedsProv})${addrLine(h)}<span class="m">Casualty transport LP</span>`, { className: 'aa-tip' });
+      m.bindPopup(`<h4>${h.id} · ${esc(h.name)}</h4><div class="small">Receiving hospital · ${h.beds} free beds</div>${MAP.whereHtml(h)}`);
       m.addTo(layers.hosp);
+      label(h, `${h.id} ${h.name}`, 'store');
     });
     st.closures.forEach((c) => L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="closure-x">✕</div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).bindTooltip('Road closed').addTo(layers.closures));
     // casualty flows
@@ -168,15 +183,19 @@
 
   MAP.drawSites = (st) => {
     layers.sites.clearLayers();
+    layers.labels.eachLayer((l) => { if (l.options.icon?.options?.html?.includes('maplabel site')) layers.labels.removeLayer(l); });
     const w = st.warehouses; if (!w) return;
     w.cand.forEach((c) => { if (!c.safe && c.kind === 'grid') L.circleMarker([c.lat, c.lon], { radius: 3, color: '#7c3aed', weight: 1, opacity: 0.5, fillOpacity: 0, interactive: false }).addTo(layers.sites); });
     w.sizes.forEach((s, k) => {
       const c = w.cand[s.j];
       const stock = AA.config.commodities.map((cm) => `${AA.fmt.n(s.stock[cm.key], s.stock[cm.key] < 10 ? 1 : 0)} ${cm.unit} ${cm.label.toLowerCase()}`).join('<br>');
+      const where = c.address ? c.address.split(',').slice(0, 2).join(',') : '';
       L.marker([c.lat, c.lon], { icon: L.divIcon({ className: '', html: '<div class="site-diamond"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: 600 })
-        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${c.name ? ` (existing: ${esc(c.name)})` : ''}<br>Serves ${s.zones.join(', ')} within ${AA.config.coverageMinutes} min<br>Pre-position for 72 h at P90:<br>${stock}<span class="m">Model: hazard-safe MCLP (${esc(w.sol.method)}) + 72 h P90 sizing</span>`, { className: 'aa-tip' })
-        .on('click', () => AA.explain.open('m-mclp'))
+        .bindTooltip(`<b>Recommended storage S${k + 1}</b>${c.name ? ` (existing: ${esc(c.name)})` : ''}${addrLine(c)}<br>Serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))} within ${AA.config.coverageMinutes} min<br>Pre-position for 72 h at P90:<br>${stock}<br><i>Click for address and directions</i><span class="m">Model: hazard-safe MCLP (${esc(w.sol.method)}) + 72 h P90 sizing</span>`, { className: 'aa-tip' })
+        .bindPopup(() => `<h4>Recommended storage S${k + 1}</h4><div class="small">${c.name ? `Existing facility: ${esc(c.name)}<br>` : 'Suggested location: look for a warehouse, school, hall or open ground at or near this point that is safe from the hazard.<br>'}Serves ${esc(s.zones.map((id) => st.zones.find((z) => z.id === id)?.name || id).join(', '))} within ${AA.config.coverageMinutes} min by road<br>Stock for 72 h at P90: ${stock.replace(/<br>/g, ', ')}</div>${MAP.whereHtml(c)}<div class="small"><a href="#m-mclp" class="x-mclp">How this site was chosen</a></div>`)
+        .on('popupopen', (e) => { const a = e.popup.getElement()?.querySelector('.x-mclp'); if (a) a.onclick = (ev) => { ev.preventDefault(); AA.explain.open('m-mclp'); }; })
         .addTo(layers.sites);
+      label(c, `S${k + 1} storage${where ? ` · ${where}` : ''}`, 'site');
     });
   };
 

@@ -34,6 +34,10 @@
     <aside class="panel sketch-bg" id="panel"><div class="panel-inner" id="panelInner"></div></aside>
     <div class="mapwrap">
       <div id="map" aria-label="Satellite map"></div>
+      <div class="viewtoggle" id="viewToggle" role="group" aria-label="Map view">
+        <button type="button" data-view="2d" aria-pressed="true" title="Flat map: fastest">2D</button>
+        <button type="button" data-view="3d" aria-pressed="false" title="Globe, terrain, 3D buildings and columns (downloads the 3D engine the first time)">3D</button>
+      </div>
       <div class="toast" id="toast" hidden></div>
       <div class="hint" id="hint" hidden><span id="hintText"></span><button type="button" id="hintCancel">Cancel</button></div>
       <div class="legend" id="legend"></div>
@@ -62,6 +66,7 @@
 <script src="../js/models/risk.js"></script>
 <script src="../js/engine.js"></script>
 <script src="../js/ui/map.js"></script>
+<script src="../js/ui/map3d.js"></script>
 <script src="../js/ui/explain.js"></script>
 <script src="../js/ui/report.js"></script>
 <script src="../js/ui/workspace-ui.js"></script>

@@ -102,6 +102,21 @@ button, input, select { font: inherit; color: inherit; }
 .panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
 .mapwrap { position: relative; min-height: 0; }
 #map { position: absolute; inset: 0; background: #1b1e22; }
+#map3d { position: absolute; inset: 0; z-index: 450; background: #1b1e22; }
+/* keep the 3D canvas laid out while hidden: collapsing it to 0×0 makes MapLibre re-render mid-frame */
+#map3d[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#map.is3d .leaflet-pane, #map.is3d .leaflet-control-zoom, #map.is3d .leaflet-control-layers, #map.is3d .leaflet-control-scale, #map.is3d .leaflet-control-attribution { visibility: hidden; }
+.maplibregl-popup.aa-tip3d { pointer-events: none; }
+/* 2D | 3D switch, top right of the map; the map's own top-right controls sit below it */
+.viewtoggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: inline-flex; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.viewtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 5px 14px; font: 600 12.5px/1 var(--sans); color: var(--graphite); cursor: pointer; min-width: 44px; min-height: 30px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.viewtoggle button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.viewtoggle.busy button[data-view="3d"] { opacity: .6; cursor: progress; }
+.mapwrap .leaflet-top.leaflet-right, .mapwrap .maplibregl-ctrl-top-right { top: 48px; }
+.maplibregl-popup.aa-tip3d .maplibregl-popup-content { font: 12.5px/1.45 var(--sans); padding: 6px 9px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.maplibregl-popup.aa-pop3d .maplibregl-popup-content { font: 13px/1.45 var(--sans); padding: 10px 12px; border-radius: 8px; }
+.maplibregl-popup.aa-pop3d h4 { margin: 0 0 4px; }
 @media (max-width: 860px) {
   .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
   .mapwrap { order: -1; }
@@ -216,6 +231,12 @@ table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); fo
 .modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
 .modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
 .modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+.aa-tip .addr, .addr { display: inline-block; margin-top: 2px; color: #374151; font-size: 12px; }
+.where { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); }
+.maplabel { display: inline-block; white-space: nowrap; font: 600 11.5px/1.2 var(--sans); color: #111; background: rgba(255,255,255,.88); border: 1px solid rgba(0,0,0,.18); border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.maplabel.zone { border-left: 3px solid var(--affected); }
+.maplabel.store { border-left: 3px solid var(--supply); }
+.maplabel.site { border-left: 3px solid var(--storage); }
 
 /* ---------- workspace (Phase 1) ---------- */
 .wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }
@@ -312,6 +333,7 @@ details.card[open] { display: grid; gap: 8px; }
       <li><a href="#respond">8. Responding to change</a></li>
       <li><a href="#reports">9. Action reports</a></li>
       <li><a href="#map-symbols">10. Map symbols</a></li>
+      <li class="sub"><a href="#map-3d">3D map</a></li>
       <li><a href="#models-panel">11. The Models panel</a></li>
       <li><a href="#settings">12. Settings and your own data</a></li>
       <li><a href="#workspace">12a. Workspace, roles, saved plans, alerts</a></li>
@@ -341,6 +363,7 @@ details.card[open] { display: grid; gap: 8px; }
         <tr><td><b>Top bar</b></td><td>The AidAtlas name (back to home), the four mode tabs, the <b>search box</b> (type a city, address or country and press <kbd>Enter</kbd>), <b>Guide</b> (this page), <b>Models</b> (the maths behind every number) and <b>Settings</b>.</td></tr>
         <tr><td><b>Left panel</b></td><td>Lists, forms and the plan for the selected event: key actions, forecast, allocation, controls and tables. It scrolls.</td></tr>
         <tr><td><b>Map</b></td><td>Satellite imagery with place names and roads. Drag to move, scroll or use <kbd>+</kbd>/<kbd>−</kbd> to zoom. Hover any dot or line for details; click a green or red dot for actions. The layers button (top right) switches between satellite and street maps and turns labels, roads and live traffic on or off.</td></tr>
+        <tr><td><b>2D | 3D switch</b></td><td>Top-right corner of the map: flat map or 3D map (see <a href="#map-3d">3D map</a>).</td></tr>
         <tr><td><b>Key actions box</b></td><td>Top-left of the map when a plan is open: the most important steps right now. Click a line to fly to the place it refers to. <b>Full action report</b> opens the printable report.</td></tr>
         <tr><td><b>Legend</b></td><td>Bottom-right: what each colour and line means. The underlined words open the exact calculation used. <b>Show vehicles in transit</b> turns on moving vehicle dots.</td></tr>
         <tr><td><b>Status pill</b></td><td>Top-centre of the map: what AidAtlas is doing (for example “Building road travel-time matrix”). Red text means a problem, with a hint.</td></tr>
@@ -403,6 +426,7 @@ details.card[open] { display: grid; gap: 8px; }
     <p>The most important steps for the next 6 hours in plain words, also shown in the box on the map: warn people, open shelters, move the injured, dispatch the first supplies, arrange air drops, ask for outside help and stock storage sites. Click a line to fly to the place. <b>Generate action report</b> turns these and much more into a printable report.</p>
     <h3 id="forecast">Forecast</h3>
     <p>Four boxes: <a href="#g-affected">Affected</a>, <a href="#g-displaced">Displaced</a>, <a href="#g-injured">Injured</a>, <a href="#g-fatalities">Fatalities</a>. The big number is the most likely value (<a href="#g-p50">P50</a>); the small line is the range (<a href="#g-p50">P10–P90</a>). Plan for the higher end.</p>
+    <p id="addresses"><b>Names and addresses.</b> Affected areas are named after the real sectors, colonies, suburbs and villages that OpenStreetMap has at that spot (for example “Sector 29” or “DLF Phase 1”); an area also lists the nearby localities it covers. Supply stores, hospitals and recommended storage sites show a street address once it has been looked up (it fills in within a few seconds after the plan appears). Hover any dot to see its address, click it for coordinates and an <b>Open in Google Maps</b> link for directions, and zoom in (street level) to see name labels on the map. The action report repeats every address and ends with a <b>Where everything is</b> table.</p>
     <p id="evidence">Under the boxes, the <b>evidence card</b> shows what agencies have already confirmed (<a href="#g-reported">reported impact</a>), the USGS <a href="#g-pager">PAGER</a> loss estimate or alert for earthquakes, the <a href="#g-flood-type">flood type</a>, and where the population and water figures come from (<a href="#g-worldpop">WorldPop</a>, the GDACS <a href="#g-flood-outline">flood outline</a>, <a href="#g-river-flow">river flow</a>). Reported counts are minimums, so the forecast never goes below them. If the evidence card says the model alone gave a much lower number, trust the reported number.</p>
     <h3 id="allocation">This epoch's allocation</h3>
     <ul>
@@ -473,6 +497,23 @@ details.card[open] { display: grid; gap: 8px; }
     </table>
     <div class="box tip"><b>Real traffic.</b> Traffic shown by the moving dots is simulated. To see real road traffic colours (green, orange, red), get a free key from TomTom (developer.tomtom.com), paste it in Settings, and turn on “Live traffic (TomTom)” in the map layers.</div>
 
+    <h3 id="map-3d">3D map</h3>
+    <p>The map opens in <b>2D</b>, which loads fastest. Press <b>3D</b> on the <b>2D | 3D</b> switch in the top-right corner of the map to change to the 3D map; the 3D engine is downloaded the first time you do this (a few seconds), then switching is instant. Your choice is remembered on this device, so if you leave it on 3D the map opens in 3D next time. Both views always show the same plan, events and risk grid. 3D works in all current desktop and phone browsers.</p>
+    <table class="g">
+      <thead><tr><th>You see</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td>A <b>globe</b> (Live mode, zoomed out)</td><td>Every current disaster as a coloured dot (red, orange, green alert). Drag to spin the globe; click a dot to open its plan. Zoom in past country level and the globe turns into a tilted 3D landscape.</td></tr>
+        <tr><td><b>Real terrain</b></td><td>Satellite imagery draped over real elevation (hills and valleys are exaggerated 1.4× so they are easy to see). Useful to see which villages sit in valleys, on slopes or behind ridges.</td></tr>
+        <tr><td><b>3D buildings</b></td><td>Building blocks appear when you zoom into a town (street level).</td></tr>
+        <tr><td><b>Green columns</b></td><td>Affected areas. The taller the column, the more people affected; the darker the green, the higher the need score. Light green = marked served.</td></tr>
+        <tr><td><b>Purple columns</b></td><td>Recommended storage sites.</td></tr>
+        <tr><td><b>Rising squares</b> (Risk mode)</td><td>The risk grid. Taller and redder squares are higher risk.</td></tr>
+        <tr><td>Lines and dots</td><td>Truck routes, milk runs, air drops, ambulance flows, stores and hospitals, exactly as in the 2D legend.</td></tr>
+      </tbody>
+    </table>
+    <p><b>Moving around.</b> Drag to move. Scroll or pinch to zoom. <b>Right-drag</b> (or <kbd>Ctrl</kbd>+drag) to tilt and rotate; on a phone, drag with two fingers. The compass button (top right) resets north; the arrow button resets the tilt. Hover any column, dot or line for a summary, and click it for the same actions as in 2D (zone controls, store on/offline, address and <b>Open in Google Maps</b>). Clicking empty ground picks a place, just like the 2D map.</p>
+    <p class="small">Links can force a view: add <code>&amp;view=3d</code> or <code>&amp;view=2d</code>. If a computer has no WebGL, or the 3D library cannot be downloaded, AidAtlas shows the 2D map and says why.</p>
+
     <h2 id="models-panel">11. The Models panel</h2>
     <p>Press <b>Models</b> in the top bar, any underlined model name in the legend, or a link next to a section heading. A drawer opens with each model's formula and a table of the <b>actual numbers used in this plan</b>: severity score, forecast, need scores, demand, every shipment, congestion, shared trucks, every route, casualties, storage sites and risk. This is the proof behind each recommendation.</p>
 
@@ -528,6 +569,7 @@ details.card[open] { display: grid; gap: 8px; }
       <li><code>?mode=live&amp;event=top</code>: today's most severe event.</li>
       <li><code>?mode=plan&amp;q=Gurugram&amp;hazard=EQ&amp;mag=7.2</code>: a planning scenario. Hazards: EQ earthquake, TC cyclone, FL flood, WF wildfire, VO volcano, DR drought.</li>
       <li><code>?mode=history&amp;q=Kathmandu</code> and <code>?mode=risk&amp;q=Manila</code>.</li>
+      <li>Add <code>&amp;view=3d</code> or <code>&amp;view=2d</code> to any link to open the 3D or flat map.</li>
     </ul>
 
     <h2 id="glossary">14. Glossary of every term</h2>
@@ -635,13 +677,15 @@ details.card[open] { display: grid; gap: 8px; }
         <tr><td>Status pill stays on “Finding towns, hospitals…” for a long time</td><td>The free OpenStreetMap servers are busy. AidAtlas waits up to 20 seconds, then tries a second source, then uses staging sites. This is noted under Data notes.</td></tr>
         <tr><td>Routes are straight lines marked “estimated”</td><td>The routing server did not answer. Drive times are estimated at 40 km/h. Try again later.</td></tr>
         <tr><td>Allocation bars are very low</td><td>That is the result, not an error: local stock or vehicles are much smaller than the need. Read “What would close the gap” and ask for outside help, raise the Supply level, or import your real inventory.</td></tr>
+        <tr><td>The map stays flat or says “3D map unavailable”</td><td>The browser has WebGL turned off (some remote desktops and locked-down office PCs), or jsdelivr.net is blocked. The 2D map works fully. In Chrome, check <code>chrome://gpu</code> and turn on “Use graphics acceleration when available”.</td></tr>
+        <tr><td>3D map feels slow</td><td>Press <b>2D</b> on the switch at the top right of the map, or zoom out a little: terrain and buildings are the heaviest parts.</td></tr>
         <tr><td>Print button does nothing</td><td>Your browser blocked the pop-up. Allow pop-ups for this page, or use Download and print the saved file.</td></tr>
       </tbody>
     </table>
 
     <h2 id="limits">16. Data sources and limits</h2>
     <ul>
-      <li><b>Hazards:</b> GDACS, USGS, NASA EONET. <b>Places, hospitals, stores:</b> OpenStreetMap (Overpass, Nominatim). <b>Roads and drive times:</b> OSRM. <b>Weather, river flow, elevation:</b> Open-Meteo and GloFAS. <b>Country data:</b> World Bank. <b>Satellite images:</b> Esri World Imagery. <b>Traffic (optional):</b> TomTom.</li>
+      <li><b>Hazards:</b> GDACS, USGS, NASA EONET. <b>Places, hospitals, stores:</b> OpenStreetMap (Overpass, Nominatim). <b>Roads and drive times:</b> OSRM. <b>Weather, river flow, elevation:</b> Open-Meteo and GloFAS. <b>Country data:</b> World Bank. <b>Satellite images:</b> Esri World Imagery. <b>3D terrain:</b> Mapzen Terrain Tiles on AWS Open Data. <b>3D buildings:</b> OpenFreeMap (OpenStreetMap). <b>3D engine:</b> MapLibre GL. <b>Traffic (optional):</b> TomTom.</li>
       <li>Forecasts are <b>estimates</b>. The earthquake model was checked against Nepal 2015 and Türkiye 2023 (the real death tolls fall inside its forecast range), but local building quality can change results a lot.</li>
       <li>Stock and vehicles at real facilities are <b>assumptions</b> until you import your own inventory.</li>
       <li>The free public map and routing servers have rate limits. For an operations centre, run your own copies.</li>

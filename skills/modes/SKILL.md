@@ -39,3 +39,10 @@ sites that would have covered it.
 Search a place. Build the risk grid (risk-assessment skill), list the Top 5 high-risk areas
 with dominant hazard and R. Clicking one opens its planning view; "Plan storage for all"
 runs facility location across all five.
+
+## Names and addresses (user feedback, Oct 2026)
+- Zones come from OSM localities: cities/towns across the radius + suburbs, quarters, neighbourhoods and villages within 35 km (`D.places`). A city with ≥ 3 mapped localities is represented by them (no N/E/S/W quarters). Zones are picked worst-first but ≥ 2 km apart; skipped neighbours are listed in `zone.covers`.
+- Modelled areas and unmapped city quarters (`needsName`) are named from Nominatim reverse geocoding (zoom 16) during the build.
+- `ENG.enrichAddresses()` fills `address` for storage sites → stores → hospitals → zones in the background (OSM `addr:*` tags first, else Nominatim zoom 17–18 at ≤ 1 req/s) and emits `addresses`; results live in `state.inputs.addr`, so saved plans reopen without lookups. Unnamed facilities become "Warehouse on <road>, <locality>".
+- UI: address line in every tooltip; popups have coordinates + Google Maps link; name labels at zoom ≥ 12; report dispatch/hospital/storage lines carry addresses and a "Where everything is" table.
+- Tests: tests/addresses.test.js.

@@ -132,11 +132,11 @@
     return rows.filter((r) => r.some((x) => x.trim() !== '')).map((r) => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
   };
   /** Accept common column spellings so a team's own sheet works without renaming everything. */
-  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'] };
+  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'], address: ['address', 'location', 'addr'] };
   W.normaliseRows = (rows) => (rows || []).map((r) => {
     const low = Object.fromEntries(Object.entries(r).map(([k, v]) => [String(k).trim().toLowerCase().replace(/\s+/g, '_'), v]));
     const o = {};
-    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
+    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' || k === 'address' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
     return o;
   }).filter((r) => isFinite(r.lat) && isFinite(r.lon) && Math.abs(r.lat) <= 90 && Math.abs(r.lon) <= 180);
 

@@ -4,7 +4,7 @@
   "description": "Forecast disaster needs, fair-share the aid, route it fast. Static web app.",
   "scripts": {
     "build": "node tools/build-standalone.js",
-    "test": "node tests/models.test.js && node tests/phase1.test.js && node tests/watch-alerts.test.js && node tests/schema.test.mjs",
+    "test": "node tests/models.test.js && node tests/phase1.test.js && node tests/addresses.test.js && node tests/watch-alerts.test.js && node tests/schema.test.mjs",
     "alerts": "node tools/watch-alerts.js watch-areas.json"
   },
   "devDependencies": {
