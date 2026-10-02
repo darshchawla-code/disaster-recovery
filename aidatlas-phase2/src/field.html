@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5fbf">
+<title>AidAtlas · Field</title>
+<link rel="manifest" href="field.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5fbf'/%3E%3Cpath d='M32 12c-8 0-14 6-14 14 0 10 14 26 14 26s14-16 14-26c0-8-6-14-14-14zm0 19a5 5 0 110-10 5 5 0 010 10z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../css/aidatlas.css">
+<style>
+  body.fieldapp { background: var(--paper-2); min-height: 100%; }
+  .fa { max-width: 560px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+  .fa-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); }
+  .fa-top .wordmark { font-size: 26px; text-decoration: none; color: var(--ink); }
+  .fa-top .wordmark small { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--graphite); margin-left: 4px; letter-spacing: 0; }
+  .net { margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; }
+  .net.off { background: #fee2e2; color: #991b1b; }
+  .fa h1 { font-size: 20px; margin: 16px 0 2px; }
+  .fa .lead { margin: 0 0 10px; color: var(--graphite); font-size: 13px; }
+  .fcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 12px; margin: 10px 0; }
+  .fcard h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+  .fcard h2 .n { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; letter-spacing: 0; }
+  .big { width: 100%; min-height: 48px; border-radius: 10px; border: 1px solid var(--rule); background: var(--paper); font-weight: 600; cursor: pointer; padding: 10px 12px; }
+  .big.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .loc { font-family: var(--mono); font-size: 13px; margin: 8px 0 0; }
+  .loc.ok { color: #166534; } .loc.bad { color: #991b1b; }
+  .dmgs { display: grid; gap: 6px; }
+  .dmgs button { text-align: left; min-height: 52px; border-radius: 10px; border: 2px solid var(--rule); background: var(--paper); padding: 8px 12px; cursor: pointer; }
+  .dmgs button b { display: block; }
+  .dmgs button span { font-size: 12px; color: var(--graphite); }
+  .dmgs button[aria-pressed="true"] { border-color: var(--ink); background: var(--paper-2); }
+  .dmgs button i { float: right; width: 14px; height: 14px; border-radius: 3px; margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips label, .seg label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); cursor: pointer; font-size: 13px; }
+  .chips input, .seg input { accent-color: var(--accent); width: 18px; height: 18px; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .seg label { justify-content: center; border-radius: 10px; text-align: center; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .fa .field input, .fa .field textarea, .fa .field select { width: 100%; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; background: var(--paper); }
+  .fa .field textarea { min-height: 70px; resize: vertical; }
+  .photo-prev { display: block; max-width: 100%; max-height: 220px; border-radius: 10px; margin-top: 8px; }
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.97); border-top: 1px solid var(--rule); }
+  .savebar .big { max-width: 528px; margin: 0 auto; display: block; }
+  .ob { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .ob li { border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; background: var(--paper); font-size: 13px; }
+  .ob .st { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--rule); }
+  .ob .st.sent { background: #dcfce7; color: #166534; } .ob .st.queued { background: #fef3c7; color: #92400e; } .ob .st.shared { background: #dbeafe; color: #1e3a8a; }
+  .ob .btns { margin-top: 6px; }
+  .codebox { width: 100%; font: 11px/1.4 var(--mono); border: 1px solid var(--rule); border-radius: 6px; padding: 6px; margin-top: 6px; }
+  .planbanner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 10px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
+  .ftoast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 7; background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; max-width: calc(100% - 32px); text-align: center; }
+</style>
+</head>
+<body class="fieldapp">
+<header class="fa-top"><a class="wordmark" href="index.html">Aid<b>Atlas</b><small>Field</small></a><span class="net" id="net">online</span></header>
+<main class="fa">
+  <h1>Report what you see</h1>
+  <p class="lead">Your report goes to the control room and updates the relief plan for this area. It is saved on this phone first, so it is safe even without a signal.</p>
+  <div class="planbanner" id="planBanner" hidden></div>
+
+  <section class="fcard" aria-labelledby="h-loc"><h2 id="h-loc"><span class="n">1</span>Where are you?</h2>
+    <button class="big" id="gps" type="button">Use my location</button>
+    <p class="loc" id="locTxt">Location not set yet.</p>
+    <details style="margin-top:6px"><summary class="small">Type the location instead</summary>
+      <div class="grid2"><label class="field">Latitude<input id="lat" type="number" step="0.00001" inputmode="decimal"></label><label class="field">Longitude<input id="lon" type="number" step="0.00001" inputmode="decimal"></label></div></details>
+    <label class="field" style="margin-top:8px">Place name (village, ward, landmark)<input id="place" type="text" maxlength="120" placeholder="e.g. Sector 29, near the water tank"></label>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-photo"><h2 id="h-photo"><span class="n">2</span>Photo <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></h2>
+    <label class="big" style="display:grid;place-items:center">Take or choose a photo<input id="photo" type="file" accept="image/*" capture="environment" hidden></label>
+    <img class="photo-prev" id="photoPrev" alt="Photo preview" hidden>
+    <p class="small muted" id="photoTxt" style="margin:6px 0 0">Photos are shrunk to about 150 KB before sending.</p>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-dmg"><h2 id="h-dmg"><span class="n">3</span>How bad is the damage here?</h2>
+    <div class="dmgs" id="dmgs" role="group" aria-label="Damage level"></div>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-needs"><h2 id="h-needs"><span class="n">4</span>What do people need most?</h2>
+    <div class="chips" id="needs"></div>
+    <div class="grid3" style="margin-top:10px"><label class="field">People affected<input id="pAff" type="number" min="0" inputmode="numeric" placeholder="about"></label><label class="field">Injured<input id="pInj" type="number" min="0" inputmode="numeric"></label><label class="field">Trapped / missing<input id="pTrap" type="number" min="0" inputmode="numeric"></label></div>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-road"><h2 id="h-road"><span class="n">5</span>Can trucks reach this place?</h2>
+    <div class="seg" id="road" role="radiogroup" aria-label="Road access">
+      <label><input type="radio" name="road" value="open" checked> Open</label><label><input type="radio" name="road" value="partly"> Partly blocked</label><label><input type="radio" name="road" value="blocked"> Blocked</label></div>
+    <label class="field" style="margin-top:10px">Anything else (optional)<textarea id="note" maxlength="500" placeholder="e.g. bridge on the main road is down; 40 families in the school"></textarea></label>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-me"><h2 id="h-me">About you</h2>
+    <div class="grid2"><label class="field">Your name<input id="by" type="text" maxlength="80" autocomplete="name"></label><label class="field">Team<input id="team" type="text" maxlength="80" placeholder="e.g. NDRF 8th Bn"></label></div>
+    <div class="chips" style="margin-top:8px"><label><input type="checkbox" id="trained"> I am a trained damage assessor</label></div>
+  </section>
+
+  <section class="fcard" id="outboxSec" aria-labelledby="h-ob"><h2 id="h-ob">My reports</h2><ul class="ob" id="outbox"></ul><p class="small muted" id="obEmpty" style="margin:0">Nothing saved yet.</p></section>
+
+  <section class="fcard" aria-labelledby="h-conn"><h2 id="h-conn">Sending</h2>
+    <p class="small" id="connTxt" style="margin:0 0 6px"></p>
+    <details><summary class="small"><b>Send automatically to the control room</b> (shared workspace)</summary>
+      <p class="small muted">Ask your control room for the project link and key, then sign in with the e-mail they invited (role: Field team). Reports and photos then arrive in their plan on their own; without this, use Share and send the message by WhatsApp or SMS.</p>
+      <div class="grid2"><label class="field">Project URL<input id="sbUrl" type="url" placeholder="https://xxxx.supabase.co"></label><label class="field">Public key<input id="sbKey" type="text"></label></div>
+      <div class="btns"><button class="btn" id="sbSave" type="button">Connect</button><button class="btn" id="sbOff" type="button">Disconnect</button></div>
+      <div class="grid2"><label class="field">Your e-mail<input id="sbEmail" type="email" autocomplete="email"></label><label class="field">6-digit code<input id="sbCode" type="text" inputmode="numeric" maxlength="10"></label></div>
+      <div class="btns"><button class="btn" id="sbSend" type="button">Send code</button><button class="btn primary" id="sbVerify" type="button">Sign in</button></div>
+      <p class="small" id="sbMsg"></p></details>
+  </section>
+  <p class="small muted">AidAtlas field app · <a href="guide.html#field-app">How it works</a> · built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></p>
+</main>
+<div class="savebar"><button class="big primary" id="save" type="button">Save report</button></div>
+<div class="ftoast" id="ftoast" hidden></div>
+
+<script src="../js/core.js"></script>
+<script src="../js/workspace.js"></script>
+<script src="../js/cloud.js"></script>
+<script src="../js/field.js"></script>
+<script src="../js/field-page.js"></script>
+</body>
+</html>

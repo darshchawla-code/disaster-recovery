@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AidAtlas</title>
+<meta name="description" content="Forecast disaster impact, allocate relief by need, and route it at the lowest feasible cost — live, planning, historical and risk modes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../css/aidatlas.css">
+</head>
+<body>
+<div class="landing sketch-bg">
+  <header>
+    <div class="wordmark">Aid<b>Atlas</b></div>
+    <nav aria-label="Primary">
+      <a href="app.html?mode=live">Live</a>
+      <a href="app.html?mode=plan">Plan</a>
+      <a href="app.html?mode=history">History</a>
+      <a href="app.html?mode=risk">Risk</a>
+      <a href="field.html">Field app</a>
+      <a href="guide.html">User guide</a>
+      <a href="app.html?mode=live#explain">How the models work</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Forecast the need. <span class="hl">Fair-share the aid.</span> Route it fast.</h1>
+      <p class="lead">AidAtlas predicts where a disaster will hit hardest, how many people will need water, food, shelter, medical care and responders, and moves stock from the nearest supply stores to them at the lowest feasible cost. Allocation follows need, not head-count or proximity, and it re-optimises every six hours as roads close, supplies land and the disaster spreads.</p>
+      <div class="loop" aria-label="Adaptive loop">
+        <span>Predict</span><i>→</i><span>Assess need</span><i>→</i><span>Allocate fairly</span><i>→</i><span>Route efficiently</span><i>→</i><span>Dispatch</span><i>→</i><span>Monitor</span><i>↺</i>
+      </div>
+    </div>
+    <aside class="livebox" aria-live="polite">
+      <h2><span><span class="eyebrow">Live now</span> · top 5 by unified severity</span><a href="app.html?mode=live" class="small">Open map →</a></h2>
+      <ol id="live"><li class="empty"><span class="spin"></span> Reading GDACS, USGS and NASA EONET…</li></ol>
+    </aside>
+  </section>
+
+  <section class="modes" aria-label="Modes">
+    <a class="mode" href="app.html?mode=live">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="#16a34a" stroke="none"/><circle cx="24" cy="24" r="11"/><path d="M8 24a16 16 0 0 1 32 0M4 24a20 20 0 0 1 40 0" opacity=".6"/></svg>
+      <span class="n">Mode 1</span><h3>Live</h3>
+      <p>Current disasters worldwide from satellites and agencies, ranked by severity. Open one to see the affected area, supply stores and routed aid.</p>
+      <span class="go">See live events →</span>
+    </a>
+    <a class="mode" href="app.html?mode=plan">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><path d="M24 42s-12-12-12-22a12 12 0 0 1 24 0c0 10-12 22-12 22z"/><circle cx="24" cy="20" r="4" fill="#16a34a" stroke="none"/><path d="M6 44h36" opacity=".5"/></svg>
+      <span class="n">Mode 2</span><h3>Plan</h3>
+      <p>Pick any city or address, assume a disaster there, and get the full relief plan plus where to build storage before it happens.</p>
+      <span class="go">Plan a scenario →</span>
+    </a>
+    <a class="mode" href="app.html?mode=history">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="17"/><path d="M24 13v11l7 5"/><path d="M5 18l3 6 5-4" /></svg>
+      <span class="n">Mode 3</span><h3>History</h3>
+      <p>The five most recent major disasters near a place, replayed with the paths aid should have taken and the depots that would have covered them.</p>
+      <span class="go">Replay the past →</span>
+    </a>
+    <a class="mode" href="app.html?mode=risk">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><path d="M24 6 44 40H4z"/><path d="M24 18v10"/><circle cx="24" cy="33" r="1.4" fill="#23262b"/></svg>
+      <span class="n">Mode 4</span><h3>Risk</h3>
+      <p>High-risk areas around a city from seismic catalogues, river discharge, storm and fire history, population and coping capacity.</p>
+      <span class="go">Map the risk →</span>
+    </a>
+  </section>
+
+  <footer>
+    <span>Built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></span>
+    <span>Data: GDACS (UN OCHA / EC JRC) · USGS · NASA EONET · OpenStreetMap (Nominatim, Overpass, OSRM) · Open-Meteo / GloFAS · World Bank · Esri World Imagery</span>
+    <span>Forecasts are estimates with P10–P90 bands, not guarantees. Stock levels at real facilities are planning assumptions until you import your own.</span>
+  </footer>
+</div>
+<script src="../js/core.js"></script>
+<script src="../js/data.js"></script>
+<script>
+(async () => {
+  const ol = document.getElementById('live');
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  try {
+    const { events } = await AA.data.liveEvents();
+    const top = events.slice(0, 5);
+    if (!top.length) { ol.innerHTML = '<li class="empty">No current events reported.</li>'; return; }
+    ol.innerHTML = top.map((e, k) => `<li><a href="app.html?mode=live&event=${encodeURIComponent(e.id)}">
+      <span class="rk">${k + 1}</span><span class="chip ${e.hazard}">${e.hazard}</span>
+      <span class="ttl">${esc(e.name)}<br><small>${esc(e.country || '')}</small></span>
+      <span class="num small">${e.usi.toFixed(2)}</span></a></li>`).join('');
+  } catch (err) {
+    ol.innerHTML = `<li class="empty">Live feeds could not be reached (${esc(err.message)}). Open the map to retry.</li>`;
+  }
+})();
+</script>
+</body>
+</html>

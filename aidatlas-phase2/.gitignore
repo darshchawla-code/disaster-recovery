@@ -1,0 +1,4 @@
+node_modules/
+.watch-state.json
+.DS_Store
+server/data/

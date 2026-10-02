@@ -1,0 +1,13 @@
+{
+  "name": "AidAtlas Field",
+  "short_name": "AidAtlas Field",
+  "description": "Send damage reports, photos and needs from the field to the AidAtlas control room, even offline.",
+  "start_url": "field.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8f9",
+  "theme_color": "#1f5fbf",
+  "icons": [
+    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5fbf'/%3E%3Cpath d='M32 12c-8 0-14 6-14 14 0 10 14 26 14 26s14-16 14-26c0-8-6-14-14-14zm0 19a5 5 0 110-10 5 5 0 010 10z' fill='%23fff'/%3E%3C/svg%3E", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
