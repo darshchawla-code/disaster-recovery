@@ -1,0 +1,2370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Built from src/validation.html by tools/build-standalone.js — edit the sources, not this file. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AidAtlas · Validation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* AidAtlas — skill: ui-sketch.
+   Layout concept: a white field-notebook page; pencil-sketched landscape underlies every screen;
+   the satellite map is the working surface, the notebook panel is the plan. Single light theme by design. */
+:root {
+  --paper: #ffffff;
+  --paper-2: #f7f8f9;
+  --ink: #23262b;
+  --graphite: #5b6068;
+  --faint: #8a9099;
+  --rule: #e2e5e9;
+  --accent: #1f5fbf;
+  --accent-ink: #ffffff;
+  --affected: #16a34a;
+  --supply: #dc2626;
+  --storage: #7c3aed;
+  --warn: #b45309;
+  --truck: #f59e0b;
+  --bus: #0ea5e9;
+  --casualty: #db2777;
+  --display: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r: 6px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.wordmark { font-family: var(--display); font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+.wordmark b { color: var(--accent); font-weight: 700; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--graphite); font-weight: 600; }
+.sketch-bg { position: relative; isolation: isolate; }
+.sketch-bg::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMTYwMCA1MjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWF4IHNsaWNlIiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUb3pZalptTURFNE55MDRZV1E1TFRRNFpqTXRPR1E1TlMxbE9XRTRaamt3TlRJMU5qY0FBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphUE04dFFZdEQ0Y2M2djl1ZnpROThMc0FBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEcGhaREF5TkRRM05TMWhaakV5TFRRM09UQXRPRE5tT0MwNU5HUXhOalZrWXpWbU16VnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob05rZ0h1bC84MXZTNzBaVWVOeWZCY0FBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2crRm1VRjEySzBVTUtaVFpmM1k5VFg2R29oSWQ5WnI0WHlmUWlYeFh4cHdTa1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphTmx5TnRJRTVvT0tmeGpMZ0h2eE0vQUFBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDQWFtN1BRbzE2cy9qbHFaSkt4dDF3eXBsN21aeGxFRGRHbEIya1piTXNOSkdSdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCak9abXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qTmlObVl3TVRnM0xUaGhaRGt0TkRobU15MDRaRGsxTFdVNVlUaG1PVEExTWpVMk55OWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qQTRZVFEwTURBNUxUZzVaR1V0TkdReE5DMWhPVGhpTFRZNE9EY3pPVGxsTnpVM1luSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NENFdaUVhYWXJSUXdwbE5sL2RqMU5mb2FpRWgzMW12aGZKOUNKZkZmR25CS0pqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnbkJWTDhWaG1pVkpiNmh4YnQrOFMxdndhckFnelJ2amZROW5XS0w3RGs2dWlZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dSb3d5M1hoM0ZpYXpHdURuY252SUpRcmJJNFNmcFZoSkhNeGhPcjRQLzE1MFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRT1dJbnh4WUd3WFVLQWh5TTFPMTRVNVJUZEI0Z2x2VXJYNytoU0NUYnRabjFEV28xa0lpNnpYWnUrdENXSzAxb1FiTHQxMjFYUWJpaytNTk4veHp0Vm89PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+CjxkZWZzPgo8ZmlsdGVyIGlkPSJyMSIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAzNSIgbnVtT2N0YXZlcz0iMiIgc2VlZD0iMyIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjMuMiIvPjwvZmlsdGVyPgo8ZmlsdGVyIGlkPSJyMiIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjA1IiBudW1PY3RhdmVzPSIyIiBzZWVkPSIxMSIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjQuNSIvPjwvZmlsdGVyPgo8ZyBpZD0ic2NlbmUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Ik0yNzAuMCAyMDAuMCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAyMDguMiBBNi4zIDYuMyAwIDAgMSAyNTIuOSAyMTAuMiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAyMDQuNiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAxOTUuNCBBNi4zIDYuMyAwIDAgMSAyNTIuOSAxODkuOCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAxOTEuOCBBNi4zIDYuMyAwIDAgMSAyNzAuMCAyMDAuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTI5Ni4wIDE2Mi4wIEE5LjAgOS4wIDAgMCAxIDI4OC41IDE3My43IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE3Ni42IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE2OC41IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE1NS41IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE0Ny40IEE5LjAgOS4wIDAgMCAxIDI4OC41IDE1MC4zIEE5LjAgOS4wIDAgMCAxIDI5Ni4wIDE2Mi4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMjk0LjAgMTE4LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMzMuMiBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDEzNy4wIEExMS43IDExLjcgMCAwIDEgMjQ0LjYgMTI2LjUgQTExLjcgMTEuNyAwIDAgMSAyNDQuNiAxMDkuNSBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDk5LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMDIuOCBBMTEuNyAxMS43IDAgMCAxIDI5NC4wIDExOC4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMzMyLjAgNzQuMCBBMTQuNCAxNC40IDAgMCAxIDMyMC4wIDkyLjggQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA5Ny40IEExNC40IDE0LjQgMCAwIDEgMjcxLjIgODQuNCBBMTQuNCAxNC40IDAgMCAxIDI3MS4yIDYzLjYgQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA1MC42IEExNC40IDE0LjQgMCAwIDEgMzIwLjAgNTUuMiBBMTQuNCAxNC40IDAgMCAxIDMzMi4wIDc0LjAiIHN0cm9rZS13aWR0aD0iMS4zIi8+CjxwYXRoIGQ9Ik0zODAuMCA0Mi4wIEExMy41IDEzLjUgMCAwIDEgMzY4LjcgNTkuNiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDYzLjkgQTEzLjUgMTMuNSAwIDAgMSAzMjMuMCA1MS44IEExMy41IDEzLjUgMCAwIDEgMzIzLjAgMzIuMiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDIwLjEgQTEzLjUgMTMuNSAwIDAgMSAzNjguNyAyNC40IEExMy41IDEzLjUgMCAwIDEgMzgwLjAgNDIuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTAgNDAyIEMgMTYwIDM5OCwgMzIwIDQwNiwgNTIwIDQwMSBTIDgyMCAzOTgsIDEwMDAgNDA0IFMgMTE2MCA0MDAsIDExODAgNDA0IiBzdHJva2Utd2lkdGg9IjEuNiIvPgo8cGF0aCBkPSJNNDAgNDAyIEwxNzUgMjYyIFEyMDUgMjM4IDIzNiAyMzEgTDI2NiAyMzEgUTI5NiAyMzggMzI2IDI2MiBMNDcwIDQwMiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0yMzYgMjMxIFEyNTEgMjQwIDI2NiAyMzEiIHN0cm9rZS13aWR0aD0iMS42Ii8+CjxwYXRoIGQ9Ik0yNDYgMjM0IFEyMzYgMjgwIDIyMiAzMzAgUTIxNiAzNTAgMjA2IDM3MiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTI1OCAyMzQgUTI3MiAyODYgMzAwIDMzNiBRMzEyIDM1NiAzMTggMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNMzgwIDQwMiBMNDY4IDMwMCBMNTE4IDMzMiBMNjAwIDIyOCBMNjc2IDMxOCBMNzI0IDI4OCBMODEyIDQwMiIgc3Ryb2tlLXdpZHRoPSIxLjgiLz4KPHBhdGggZD0iTTU3NCAyNjIgTDYwMCAyMjggTDYyOCAyNjIgTDYxNCAyNTQgTDYwMSAyNzAgTDU4OCAyNTQgWiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTY0MCAzMzIgQyA2NjggMzcyLCA2MTAgNDEyLCA3MDYgNDQ2IFMgOTA2IDQ4MiwgMTEwNiA0NzAgUyAxMjU2IDQ1MiwgMTMzNiA0MzQiIHN0cm9rZS13aWR0aD0iMS40Ii8+CjxwYXRoIGQ9Ik02NjQgMzM2IEMgNjkwIDM3NiwgNjQwIDQwNCwgNzI0IDQzMiBTIDkxNiA0NjYsIDExMTIgNDU2IFMgMTI2MiA0NDAsIDEzNDAgNDI0IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNNzA2IDQwMiBMNzA2IDM4NyBNNjg4LjAgMzg3IEw3MDYgMzQyLjAgTDcyNC4wIDM4NyBaIE02OTIgMzcyIEw3MDYgMzMzIEw3MjAgMzcyIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzM0IDQwMiBMNzM0IDM5MCBNNzE5LjYgMzkwIEw3MzQgMzU0LjAgTDc0OC40IDM5MCBaIE03MjIgMzc4IEw3MzQgMzQ3IEw3NDYgMzc4IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzYwIDQwMiBMNzYwIDM4NiBNNzQwLjIgMzg2IEw3NjAgMzM2LjAgTDc3OS44IDM4NiBaIE03NDQgMzY5IEw3NjAgMzI2IEw3NzYgMzY5IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzg4IDQwMiBMNzg4IDM5MSBNNzc0LjUgMzkxIEw3ODggMzU3LjAgTDgwMS41IDM5MSBaIE03NzcgMzgwIEw3ODggMzUwIEw3OTkgMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNODEyIDM5OCBxLTkgLTE4IDMgLTMyIHEtMSAxMyA4IDE1IHE1IC0xNCAtMSAtMjYgcTE5IDEzIDkgNDMiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik04MjggMzk2IHEtOSAtMTggMyAtMzIgcS0xIDEzIDggMTUgcTUgLTE0IC0xIC0yNiBxMTkgMTMgOSA0MyIgc3Ryb2tlLXdpZHRoPSIxLjEiLz4KPHBhdGggZD0iTTg0NiA0MDAgcS05IC0xOCAzIC0zMiBxLTEgMTMgOCAxNSBxNSAtMTQgLTEgLTI2IHExOSAxMyA5IDQzIiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNODcwIDQwMiBWMzUyIEg5MjAgVjQwMiBNODY0IDM1NCBMODk1IDMyMiBMOTI2IDM1NCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTg4NCA0MDIgdi0yMiBoMTIgdjIyIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTk0MCA0MDIgVjM0MCBIMTAwMCBWNDAyIE05MzQgMzQyIEw5NzAgMzA0IEwxMDA2IDM0MiIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTk3MCAzNDAgTDk2MiAzNTggTDk3NSAzNjggTDk2NiAzODYgTDk3MyA0MDIiIHN0cm9rZS13aWR0aD0iMS4yIi8+CjxwYXRoIGQ9Ik05NDggMzU2IGgxNCB2MTIgaC0xNCBaIE05ODIgMzU2IGgxMiB2MTIgaC0xMiBaIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEwMjIgNDAyIFYyOTYgSDEwNjggVjQwMiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTEwMjggMzA2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMDYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMwNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzIxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMjEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMyMSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzM2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMzYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMzNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzUxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNTEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM1MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzY2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNjYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM2NiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzgxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzODEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM4MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwODYgNDAyIEwxMDk0IDM1NiBMMTEzOCAzNjQgTDExMzIgNDAyIE0xMDg4IDM1OCBMMTEyMCAzMzAgTDExNDQgMzY2IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8cGF0aCBkPSJNNzgwIDQxNCBMODAwIDQyNCBMODE2IDQxNCBMODM2IDQzMiBMODUyIDQyMCBMODgyIDQzNiBMOTAyIDQyNCBMOTMwIDQ0MCIgc3Ryb2tlLXdpZHRoPSIxLjQiLz4KPHBhdGggZD0iTTkyMCA0NzAgUTk2MCA0NTIgMTAwMCA0NzAiIHN0cm9rZS13aWR0aD0iMS4wIi8+CjxwYXRoIGQ9Ik04OTAgNDc0IFE5NjAgNDM4IDEwMzAgNDc0IiBzdHJva2Utd2lkdGg9IjEuMCIvPgo8cGF0aCBkPSJNODYwIDQ3OCBROTYwIDQyNSAxMDYwIDQ3OCIgc3Ryb2tlLXdpZHRoPSIxLjAiLz4KPHBhdGggZD0iTTg3MiAxNTAgUTg1OCAxMjAgODkwIDExMyBROTAwIDg0IDkzNiA5MyBROTU2IDY2IDk5MiA4NiBRMTAyOCA4MCAxMDM0IDExMiBRMTA2NiAxMTggMTA1NCAxNTAgWiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTg4NCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNODk4IDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05MTIgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTkyNiAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTQwIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05NTQgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk2OCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTgyIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05OTYgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMTAgMTYyIGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMjQgMTY4IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMzggMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk4MCAxNTYgTDk2MiAyMDAgTDk4NCAyMDAgTDk2NCAyNTAiIHN0cm9rZS13aWR0aD0iMS44Ii8+CjxwYXRoIGQ9Ik0xNDQ0LjAgMTI4LjAgTDE0NDQuNSAxMjguNCBMMTQ0NC45IDEyOC44IEwxNDQ1LjMgMTI5LjQgTDE0NDUuNSAxMzAuMCBMMTQ0NS43IDEzMC42IEwxNDQ1LjcgMTMxLjMgTDE0NDUuNiAxMzIuMSBMMTQ0NS40IDEzMi44IEwxNDQ1LjAgMTMzLjYgTDE0NDQuNSAxMzQuMyBMMTQ0My45IDEzNS4wIEwxNDQzLjEgMTM1LjcgTDE0NDIuMiAxMzYuMyBMMTQ0MS4yIDEzNi45IEwxNDQwLjAgMTM3LjMgTDE0MzguNyAxMzcuNyBMMTQzNy40IDEzNy45IEwxNDM1LjkgMTM4LjAgTDE0MzQuNCAxMzguMCBMMTQzMi45IDEzNy44IEwxNDMxLjQgMTM3LjUgTDE0MjkuOCAxMzcuMCBMMTQyOC4zIDEzNi40IEwxNDI2LjkgMTM1LjYgTDE0MjUuNSAxMzQuNyBMMTQyNC4yIDEzMy42IEwxNDIzLjEgMTMyLjQgTDE0MjIuMSAxMzEuMCBMMTQyMS4zIDEyOS42IEwxNDIwLjcgMTI4LjAgTDE0MjAuMyAxMjYuMyBMMTQyMC4xIDEyNC42IEwxNDIwLjIgMTIyLjkgTDE0MjAuNSAxMjEuMSBMMTQyMS4xIDExOS4zIEwxNDIxLjkgMTE3LjUgTDE0MjMuMCAxMTUuOCBMMTQyNC40IDExNC4xIEwxNDI2LjAgMTEyLjUgTDE0MjcuOCAxMTEuMSBMMTQyOS45IDEwOS44IEwxNDMyLjEgMTA4LjcgTDE0MzQuNiAxMDcuNyBMMTQzNy4yIDEwNy4wIEwxNDQwLjAgMTA2LjQgTDE0NDIuOSAxMDYuMiBMMTQ0NS44IDEwNi4xIEwxNDQ4LjggMTA2LjMgTDE0NTEuOCAxMDYuOCBMMTQ1NC44IDEwNy42IEwxNDU3LjYgMTA4LjYgTDE0NjAuNCAxMDkuOSBMMTQ2My4xIDExMS40IEwxNDY1LjUgMTEzLjIgTDE0NjcuOCAxMTUuMiBMMTQ2OS43IDExNy40IEwxNDcxLjUgMTE5LjggTDE0NzIuOCAxMjIuNCBMMTQ3My45IDEyNS4xIEwxNDc0LjYgMTI4LjAgTDE0NzQuOSAxMzAuOSBMMTQ3NC44IDEzMy45IEwxNDc0LjQgMTM2LjkgTDE0NzMuNSAxMzkuOSBMMTQ3Mi4yIDE0Mi45IEwxNDcwLjUgMTQ1LjcgTDE0NjguNCAxNDguNCBMMTQ2NS45IDE1MS4wIEwxNDYzLjAgMTUzLjQgTDE0NTkuOCAxNTUuNSBMMTQ1Ni40IDE1Ny40IEwxNDUyLjYgMTU5LjAgTDE0NDguNiAxNjAuMyBMMTQ0NC40IDE2MS4yIEwxNDQwLjAgMTYxLjggTDE0MzUuNSAxNjIuMCBMMTQzMS4wIDE2MS45IEwxNDI2LjUgMTYxLjMgTDE0MjIuMCAxNjAuNCBMMTQxNy42IDE1OS4wIEwxNDEzLjQgMTU3LjMgTDE0MDkuMyAxNTUuMiBMMTQwNS42IDE1Mi44IEwxNDAyLjEgMTUwLjAgTDEzOTkuMCAxNDYuOSBMMTM5Ni4zIDE0My42IEwxMzk0LjAgMTQwLjAgTDEzOTIuMiAxMzYuMSBMMTM5MC45IDEzMi4xIEwxMzkwLjEgMTI4LjAgTDEzODkuOSAxMjMuOCBMMTM5MC4yIDExOS41IEwxMzkxLjEgMTE1LjMgTDEzOTIuNiAxMTEuMSBMMTM5NC42IDEwNy4wIEwxMzk3LjIgMTAzLjEgTDE0MDAuMyA5OS40IEwxNDAzLjkgOTUuOSBMMTQwOC4wIDkyLjcgTDE0MTIuNSA4OS45IEwxNDE3LjQgODcuNCBMMTQyMi43IDg1LjQgTDE0MjguMiA4My44IEwxNDM0LjAgODIuNiBMMTQ0MC4wIDgyLjAgTDE0NDYuMSA4MS44IEwxNDUyLjIgODIuMiBMMTQ1OC4zIDgzLjAgTDE0NjQuMiA4NC40IEwxNDcwLjAgODYuNCBMMTQ3NS42IDg4LjggTDE0ODAuOSA5MS43IEwxNDg1LjggOTUuMCBMMTQ5MC4zIDk4LjggTDE0OTQuMyAxMDIuOSBMMTQ5Ny43IDEwNy40IEwxNTAwLjYgMTEyLjMgTDE1MDIuOCAxMTcuMyBMMTUwNC4zIDEyMi42IiBzdHJva2Utd2lkdGg9IjEuNCIvPgo8cGF0aCBkPSJNMTI5MCA2MCBxMzAgLTggNjAgMCIgc3Ryb2tlLXdpZHRoPSIxIi8+CjxwYXRoIGQ9Ik0xMjk2IDg4IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDIgMTE2IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDggMTQ0IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMTQgMTcyIHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTExNTAgNDMyIEMgMTIyMiA0MjAsIDEyNjIgMzMyLCAxMzQyIDMwMCBDIDE0MjIgMjcwLCAxNTAyIDI5OCwgMTQ5NCAzNTggQyAxNDg2IDM5OCwgMTQzMiAzOTIsIDE0NDAgMzYyIEMgMTQ0OCAzMzgsIDE0ODIgMzQyLCAxNDc2IDM2MiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMTcwIDQzMCBDIDEyNDAgNDEyLCAxMjgyIDM0NiwgMTM1MCAzMTgiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik0xMTUwIDQ0MCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTExNjAgNDU2IHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNMTE3MCA0NzIgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik0xMTgwIDQ4OCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPC9nPgo8ZyBpZD0iaGF0Y2giIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIwLjgiPgo8cGF0aCBkPSJNMzAwIDI3MCBsMTggMjIiLz4KPHBhdGggZD0iTTMxNSAyODMgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zMzAgMjk2IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzQ1IDMwOSBsMTggMjIiLz4KPHBhdGggZD0iTTM2MCAzMjIgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zNzUgMzM1IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzkwIDM0OCBsMTggMjIiLz4KPHBhdGggZD0iTTQwNSAzNjEgbDE4IDIyIi8+CjxwYXRoIGQ9Ik00MjAgMzc0IGwxOCAyMiIvPgo8cGF0aCBkPSJNMTIwIDMzMCBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xMzIgMzIyIGwtMTAgMTYiLz4KPHBhdGggZD0iTTE0NCAzMTQgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTU2IDMwNiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xNjggMjk4IGwtMTAgMTYiLz4KPHBhdGggZD0iTTE4MCAyOTAgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTkyIDI4MiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik02MjAgMjYyIGwxNCAtNCIvPgo8cGF0aCBkPSJNNjI5IDI3MSBsMTQgLTQiLz4KPHBhdGggZD0iTTYzOCAyODAgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NDcgMjg5IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjU2IDI5OCBsMTQgLTQiLz4KPHBhdGggZD0iTTY2NSAzMDcgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NzQgMzE2IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjgzIDMyNSBsMTQgLTQiLz4KPHBhdGggZD0iTTY5MiAzMzQgbDE0IC00Ii8+CjxwYXRoIGQ9Ik03MDEgMzQzIGwxNCAtNCIvPgo8cGF0aCBkPSJNNDg2IDMxOCBsMTIgLTMiLz4KPHBhdGggZD0iTTQ5MyAzMjggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MDAgMzM4IGwxMiAtMyIvPgo8cGF0aCBkPSJNNTA3IDM0OCBsMTIgLTMiLz4KPHBhdGggZD0iTTUxNCAzNTggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MjEgMzY4IGwxMiAtMyIvPgo8cGF0aCBkPSJNMTAyMiAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDI4IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwMzQgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA0MCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDQ2IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwNTIgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA1OCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDY0IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEzNjAgMzAwIGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzY5IDMwOCBsOCAxOCIvPgo8cGF0aCBkPSJNMTM3OCAzMTYgbDggMTgiLz4KPHBhdGggZD0iTTEzODcgMzI0IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzk2IDMwMCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQwNSAzMDggbDggMTgiLz4KPHBhdGggZD0iTTE0MTQgMzE2IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDIzIDMyNCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQzMiAzMDAgbDggMTgiLz4KPHBhdGggZD0iTTE0NDEgMzA4IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDUwIDMxNiBsOCAxOCIvPgo8cGF0aCBkPSJNMTQ1OSAzMjQgbDggMTgiLz4KPC9nPgo8L2RlZnM+CjxnIHN0cm9rZT0iIzRhNGY1NyI+Cjx1c2UgeGxpbms6aHJlZj0iI3NjZW5lIiBocmVmPSIjc2NlbmUiIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuODUiLz4KPHVzZSB4bGluazpocmVmPSIjc2NlbmUiIGhyZWY9IiNzY2VuZSIgZmlsdGVyPSJ1cmwoI3IyKSIgb3BhY2l0eT0iMC4zNSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMS41IDEpIi8+Cjx1c2UgeGxpbms6aHJlZj0iI2hhdGNoIiBocmVmPSIjaGF0Y2giIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuNTUiLz4KPC9nPgo8L3N2Zz4=') center bottom / cover no-repeat; opacity: var(--sketch-opacity, 0.14); pointer-events: none; }
+
+/* ---------------- landing ---------------- */
+.landing { min-height: 100%; display: flex; flex-direction: column; padding-inline: 16px; --sketch-opacity: 0.9; }
+.landing::before { background-size: max(1400px, 100%) auto; background-position: center bottom; }
+.landing header { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.landing header .wordmark { font-size: 40px; }
+.landing nav { display: flex; gap: 18px; font-size: 13px; }
+.landing nav a { color: var(--graphite); text-decoration: none; }
+.landing nav a:hover { color: var(--ink); text-decoration: underline; }
+.hero { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 12px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.hero h1 { font-family: var(--display); font-size: clamp(40px, 6vw, 68px); line-height: 0.95; margin: 0 0 14px; font-weight: 700; text-wrap: balance; }
+.hero h1 .hl { background: linear-gradient(transparent 62%, #fde68a 62%, #fde68a 92%, transparent 92%); }
+.hero p.lead { font-size: 17px; color: var(--graphite); max-width: 56ch; margin: 0 0 18px; }
+.loop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--graphite); }
+.loop span { border: 1px solid var(--rule); background: var(--paper); padding: 2px 8px; border-radius: 999px; }
+.loop i { font-style: normal; color: var(--faint); }
+.livebox { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+.livebox h2 { margin: 0 0 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.livebox ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.livebox li a { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 4px; border-radius: 6px; text-decoration: none; color: var(--ink); }
+.livebox li a:hover { background: var(--paper-2); }
+.livebox .rk { font-family: var(--mono); color: var(--faint); font-size: 12px; }
+.livebox .ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livebox small { color: var(--faint); font-size: 11px; }
+.modes { max-width: 1120px; width: 100%; margin: 18px auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.mode { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: rgba(255,255,255,.92); border: 1.5px solid var(--ink); border-radius: 12px 14px 11px 13px; padding: 16px; transition: transform .15s ease, box-shadow .15s ease; }
+.mode:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); }
+.mode .n { font-family: var(--mono); font-size: 11px; color: var(--graphite); }
+.mode h3 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; }
+.mode p { margin: 0; color: var(--graphite); font-size: 13px; }
+.mode .go { margin-top: auto; font-size: 13px; color: var(--accent); font-weight: 600; }
+.mode svg { width: 44px; height: 44px; }
+.landing footer { max-width: 1120px; width: 100%; margin: auto auto 0; padding-block: 220px 24px; position: relative; font-size: 12px; color: var(--graphite); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+@media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); } .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .landing footer { padding-block: 140px 18px; } }
+@media (max-width: 480px) { .modes { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------------- app shell ---------------- */
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.topbar { display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-bottom: 1px solid var(--rule); background: var(--paper); position: relative; z-index: 1001; flex-wrap: wrap; }
+.topbar .wordmark { font-size: 28px; text-decoration: none; color: var(--ink); }
+.tabs { display: flex; gap: 2px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 2px; }
+.tabs a { padding: 5px 12px; border-radius: 6px; text-decoration: none; color: var(--graphite); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tabs a[aria-current='page'] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { flex: 1 1 260px; min-width: 0; position: relative; max-width: 520px; }
+.search input { width: 100%; padding: 7px 12px 7px 32px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235b6068' stroke-width='1.8'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 4 4'/%3E%3C/svg%3E") 10px 50% no-repeat; }
+.search ul { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; list-style: none; margin: 0; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 320px; overflow: auto; }
+.search li button { width: 100%; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.search li button:hover, .search li button:focus { background: var(--paper-2); }
+.iconbtn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--graphite); }
+.iconbtn:hover { color: var(--ink); border-color: var(--graphite); }
+.main { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: 0; }
+.panel { overflow: auto; border-right: 1px solid var(--rule); background: var(--paper); --sketch-opacity: 0.11; }
+.panel::before { background-size: 1200px auto; background-position: 18% bottom; position: fixed; left: 0; width: 400px; top: auto; bottom: 0; height: 60%; }
+.panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
+.mapwrap { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; background: #1b1e22; }
+#map3d { position: absolute; inset: 0; z-index: 450; background: #1b1e22; }
+/* keep the 3D canvas laid out while hidden: collapsing it to 0×0 makes MapLibre re-render mid-frame */
+#map3d[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#map.is3d .leaflet-pane, #map.is3d .leaflet-control-zoom, #map.is3d .leaflet-control-layers, #map.is3d .leaflet-control-scale, #map.is3d .leaflet-control-attribution { visibility: hidden; }
+.maplibregl-popup.aa-tip3d { pointer-events: none; }
+/* 2D | 3D switch, top right of the map; the map's own top-right controls sit below it */
+.viewtoggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: inline-flex; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.viewtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 5px 14px; font: 600 12.5px/1 var(--sans); color: var(--graphite); cursor: pointer; min-width: 44px; min-height: 30px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.viewtoggle button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.viewtoggle.busy button[data-view="3d"] { opacity: .6; cursor: progress; }
+.mapwrap .leaflet-top.leaflet-right, .mapwrap .maplibregl-ctrl-top-right { top: 48px; }
+.maplibregl-popup.aa-tip3d .maplibregl-popup-content { font: 12.5px/1.45 var(--sans); padding: 6px 9px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.maplibregl-popup.aa-pop3d .maplibregl-popup-content { font: 13px/1.45 var(--sans); padding: 10px 12px; border-radius: 8px; }
+.maplibregl-popup.aa-pop3d h4 { margin: 0 0 4px; }
+@media (max-width: 860px) {
+  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
+  .mapwrap { order: -1; }
+  .panel { border-right: 0; border-top: 1px solid var(--rule); }
+  .panel::before { width: 100%; }
+}
+
+/* ---------------- panel components ---------------- */
+.ph { display: grid; gap: 4px; }
+.ph h2 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; text-wrap: balance; }
+.ph p { margin: 0; color: var(--graphite); font-size: 13px; }
+.sec { display: grid; gap: 8px; }
+.sec > h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--graphite); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sec > h3 a { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; }
+.card { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
+.evt { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: start; width: 100%; text-align: left; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.evt:hover { border-color: var(--graphite); }
+.evt .rk { font-family: var(--mono); font-size: 13px; color: var(--faint); padding-top: 2px; }
+.evt .t { font-weight: 600; line-height: 1.3; }
+.evt .s { color: var(--graphite); font-size: 12px; }
+.evt .score { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--graphite); }
+.evt .score b { display: block; font-size: 16px; color: var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.EQ { color: #92400e; } .chip.TC { color: #0369a1; } .chip.FL { color: #1d4ed8; } .chip.VO { color: #b91c1c; } .chip.DR { color: #a16207; } .chip.WF { color: #c2410c; }
+.alert { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: 0; border: 1px solid rgba(0,0,0,.25); }
+.alert.Green { background: #22c55e; } .alert.Orange { background: #f97316; } .alert.Red { background: #ef4444; } .alert.na { background: #cbd5e1; }
+.prov { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); border: 1px dashed var(--faint); border-radius: 4px; padding: 0 5px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tile { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; }
+.tile .v { font-family: var(--mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: 11px; color: var(--graphite); }
+.tile .band { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+table.t { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.t th { text-align: left; font-weight: 600; color: var(--graphite); font-size: 11px; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.t td { padding: 5px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; }
+.bar { height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; min-width: 50px; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+.bar.need > i { background: var(--affected); }
+.bar.cov > i { background: #0f766e; }
+.covrow { display: grid; grid-template-columns: 74px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 12px; }
+.covrow .bar { height: 8px; }
+.bar.ready > i { background: #0f766e; }
+.good { color: #0f766e; font-weight: 600; font-size: 12px; }
+.readiness .ready-head { display: flex; gap: 14px; align-items: center; }
+.ready-score { min-width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; align-content: center; border: 6px solid #0f766e; background: var(--paper); }
+.ready-score b { font: 700 26px/1 var(--mono, monospace); }
+.ready-score span { font-size: 11px; color: var(--graphite); }
+.readiness.partly .ready-score { border-color: #d97706; } .readiness.partly .bar.ready > i { background: #d97706; }
+.readiness.not .ready-score { border-color: #b91c1c; } .readiness.not .bar.ready > i { background: #b91c1c; }
+.ready-grade { font-weight: 700; font-size: 17px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.btn:hover { border-color: var(--graphite); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.on { background: #eef4ff; border-color: var(--accent); color: var(--accent); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--graphite); }
+.field input, .field select { padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 13px; width: 100%; }
+.field input[type=range] { padding: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.note { font-size: 12px; color: var(--graphite); border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; }
+.note.warn { border-color: var(--warn); color: #78350f; }
+.log { display: grid; gap: 6px; font-size: 12px; }
+.log .e { border-left: 2px solid var(--accent); padding-left: 8px; }
+.log .e b { font-weight: 600; }
+.log .e .d { color: var(--graphite); font-family: var(--mono); font-size: 11px; }
+.back { border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; font-size: 13px; justify-self: start; }
+.muted { color: var(--graphite); }
+.small { font-size: 12px; }
+.empty { color: var(--graphite); font-size: 13px; padding: 10px 0; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.8s linear infinite; vertical-align: -2px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ---------------- map overlays ---------------- */
+.toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.18); max-width: calc(100% - 32px); }
+.toast.err { border-color: #fecaca; color: #991b1b; }
+.hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--ink); color: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 32px); }
+.hint button { background: none; border: 1px solid rgba(255,255,255,.5); color: #fff; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.legend { position: absolute; right: 10px; bottom: 24px; z-index: 900; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; font-size: 12px; width: 270px; max-height: calc(100% - 120px); overflow: auto; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.legend h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); display: flex; justify-content: space-between; }
+.legend h4 button { border: 0; background: none; cursor: pointer; color: var(--graphite); font-size: 11px; }
+.legend ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.legend li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: center; }
+.legend .sw { width: 18px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.legend .dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.legend .ln { width: 18px; height: 0; border-top: 3px solid; }
+.legend .ln.dash { border-top-style: dashed; }
+.legend a { text-decoration: none; border-bottom: 1px dotted var(--accent); }
+.legend.collapsed ul, .legend.collapsed p { display: none; }
+@media (max-width: 860px) { .legend { width: 220px; bottom: 10px; right: 8px; max-height: 40%; } }
+.leaflet-tooltip.aa-tip { font: 12px/1.45 var(--sans); max-width: 320px; white-space: normal; border-radius: 8px; padding: 8px 10px; }
+.leaflet-tooltip.aa-tip .m { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); color: var(--accent); font-size: 11px; }
+.leaflet-popup-content { font: 12.5px/1.45 var(--sans); }
+.leaflet-popup-content h4 { margin: 0 0 4px; font-size: 13px; }
+.leaflet-popup-content .btns { margin-top: 8px; }
+.pulse { width: 22px; height: 22px; border-radius: 50%; background: var(--affected); border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(22,163,74,.7); animation: pl 1.8s infinite; }
+@keyframes pl { 70% { box-shadow: 0 0 0 18px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+.closure-x { color: #111; font: 700 20px/1 var(--sans); text-shadow: 0 0 3px #fff, 0 0 6px #fff; }
+.site-diamond { width: 16px; height: 16px; background: var(--storage); border: 2px solid #fff; transform: rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.airdrop-label { color: #fff; background: var(--supply); font: 600 10px/1 var(--sans); padding: 3px 5px; border-radius: 4px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } .mode { transition: none; } }
+
+/* ---------------- explainer drawer ---------------- */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: var(--paper); z-index: 2000; box-shadow: -12px 0 32px rgba(0,0,0,.18); display: grid; grid-template-rows: auto minmax(0, 1fr); transform: translateX(105%); transition: transform .25s ease; --sketch-opacity: .08; }
+.drawer.open { transform: none; }
+.drawer header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
+.drawer header h2 { font-family: var(--display); font-size: 30px; margin: 0; }
+.drawer .body { overflow: auto; padding: 8px 18px 60px; }
+.drawer nav { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
+.drawer section { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.drawer section h3 { font-family: var(--display); font-size: 26px; margin: 0 0 4px; }
+.drawer section p { margin: 6px 0; max-width: 70ch; }
+.drawer .tex { overflow-x: auto; padding: 6px 0; }
+.drawer .applied { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.drawer .applied h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); }
+.drawer .src { font-size: 11px; color: var(--graphite); }
+.drawer section:target h3, .drawer section.flash h3 { background: linear-gradient(transparent 60%, #fde68a 60%); }
+.modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
+.modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
+.modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+.aa-tip .addr, .addr { display: inline-block; margin-top: 2px; color: #374151; font-size: 12px; }
+.where { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); }
+.maplabel { display: inline-block; white-space: nowrap; font: 600 11.5px/1.2 var(--sans); color: #111; background: rgba(255,255,255,.88); border: 1px solid rgba(0,0,0,.18); border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.maplabel.zone { border-left: 3px solid var(--affected); }
+.maplabel.store { border-left: 3px solid var(--supply); }
+.maplabel.site { border-left: 3px solid var(--storage); }
+
+/* ---------- workspace (Phase 1) ---------- */
+.wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }
+.wsbadge.viewer { background: #fef3c7; color: #92400e; }
+.wsbadge.admin { background: #dbeafe; color: #1e3a8a; }
+.modal .box.wide { width: min(720px, 100%); }
+.modal .box section { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.plist li { border-bottom: 1px dashed var(--rule); padding-bottom: 6px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-align: left; }
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn.danger { color: var(--supply); font-size: 12px; }
+.alerthit { font-size: 12.5px; }
+.alerthit.Red { color: #b91c1c; font-weight: 600; }
+.alerthit.Orange { color: var(--warn); font-weight: 600; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+details.card > summary { cursor: pointer; }
+details.card[open] { display: grid; gap: 8px; }
+
+/* ---------------- key actions ---------------- */
+.actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.act { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; width: 100%; text-align: left; background: rgba(255,255,255,.96); border: 1px solid var(--rule); border-left: 3px solid var(--supply); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+.act:hover { border-color: var(--graphite); border-left-color: var(--supply); }
+.ai { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font: 700 12px/1 var(--sans); flex: none; }
+.actions-box { background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.2); padding: 8px 10px; width: 300px; max-width: calc(100vw - 80px); font: 12.5px/1.4 var(--sans); color: var(--ink); }
+.actions-box .ab-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.actions-box .ab-tog { border: 0; background: none; color: var(--graphite); cursor: pointer; font-size: 11px; }
+.actions-box ol { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+.actions-box li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; align-items: start; padding: 4px; border-radius: 6px; cursor: pointer; }
+.actions-box li:hover { background: var(--paper-2); }
+.actions-box .ab-rep { width: 100%; }
+.fleet-tog { display: flex; gap: 6px; align-items: center; margin: 2px 0 6px; font-weight: 500; }
+@media (max-width: 860px) { .actions-box { width: 230px; } }
+
+/* ---------------- report modal ---------------- */
+.report-modal { place-items: start center; overflow: auto; }
+.report-box { width: min(860px, 100%); max-height: none; padding: 0; margin-block: 16px; }
+.report-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--paper-2); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; }
+.landing footer span { background: rgba(255,255,255,.92); border-radius: 6px; padding: 2px 6px; position: relative; z-index: 1; }
+
+/* ---------- Phase 2: field reports in the plan view ---------- */
+.field-pin { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); color: #fff; font: 700 10px/14px var(--sans); text-align: center; }
+.flist { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.frow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: 12.5px; padding: 6px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.frow.done { opacity: .7; }
+.fthumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
+.fthumb.none { display: grid; place-items: center; background: var(--paper-2); color: var(--graphite); font-size: 18px; }
+.frow .fact { display: grid; gap: 4px; justify-items: end; }
+.dmg.d0 { color: #15803d; } .dmg.d1 { color: #4d7c0f; } .dmg.d2 { color: #b45309; } .dmg.d3 { color: #c2410c; } .dmg.d4 { color: #b91c1c; }
+#fieldSec textarea { width: 100%; box-sizing: border-box; font: 12px/1.4 var(--mono, monospace); border: 1px solid var(--rule); border-radius: 6px; padding: 6px; margin-top: 6px; }
+.wsbadge.field { background: #fef3c7; color: #92400e; }
+
+/* ---------- Phase 3: tasks and comments ---------- */
+.tlist, .clist { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.trow { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: 12.5px; padding: 6px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.trow select { width: 100%; font-size: 12px; padding: 3px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+.trow.done { opacity: .65; } .trow.done b { text-decoration: line-through; }
+.trow.late { border-color: #fca5a5; }
+.warn { color: #b45309; }
+.clist li { font-size: 12.5px; padding: 6px 8px; background: var(--paper-2); border-radius: 8px; }
+.live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 5px; box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+
+</style>
+<style>
+  body.valpage { background: var(--paper-2); }
+  .vp { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
+  .vp-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+  .vp-top .wordmark { font-size: 28px; text-decoration: none; color: var(--ink); }
+  .vp-top nav { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+  .vp h1 { font-family: var(--display); font-size: 48px; margin: 18px 0 4px; line-height: 1; }
+  .vp h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); margin: 28px 0 8px; }
+  .vp .lead { color: var(--graphite); max-width: 760px; margin: 0 0 12px; }
+  .vcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .stat { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; }
+  .stat .v { font: 600 30px/1.1 var(--mono); }
+  .stat .l { font-size: 12.5px; color: var(--graphite); }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+  .controls label { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+  .chartwrap { overflow-x: auto; }
+  #btChart { display: block; min-width: 640px; }
+  #btChart .row:hover rect.hit { fill: rgba(31,95,191,.06); }
+  .legendrow { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--graphite); margin: 6px 0; }
+  .legendrow i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .bt-tip { position: fixed; z-index: 20; pointer-events: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.16); max-width: 300px; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .mcard h3 { margin: 0 0 4px; font-size: 18px; }
+  .mcard .st { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; margin-bottom: 6px; }
+  .st.validated { background: #dcfce7; color: #166534; } .st.tested { background: #dbeafe; color: #1e3a8a; } .st.calibrated { background: #fef3c7; color: #92400e; } .st.indicative { background: #fee2e2; color: #991b1b; }
+  .mcard dl { margin: 0; font-size: 13px; } .mcard dt { font-weight: 600; margin-top: 8px; } .mcard dd { margin: 2px 0 0; color: var(--graphite); }
+  .mcard ul { margin: 2px 0 0; padding-left: 18px; }
+  .tag { font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--rule); }
+  .tag.in { background: #dcfce7; color: #166534; } .tag.out { background: #fee2e2; color: #991b1b; }
+  @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cards { grid-template-columns: minmax(0, 1fr); } .vp h1 { font-size: 38px; } }
+</style>
+</head>
+<body class="valpage">
+<header class="vp-top"><a class="wordmark" href="index.html">Aid<b>Atlas</b></a><nav><a href="app.html">Map</a><a href="guide.html#validation">Guide</a><a href="#cards">Model cards</a></nav></header>
+<main class="vp">
+  <h1>How accurate is AidAtlas?</h1>
+  <p class="lead">Every earthquake since 2001 that killed 250 or more people (NOAA NCEI catalogue) is replayed through the same forecast the map uses, with no knowledge of what happened. The chart shows the forecast range for deaths beside the toll that was reported. A good model has about 8 in 10 reported tolls inside its 10–90 % range.</p>
+
+  <section aria-labelledby="h-sum"><h2 id="h-sum">Summary</h2>
+    <div class="stats" id="btStats"></div>
+    <div class="controls">
+      <button class="btn primary" id="btRun" type="button">Run the back-test</button>
+      <label><input type="checkbox" id="btWp"> Use WorldPop population (slower, closer to the map)</label>
+      <button class="btn" id="btCsv" type="button" disabled>Download CSV</button>
+      <button class="btn" id="btJson" type="button" disabled>Download JSON</button>
+      <label class="btn" style="cursor:pointer">Open results file<input id="btLoad" type="file" accept=".json,application/json" hidden></label>
+    </div>
+    <p class="small muted" id="btStatus">Not run on this device yet. A run reads towns for each event from OpenStreetMap (about 2–4 minutes); results are kept on this device.</p>
+  </section>
+
+  <section aria-labelledby="h-chart"><h2 id="h-chart">Forecast vs reported deaths</h2>
+    <div class="vcard">
+      <div class="legendrow"><span><i style="width:28px;height:6px;border-radius:3px;background:#1f5fbf"></i>Forecast range (P10–P90), dot = most likely (P50)</span><span><i style="width:10px;height:10px;background:#c2410c;transform:rotate(45deg)"></i>Reported deaths (NOAA NCEI)</span><span><i style="width:10px;height:10px;border:2px solid #8a9099;transform:rotate(45deg)"></i>Not scored (tsunami or disputed toll)</span></div>
+      <div class="chartwrap"><svg id="btChart" role="img" aria-label="Forecast death range and reported deaths for each past earthquake"></svg></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-table"><h2 id="h-table">Event by event</h2>
+    <div class="vcard tablewrap"><table class="t" id="btTable"><thead><tr><th>Date</th><th>Earthquake</th><th class="num">M</th><th class="num">Reported</th><th class="num">P10</th><th class="num">P50</th><th class="num">P90</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+    <p class="small muted" id="btSrc"></p>
+  </section>
+
+  <section aria-labelledby="h-cards" id="cards"><h2 id="h-cards">Model cards</h2>
+    <p class="lead">What each model does, what it has been checked against, and where it should not be trusted.</p>
+    <div class="cards" id="mCards"></div>
+  </section>
+  <p class="small muted">AidAtlas · model version <span id="mVer"></span> · built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></p>
+</main>
+<div class="bt-tip" id="btTip" hidden></div>
+
+<script>/* js/core.js */
+/* AidAtlas core: namespace, maths utilities, configuration. Skill: orchestrator */
+(function (root) {
+  const AA = (root.AA = root.AA || {});
+
+  // ---------- maths ----------
+  const M = {};
+  M.EPS = 1e-6;
+  M.clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  // Abramowitz–Stegun 7.1.26 erf, |error| < 1.5e-7
+  M.erf = (x) => {
+    const s = Math.sign(x); x = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  };
+  M.Phi = (z) => 0.5 * (1 + M.erf(z / Math.SQRT2));
+  M.toRad = (d) => d * Math.PI / 180;
+  M.haversine = (a, b) => { // km
+    const R = 6371.0088, dLat = M.toRad(b.lat - a.lat), dLon = M.toRad(b.lon - a.lon);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(M.toRad(a.lat)) * Math.cos(M.toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  };
+  M.destination = (p, bearingDeg, km) => {
+    const R = 6371.0088, d = km / R, br = M.toRad(bearingDeg);
+    const la1 = M.toRad(p.lat), lo1 = M.toRad(p.lon);
+    const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(br));
+    const lo2 = lo1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+    return { lat: la2 * 180 / Math.PI, lon: ((lo2 * 180 / Math.PI + 540) % 360) - 180 };
+  };
+  // point-to-segment distance (km) using local equirectangular projection
+  M.pointSegDist = (p, a, b) => {
+    const k = Math.cos(M.toRad(p.lat)) * 111.32, kl = 110.57;
+    const ax = (a.lon - p.lon) * k, ay = (a.lat - p.lat) * kl, bx = (b.lon - p.lon) * k, by = (b.lat - p.lat) * kl;
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let t = L ? -(ax * dx + ay * dy) / L : 0; t = M.clamp(t, 0, 1);
+    const x = ax + t * dx, y = ay + t * dy; return Math.sqrt(x * x + y * y);
+  };
+  M.mulberry32 = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  M.gauss = (rng) => { // Box–Muller
+    let u = 0, v = 0; while (u === 0) u = rng(); while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  M.quantile = (arr, q) => {
+    const a = [...arr].sort((x, y) => x - y); if (!a.length) return 0;
+    const pos = (a.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return a[lo] + (a[hi] - a[lo]) * (pos - lo);
+  };
+  M.minmax = (vals) => {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    return vals.map((v) => (v - lo) / (hi - lo + M.EPS));
+  };
+  M.sum = (a) => a.reduce((s, x) => s + x, 0);
+  M.mean = (a) => (a.length ? M.sum(a) / a.length : 0);
+  M.std = (a) => { const m = M.mean(a); return Math.sqrt(M.mean(a.map((x) => (x - m) ** 2))); };
+  M.round = (x, d = 0) => { const f = 10 ** d; return Math.round(x * f) / f; };
+  // ---------- polygons (GeoJSON lon/lat rings) ----------
+  /** Ray-casting point-in-ring; holes are ignored (flood outlines rarely have meaningful holes). */
+  M.inRing = (p, ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > p.lat) !== (yj > p.lat) && p.lon < ((xj - xi) * (p.lat - yi)) / (yj - yi + 1e-12) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  /** polys = array of polygons, each an array of rings (GeoJSON MultiPolygon coordinates). */
+  M.inPolys = (p, polys) => (polys || []).some((poly) => poly[0] && M.inRing(p, poly[0]));
+  M.polysBBox = (polys) => {
+    let w = 180, s = 90, e = -180, n = -90;
+    (polys || []).forEach((poly) => (poly[0] || []).forEach(([x, y]) => { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); }));
+    return { w, s, e, n, c: { lat: (s + n) / 2, lon: (w + e) / 2 } };
+  };
+  /** Distance (km) from p to the nearest polygon edge; 0 when inside. */
+  M.distToPolys = (p, polys) => {
+    if (M.inPolys(p, polys)) return 0;
+    let d = Infinity;
+    (polys || []).forEach((poly) => { const r = poly[0] || []; for (let i = 1; i < r.length; i++) d = Math.min(d, M.pointSegDist(p, { lon: r[i - 1][0], lat: r[i - 1][1] }, { lon: r[i][0], lat: r[i][1] })); });
+    return d;
+  };
+  /** Approximate circle as a closed GeoJSON polygon ring (n vertices). */
+  M.circleRing = (c, km, n = 16) => { const r = []; for (let k = 0; k <= n; k++) { const p = M.destination(c, (k % n) * (360 / n), km); r.push([+p.lon.toFixed(5), +p.lat.toFixed(5)]); } return r; };
+  AA.math = M;
+
+  /** Version of the forecast and planning models; back-test results and model cards refer to it. */
+  AA.MODEL_VERSION = '3.0.0';
+
+  // ---------- configuration (all editable in Settings) ----------
+  AA.config = {
+    epochHours: 6,
+    horizonEpochs: 4,
+    scenarioWeights: { low: 0.3, base: 0.4, high: 0.3 }, // Swanson–Megill
+    mcDraws: 400,
+    seed: 20261001,
+    needWeights: { sev: 0.35, pop: 0.2, vul: 0.2, acc: 0.15, recv: 0.1 },
+    objective: { alpha: 1, delta: 2, beta: 1, mu: 3, phi: 0.5 },
+    criticality: { water: 3, medical: 3, food: 2, staff: 2, shelter: 1.5 },
+    commodities: [
+      { key: 'water', label: 'Water', unit: 'kL', kg: 1000, critical: true, cls: 'truck' },
+      { key: 'food', label: 'Food', unit: 't', kg: 1000, critical: false, cls: 'truck' },
+      { key: 'shelter', label: 'Shelter', unit: 'tents', kg: 35, critical: false, cls: 'truck' },
+      { key: 'medical', label: 'Medical', unit: 'modules', kg: 50, critical: true, cls: 'truck' },
+      { key: 'staff', label: 'Personnel', unit: 'staff', kg: 1, critical: false, cls: 'bus' },
+    ],
+    vehicles: {
+      truck: { label: 'Truck', cap: 8000, cD: 1.2, cT: 40, cF: 150, speedFactor: 1.0, color: '#f59e0b' },
+      bus: { label: 'Responder bus', cap: 30, cD: 0.9, cT: 35, cF: 100, speedFactor: 1.0, color: '#38bdf8' },
+    },
+    loadCostPerKg: 0.02,
+    serviceHours: 0.5,
+    bprCapacityPerEpoch: 12,
+    roadAlpha: 0.7,
+    thetaMax: 0.95,
+    roadRecovery: 0.08,
+    closureBufferKm: 0.25,
+    circuity: 1.35,
+    fallbackSpeedKmh: 40,
+    coverageMinutes: 90,
+    warehouses: 3,
+    tomtomKey: '',
+    showFleet: false,
+    lowBandwidth: false, // Settings: no WorldPop, no street addresses, no 3D, street map instead of satellite
+  };
+
+  AA.fmt = {
+    n: (x, d = 0) => (x == null || isNaN(x) ? '–' : Number(x).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })),
+    k: (x) => (x >= 1e6 ? (x / 1e6).toFixed(1) + 'M' : x >= 1e3 ? (x / 1e3).toFixed(1) + 'k' : Math.round(x) + ''),
+    usd: (x) => '$' + AA.fmt.n(x, 0),
+    min: (h) => Math.round(h * 60) + ' min',
+  };
+  AA.HAZARDS = {
+    EQ: { label: 'Earthquake', lethal: 1.0, icon: '〰' },
+    TC: { label: 'Tropical cyclone', lethal: 0.9, icon: '🌀' },
+    FL: { label: 'Flood', lethal: 0.8, icon: '≈' },
+    VO: { label: 'Volcano', lethal: 0.7, icon: '▲' },
+    DR: { label: 'Drought', lethal: 0.6, icon: '☀' },
+    WF: { label: 'Wildfire', lethal: 0.5, icon: '🔥' },
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/data.js */
+/* Data ingestion. Skill: skills/data-ingestion/SKILL.md
+   All endpoints are free, keyless and CORS-enabled (verified 2026-10-01). */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const D = {};
+  const cache = new Map();
+
+  D.fetchJSON = async (url, { timeout = 15000, cacheTtl = 5 * 60e3, ...init } = {}) => {
+    const key = url + (init.body || '');
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.t < cacheTtl) return hit.v;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeout);
+    try {
+      const r = await fetch(url, { ...init, signal: ctl.signal });
+      if (!r.ok) throw new Error(`${r.status} ${r.statusText} from ${new URL(url).host}`);
+      if (r.headers && r.headers.get && r.headers.get('X-AidAtlas-Offline-Copy')) D.offlineCopy = true; // served by the service worker while offline
+      const v = await r.json();
+      cache.set(key, { t: Date.now(), v });
+      return v;
+    } finally { clearTimeout(timer); }
+  };
+
+  // ---------------- live hazards ----------------
+  const GDACS = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist';
+  D.gdacsLive = async () => {
+    const j = await D.fetchJSON(`${GDACS}/EVENTS4APP`, { cacheTtl: 60e3 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat] = f.geometry.coordinates;
+      return {
+        src: 'GDACS', prov: 'live', id: `${p.eventtype}-${p.eventid}`, hazard: p.eventtype, lat, lon,
+        name: p.name, country: p.country || (p.affectedcountries || []).map((c) => c.countryname).join(', ') || 'Offshore',
+        iso2: (p.affectedcountries || [])[0]?.iso2 || '', alertscore: p.alertscore, alertlevel: p.alertlevel, episodealertscore: p.episodealertscore, episodealertlevel: p.episodealertlevel,
+        severity: p.severitydata?.severity, severityUnit: p.severitydata?.severityunit, severityText: p.severitydata?.severitytext,
+        from: p.fromdate, to: p.todate, current: p.iscurrent === 'true' || p.iscurrent === true,
+        url: p.url?.report, eventid: p.eventid, episodeid: p.episodeid,
+      };
+    });
+  };
+  D.usgsLive = async () => {
+    const j = await D.fetchJSON('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson', { cacheTtl: 60e3 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat, depth] = f.geometry.coordinates;
+      return { src: 'USGS', prov: 'live', id: f.id, hazard: 'EQ', lat, lon, depth, magnitude: p.mag, mmi: p.mmi, pager: p.alert, tsunami: p.tsunami, name: p.title, country: (p.place || '').split(', ').pop(), from: new Date(p.time).toISOString(), to: new Date(p.time).toISOString(), current: true, url: p.url };
+    });
+  };
+  const EONET_MAP = { severeStorms: 'TC', wildfires: 'WF', volcanoes: 'VO', floods: 'FL', earthquakes: 'EQ', drought: 'DR' };
+  D.eonetLive = async () => {
+    const j = await D.fetchJSON('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=20', { cacheTtl: 60e3 });
+    return (j.events || []).map((e) => {
+      const hz = EONET_MAP[e.categories?.[0]?.id]; if (!hz) return null;
+      const g = e.geometry[e.geometry.length - 1];
+      const c = g.type === 'Point' ? g.coordinates : g.coordinates[0][0];
+      if (hz === 'WF' && /prescribed|\bRX\b/i.test(e.title)) return null; // planned burns are not disasters
+      let sev = g.magnitudeValue, unit = g.magnitudeUnit;
+      if (hz === 'TC' && unit === 'kts') { sev = sev * 1.852; unit = 'km/h'; }
+      if (hz === 'WF' && /acre/i.test(unit || '')) { sev = sev * 0.4047; unit = 'ha'; }
+      return { src: 'NASA EONET', prov: 'live', id: e.id, hazard: hz, lat: c[1], lon: c[0], name: e.title, country: '', severity: sev, severityUnit: unit, from: e.geometry[0].date, to: g.date, current: true, url: e.sources?.[0]?.url, alertscore: null };
+    }).filter(Boolean);
+  };
+
+  /** Unified Severity Index (skill: modes). */
+  D.usi = (e) => {
+    const PAGER = { green: 0, yellow: 0.33, orange: 0.67, red: 1 };
+    // agency alert: GDACS blends the event alert with the current episode (a decayed storm keeps its old Red),
+    // USGS PAGER (absent = below alert threshold), EONET has no alert → small prior
+    let A;
+    if (e.alertscore != null) {
+      const ev = M.clamp((e.alertscore - 1) / 2, 0, 1), ep = e.episodealertscore != null ? M.clamp((e.episodealertscore - 1) / 2, 0, 1) : ev;
+      A = 0.3 * ev + 0.7 * ep;
+    } else if (e.src === 'USGS') A = e.pager ? PAGER[e.pager] : 0;
+    else A = 0.1;
+    let m = 0;
+    const s = e.severity;
+    if (e.hazard === 'EQ') m = M.clamp(((e.magnitude ?? s) - 4) / 5, 0, 1);
+    else if (e.hazard === 'TC') m = M.clamp((s || 0) / 300, 0, 1);
+    else if (e.hazard === 'WF') m = M.clamp(Math.log10(Math.max(1, s || 1)) / 6, 0, 1);
+    else if (e.hazard === 'DR') m = M.clamp(Math.log10(Math.max(1, s || 1)) / 6.5, 0, 1);
+    else m = A;
+    const h = AA.HAZARDS[e.hazard]?.lethal ?? 0.5;
+    const usi = 0.5 * A + 0.35 * m + 0.15 * h;
+    return { usi, A, m, h };
+  };
+
+  D.liveEvents = async () => {
+    const [g, u, n] = await Promise.allSettled([D.gdacsLive(), D.usgsLive(), D.eonetLive()]);
+    const gd = g.status === 'fulfilled' ? g.value : [];
+    const us = u.status === 'fulfilled' ? u.value : [];
+    const eo = n.status === 'fulfilled' ? n.value : [];
+    const errors = [g, u, n].map((x, k) => (x.status === 'rejected' ? ['GDACS', 'USGS', 'EONET'][k] + ': ' + x.reason.message : null)).filter(Boolean);
+    const now = Date.now();
+    const age = (e) => (e.to ? now - new Date(e.to.endsWith('Z') ? e.to : e.to + 'Z').getTime() : 0);
+    const recent = (e) => (e.current && age(e) < 14 * 864e5) || age(e) < 7 * 864e5; // GDACS marks long droughts not-current while still updating them
+    let all = gd.filter(recent).map((e) => ({ ...e, magnitude: e.hazard === 'EQ' ? parseFloat(e.severity) : undefined }));
+    us.forEach((q) => { // merge USGS detail into GDACS EQ, or add
+      const twin = all.find((e) => e.hazard === 'EQ' && M.haversine(e, q) < 100 && Math.abs(new Date(e.from + (e.from.endsWith('Z') ? '' : 'Z')) - new Date(q.from)) < 2 * 36e5);
+      if (twin) Object.assign(twin, { magnitude: q.magnitude, depth: q.depth, mmi: q.mmi, pager: q.pager, usgsUrl: q.url, src: 'GDACS + USGS' });
+      else all.push(q);
+    });
+    eo.forEach((e) => { if (!all.some((x) => x.hazard === e.hazard && M.haversine(x, e) < 150)) all.push(e); });
+    all.forEach((e) => Object.assign(e, D.usi(e)));
+    all.sort((a, b) => b.usi - a.usi || new Date(b.to) - new Date(a.to));
+    return { events: all, errors, counts: { gdacs: gd.length, usgs: us.length, eonet: eo.length } };
+  };
+
+  /** Agency-reported human impact for a GDACS event (Sendai-framework entries in geteventdata).
+   *  Each entry is a running total for one place and one kind, so take the maximum per (kind, place, wording)
+   *  and add across places. "Out of contact" / "missing" count as missing; "evacuated" as displaced. */
+  D.parseSendai = (list) => {
+    const best = new Map();
+    (list || []).forEach((x) => {
+      const v = parseFloat(String(x.sendaivalue).replace(/[^0-9.]/g, '')); if (!(v > 0)) return;
+      const name = (x.sendainame || '').toLowerCase(), desc = (x.description || '').toLowerCase();
+      if (!/\[people\]|people|persons/.test(desc) && !/death|injur|missing|displac|affect|evacu/.test(name)) return;
+      let kind = null;
+      if (/death|dead|fatalit|killed/.test(name + ' ' + desc)) kind = 'deaths';
+      else if (/missing|out of contact/.test(name + ' ' + desc)) kind = 'missing';
+      else if (/injur/.test(name)) kind = 'injured';
+      else if (/displac|evacu|homeless|shelter/.test(name + ' ' + desc)) kind = 'displaced';
+      else if (/affect/.test(name)) kind = 'affected';
+      if (!kind) return;
+      const wording = desc.replace(/^[\d,.\s]+/, '').replace(/\s+in\s+.*$/, '');
+      const key = [kind, x.country, x.region, wording].join('|');
+      best.set(key, Math.max(best.get(key) || 0, v));
+    });
+    const out = { deaths: 0, missing: 0, injured: 0, displaced: 0, affected: 0 };
+    best.forEach((v, key) => (out[key.split('|')[0]] += v));
+    const dates = (list || []).map((x) => x.dateinsert).filter(Boolean).sort();
+    out.asOf = dates.length ? dates[dates.length - 1].slice(0, 10) : null;
+    return out.deaths + out.missing + out.injured + out.displaced + out.affected > 0 ? out : null;
+  };
+  D.gdacsImpacts = async (type, id) => {
+    const j = await D.fetchJSON(`https://www.gdacs.org/gdacsapi/api/events/geteventdata?eventtype=${type}&eventid=${id}`, { timeout: 15000, cacheTtl: 30 * 60e3 });
+    const r = D.parseSendai(j?.properties?.sendai);
+    if (r) { r.source = 'GDACS (Sendai impact reports)'; r.url = j?.properties?.url?.report; }
+    return r;
+  };
+  /** Terrain relief (m) within ~20 km: max − min of a 5×5 elevation grid (Open-Meteo, Copernicus DEM). */
+  D.relief = async (c) => {
+    const la = [], lo = [];
+    for (let i = -2; i <= 2; i++) for (let k = -2; k <= 2; k++) { la.push((c.lat + i * 0.09).toFixed(3)); lo.push((c.lon + k * 0.1).toFixed(3)); }
+    const j = await D.elevation(la, lo);
+    const e = (j.elevation || []).filter((x) => x != null && x > -100);
+    return e.length ? Math.max(...e) - Math.min(...e) : null;
+  };
+
+  /** GDACS event outline (MultiPolygon/Polygon features only) → array of polygons in GeoJSON order. */
+  D.gdacsGeometry = async (type, id, episode = 1) => {
+    const j = await D.fetchJSON(`https://www.gdacs.org/gdacsapi/api/polygons/getgeometry?eventtype=${type}&eventid=${id}&episodeid=${episode || 1}`, { timeout: 20000, cacheTtl: 30 * 60e3 });
+    const polys = [];
+    (j.features || []).forEach((f) => {
+      const g = f.geometry || {};
+      if (g.type === 'Polygon') polys.push(g.coordinates);
+      else if (g.type === 'MultiPolygon') g.coordinates.forEach((p) => polys.push(p));
+    });
+    return polys.length ? polys : null;
+  };
+
+  /** River-flow ratio at many points (GloFAS via Open-Meteo): max daily discharge in the last 7 days + next 7 days
+   *  ÷ median daily discharge over the previous 365 days. ratio ≥ 2 ≈ out-of-bank flow. */
+  D.flowRatios = async (pts) => {
+    if (!pts.length) return [];
+    const day = (d) => d.toISOString().slice(0, 10), now = new Date();
+    const start = day(new Date(now - 372 * 864e5)), end = day(new Date(+now + 7 * 864e5));
+    const j = await D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${pts.map((p) => p.lat.toFixed(3)).join(',')}&longitude=${pts.map((p) => p.lon.toFixed(3)).join(',')}&daily=river_discharge&start_date=${start}&end_date=${end}`, { timeout: 40000, cacheTtl: 30 * 60e3 });
+    const arr = Array.isArray(j) ? j : [j];
+    return arr.map((loc) => D.flowRatio(loc?.daily?.time || [], loc?.daily?.river_discharge || [], day(new Date(now - 7 * 864e5))));
+  };
+  D.flowRatio = (time, q, recentFrom) => {
+    const past = [], recent = [];
+    time.forEach((t, i) => { const v = q[i]; if (v == null || !(v >= 0)) return; (t >= recentFrom ? recent : past).push(v); });
+    if (past.length < 60 || !recent.length) return null;
+    const med = M.quantile(past, 0.5);
+    if (!(med > 0.5)) return null; // dry channel or no river at this cell: ratio meaningless
+    return { ratio: Math.max(...recent) / med, median: med, peak: Math.max(...recent) };
+  };
+
+  /** WorldPop 2020 population inside a polygon ring (sync call; falls back to polling the task). */
+  D.worldpop = async (ring, year = 2020) => {
+    const gj = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring] } }] });
+    const base = 'https://api.worldpop.org/v1';
+    let j = await D.fetchJSON(`${base}/services/stats?dataset=wpgppop&year=${year}&geojson=${encodeURIComponent(gj)}&runasync=false`, { timeout: 35000, cacheTtl: 864e5 });
+    for (let k = 0; k < 6 && j && j.status !== 'finished' && j.taskid; k++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      j = await D.fetchJSON(`${base}/tasks/${j.taskid}`, { timeout: 15000, cacheTtl: 0 });
+    }
+    const v = j?.data?.total_population;
+    if (!(v >= 0)) throw new Error('WorldPop: no result');
+    return v;
+  };
+
+  /** USGS PAGER loss estimate for an earthquake: fatality probability bins, median fatalities, population exposure by MMI. */
+  D.pagerLosses = async (usgsId) => {
+    const det = await D.fetchJSON(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/${usgsId}.geojson`, { timeout: 20000, cacheTtl: 30 * 60e3 });
+    const pr = det?.properties?.products?.losspager?.[0];
+    const c = pr?.contents || {};
+    const url = (k) => c[k]?.url;
+    if (!url('json/alerts.json')) return null;
+    const [al, lo, ex] = await Promise.allSettled([D.fetchJSON(url('json/alerts.json'), { timeout: 20000 }), url('json/losses.json') ? D.fetchJSON(url('json/losses.json'), { timeout: 20000 }) : null, url('json/exposures.json') ? D.fetchJSON(url('json/exposures.json'), { timeout: 20000 }) : null]);
+    const fat = al.status === 'fulfilled' ? al.value?.fatality : null;
+    if (!fat?.bins) return null;
+    const out = { level: fat.level, bins: fat.bins.map((b) => ({ min: +b.min, max: +b.max, p: +b.probability })), source: 'USGS PAGER', url: det?.properties?.url ? det.properties.url + '/pager' : null };
+    if (lo.status === 'fulfilled' && lo.value?.empirical_fatality) out.median = +lo.value.empirical_fatality.total_fatalities;
+    const pe = ex.status === 'fulfilled' ? ex.value?.population_exposure : null;
+    if (pe?.mmi && pe?.aggregated_exposure) out.exposure = pe.mmi.map((m, i) => ({ mmi: +m, pop: +pe.aggregated_exposure[i] || 0 }));
+    return out;
+  };
+  /** USGS event id from a USGS event page URL or id. */
+  D.usgsIdOf = (e) => (e?.src === 'USGS' && e.id) || (/eventpage\/([a-z0-9]+)/i.exec(e?.usgsUrl || e?.url || '') || [])[1] || null;
+
+  /** Text fetch (CSV inventories, published Google Sheets). */
+  D.fetchText = async (url, timeout = 20000) => {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+    try { const r = await fetch(url, { signal: ctl.signal, cache: 'no-store' }); if (!r.ok) throw new Error(`${r.status} from ${new URL(url).host}`); return await r.text(); }
+    finally { clearTimeout(t); }
+  };
+  /** Turn a Google Sheets link into its CSV export link (sheet must be shared "anyone with the link" or published). */
+  D.sheetCsvUrl = (u) => {
+    const m = /docs\.google\.com\/spreadsheets\/d\/(e\/)?([\w-]+)/.exec(u || ''); if (!m) return u;
+    if (m[1]) return /output=csv/.test(u) ? u : `https://docs.google.com/spreadsheets/d/e/${m[2]}/pub?output=csv`;
+    const gid = (/[#&?]gid=(\d+)/.exec(u) || [])[1];
+    return `https://docs.google.com/spreadsheets/d/${m[2]}/export?format=csv${gid ? `&gid=${gid}` : ''}`;
+  };
+
+  // ---------------- history ----------------
+  D.usgsHistory = async (lat, lon, radiusKm = 300, minMag = 5.5, start = '1900-01-01') => {
+    const j = await D.fetchJSON(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${lat}&longitude=${lon}&maxradiuskm=${radiusKm}&minmagnitude=${minMag}&starttime=${start}&orderby=time&limit=200`, { timeout: 25000 });
+    return (j.features || []).map((f) => ({ src: 'USGS', prov: 'historical', id: f.id, hazard: 'EQ', lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], depth: f.geometry.coordinates[2], magnitude: f.properties.mag, mmi: f.properties.mmi, pager: f.properties.alert, name: f.properties.title, from: new Date(f.properties.time).toISOString(), url: f.properties.url }));
+  };
+  D.gdacsHistory = async (country, from = '2000-01-01') => {
+    const to = new Date().toISOString().slice(0, 10);
+    const j = await D.fetchJSON(`${GDACS}/SEARCH?eventlist=EQ;TC;FL;VO;DR;WF&fromDate=${from}&toDate=${to}&alertlevel=Orange;Red&country=${encodeURIComponent(country)}`, { timeout: 25000 });
+    return (j.features || []).map((f) => {
+      const p = f.properties, [lon, lat] = f.geometry.coordinates;
+      return { src: 'GDACS', prov: 'historical', id: `${p.eventtype}-${p.eventid}`, hazard: p.eventtype, lat, lon, name: p.name, country: p.country, alertscore: p.alertscore, alertlevel: p.alertlevel, severity: p.severitydata?.severity, severityUnit: p.severitydata?.severityunit, from: p.fromdate, to: p.todate, url: p.url?.report, magnitude: p.eventtype === 'EQ' ? p.severitydata?.severity : undefined };
+    });
+  };
+  D.eonetHistory = async (bbox, start = '2000-01-01') => {
+    const [w, s, e, n] = bbox; // minLon,minLat,maxLon,maxLat
+    const j = await D.fetchJSON(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&bbox=${w},${n},${e},${s}&start=${start}&limit=300`, { timeout: 30000 });
+    return (j.events || []).map((ev) => {
+      const hz = EONET_MAP[ev.categories?.[0]?.id]; if (!hz) return null;
+      const g = ev.geometry[0]; const c = g.type === 'Point' ? g.coordinates : g.coordinates[0][0];
+      let sev = g.magnitudeValue; if (hz === 'TC' && g.magnitudeUnit === 'kts') sev *= 1.852;
+      return { src: 'NASA EONET', prov: 'historical', id: ev.id, hazard: hz, lat: c[1], lon: c[0], name: ev.title, severity: sev, severityUnit: g.magnitudeUnit, from: g.date, url: ev.sources?.[0]?.url };
+    }).filter(Boolean);
+  };
+
+  // ---------------- geocoding (Nominatim, ≤ 1 req/s) ----------------
+  let lastNom = 0;
+  const nomThrottle = async () => { const w = 1100 - (Date.now() - lastNom); if (w > 0) await new Promise((r) => setTimeout(r, w)); lastNom = Date.now(); };
+  D.geocode = async (q) => {
+    await nomThrottle();
+    const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&addressdetails=1`, { cacheTtl: 36e5 });
+    return j.map((r) => ({ name: r.display_name, short: r.name || r.display_name.split(',')[0], lat: +r.lat, lon: +r.lon, country: r.address?.country, iso2: (r.address?.country_code || '').toUpperCase(), bbox: r.boundingbox?.map(Number) }));
+  };
+  D.reverse = async (lat, lon) => {
+    await nomThrottle();
+    const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&addressdetails=1`, { cacheTtl: 36e5 });
+    return { name: r.display_name || `${lat.toFixed(3)}, ${lon.toFixed(3)}`, short: r.address?.city || r.address?.town || r.address?.county || r.address?.state || r.name || 'Selected point', country: r.address?.country || '', iso2: (r.address?.country_code || '').toUpperCase() };
+  };
+
+  /** Street-level reverse geocode (Nominatim, throttled to 1 request/s, cached).
+   *  Returns { locality, area, road, city, address } — locality = the neighbourhood/sector/village name. */
+  D.reverseDetail = async (lat, lon, zoom = 18) => {
+    await nomThrottle();
+    const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${(+lat).toFixed(5)}&lon=${(+lon).toFixed(5)}&format=json&zoom=${zoom}&addressdetails=1&accept-language=en`, { cacheTtl: 864e5, timeout: 12000 });
+    return D.parseReverse(r);
+  };
+  D.parseReverse = (r) => {
+    const a = r?.address || {};
+    const locality = a.neighbourhood || a.quarter || a.suburb || a.residential || a.village || a.hamlet || a.city_district || a.town || a.city || '';
+    const area = a.suburb && a.suburb !== locality ? a.suburb : a.city_district && a.city_district !== locality ? a.city_district : '';
+    const city = a.city || a.town || a.county || a.state_district || '';
+    const road = [a.house_number, a.road || a.pedestrian || a.footway].filter(Boolean).join(' ');
+    const named = a.amenity || a.building || a.shop || a.office || '';
+    const address = [named, road, locality, area, city !== locality ? city : '', a.postcode].filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i).join(', ');
+    return { locality, area, road, city, postcode: a.postcode || '', address: address || r?.display_name || '' };
+  };
+
+  // ---------------- OSM Overpass (raced mirrors) ----------------
+  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  D.overpass = async (ql, timeout = 30000) => {
+    const key = 'ovp:' + ql; const hit = cache.get(key); if (hit) return hit.v;
+    const body = 'data=' + encodeURIComponent(ql);
+    const v = await Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; })));
+    cache.set(key, { t: Date.now(), v }); return v;
+  };
+  const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
+  D.bboxOf = bboxOf;
+  /** Populated places: cities and towns across the whole impact radius, plus the named sectors, suburbs,
+   *  neighbourhoods and villages in the core (≤ 35 km), so a city is planned by its real localities
+   *  (e.g. "Sector 29", "DLF Phase 3") instead of anonymous compass sectors. */
+  D.places = async (c, km) => {
+    const b = bboxOf(c, km).join(','), core = bboxOf(c, Math.min(km, 35)).join(',');
+    const j = await D.overpass(`[out:json][timeout:25];(node["place"~"^(city|town)$"](${b});node["place"~"^(suburb|quarter|neighbourhood|village)$"](${core}););out 600;`);
+    return j.elements.filter((e) => e.tags && (e.tags.name || e.tags['name:en'])).map((e) => ({
+      name: D.placeName(e.tags), lat: e.lat, lon: e.lon, type: e.tags.place,
+      population: parseInt(String(e.tags.population || '').replace(/[^0-9]/g, ''), 10) || 0,
+      parent: e.tags['is_in:city'] || e.tags['addr:city'] || '', src: 'OSM',
+    }));
+  };
+  /** English name where OSM has one (Devanagari-only names are hard to act on for many responders). */
+  D.placeName = (t) => {
+    const n = t.name || '', en = t['name:en'] || '';
+    return en && /[^\u0000-\u024f]/.test(n) ? `${en} (${n})` : n || en || 'Unnamed';
+  };
+  /** Postal-style address from OSM addr:* tags, or '' when the object has none. */
+  D.addressOf = (t = {}) => {
+    if (t['addr:full']) return t['addr:full'];
+    const street = [t['addr:housenumber'], t['addr:street']].filter(Boolean).join(' ');
+    const parts = [street || t['addr:place'], t['addr:suburb'] || t['addr:neighbourhood'], t['addr:city'] || t['addr:district'], t['addr:postcode']].filter(Boolean);
+    return parts.length >= 2 ? parts.join(', ') : '';
+  };
+  /** Google Maps link for a point (opens directions on phones). */
+  D.mapsUrl = (p) => `https://www.google.com/maps/search/?api=1&query=${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`;
+  /** Fallback facility search via Nominatim (bounded viewbox), used when Overpass is slow or down. */
+  D.facilitiesNominatim = async (c, km) => {
+    const [s, w, n, e] = bboxOf(c, km);
+    const kinds = [['hospital', 'hospital'], ['fire station', 'fire_station'], ['police', 'police'], ['warehouse', 'warehouse']];
+    const out = [];
+    for (const [q, type] of kinds) {
+      await nomThrottle();
+      try {
+        const j = await D.fetchJSON(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=25&bounded=1&viewbox=${w},${n},${e},${s}`, { cacheTtl: 36e5, timeout: 12000 });
+        j.forEach((r) => out.push({ name: r.name || r.display_name.split(',')[0], type, lat: +r.lat, lon: +r.lon, beds: 0, address: r.display_name.split(',').slice(1, 5).join(',').trim(), src: 'OSM (Nominatim)', osm: `${r.osm_type}/${r.osm_id}` }));
+      } catch (err) { /* keep what we have */ }
+    }
+    return out;
+  };
+  D.facilitiesAny = async (c, km) => {
+    try { const f = await D.facilities(c, km, 20000); if (f.length) return f; } catch (e) { /* fall through */ }
+    return D.facilitiesNominatim(c, km);
+  };
+  D.facilities = async (c, km, timeout = 30000) => {
+    const b = bboxOf(c, km).join(',');
+    const q = `[out:json][timeout:25];(nwr["amenity"~"^(hospital|fire_station|police)$"](${b});nwr["building"="warehouse"]["name"](${b});nwr["industrial"="warehouse"](${b});nwr["shop"="wholesale"](${b}););out center 300;`;
+    const j = await D.overpass(q, timeout);
+    return j.elements.map((e) => {
+      const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon; if (lat == null) return null;
+      const t = e.tags || {};
+      const type = t.amenity === 'hospital' ? 'hospital' : t.amenity === 'fire_station' ? 'fire_station' : t.amenity === 'police' ? 'police' : 'warehouse';
+      return { name: (t.name || t['name:en']) ? D.placeName(t) : '', type, lat, lon, beds: parseInt(t.beds, 10) || 0, address: D.addressOf(t), src: 'OSM', osm: `${e.type}/${e.id}` };
+    }).filter(Boolean);
+  };
+
+  // ---------------- OSRM ----------------
+  const OSRM = 'https://router.project-osrm.org';
+  const pts = (ps) => ps.map((p) => `${p.lon.toFixed(5)},${p.lat.toFixed(5)}`).join(';');
+  D.osrmTable = async (points) => {
+    const j = await D.fetchJSON(`${OSRM}/table/v1/driving/${pts(points)}?annotations=duration,distance`, { timeout: 20000, cacheTtl: 10 * 60e3 });
+    if (j.code !== 'Ok') throw new Error('OSRM table: ' + j.code);
+    return { dur: j.durations, dist: j.distances, snapped: j.sources.map((s) => ({ lat: s.location[1], lon: s.location[0], offKm: s.distance / 1000 })) };
+  };
+  let osrmQueue = Promise.resolve();
+  D.osrmRoute = (points) => { // serialised, ≥ 250 ms apart, to respect the public demo server
+    const run = async () => {
+      const alt = points.length === 2 ? '&alternatives=2' : '';
+      const j = await D.fetchJSON(`${OSRM}/route/v1/driving/${pts(points)}?overview=full&geometries=geojson${alt}`, { timeout: 20000, cacheTtl: 10 * 60e3 });
+      if (j.code !== 'Ok') throw new Error('OSRM route: ' + j.code);
+      return j.routes;
+    };
+    const p = osrmQueue.then(() => new Promise((r) => setTimeout(r, 250))).then(run);
+    osrmQueue = p.catch(() => {});
+    return p;
+  };
+  D.osrmNearest = async (p) => {
+    const j = await D.fetchJSON(`${OSRM}/nearest/v1/driving/${p.lon.toFixed(5)},${p.lat.toFixed(5)}?number=1`, { timeout: 10000, cacheTtl: 36e5 });
+    const w = j.waypoints?.[0]; if (!w) return null;
+    return { lat: w.location[1], lon: w.location[0], offKm: w.distance / 1000 };
+  };
+
+  // ---------------- weather, floods, elevation ----------------
+  D.forecast = (lat, lon) => D.fetchJSON(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum,wind_gusts_10m_max&forecast_days=7&timezone=auto`, { cacheTtl: 30 * 60e3 });
+  D.floodSeries = (lats, lons, start, end) => D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${lats.join(',')}&longitude=${lons.join(',')}&daily=river_discharge&start_date=${start}&end_date=${end}`, { timeout: 40000, cacheTtl: 36e5 });
+  D.floodNow = (lat, lon) => D.fetchJSON(`https://flood-api.open-meteo.com/v1/flood?latitude=${lat}&longitude=${lon}&daily=river_discharge,river_discharge_median,river_discharge_max&past_days=3&forecast_days=7`, { cacheTtl: 30 * 60e3 });
+  D.elevation = (lats, lons) => D.fetchJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lons.join(',')}`, { cacheTtl: 36e5 });
+
+  // ---------------- socio-economic (World Bank) ----------------
+  D.countryIndex = async (iso2) => {
+    const out = { beds: null, gdppc: null, vul: 0.5, lcc: 0.5, prov: 'assumed' };
+    if (!iso2) return out;
+    try {
+      const get = async (ind) => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); return j?.[1]?.[0]?.value ?? null; };
+      const [beds, gdppc] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD')]);
+      out.beds = beds; out.gdppc = gdppc;
+      const gN = gdppc ? M.clamp((Math.log10(gdppc) - 2.6) / 2.4, 0, 1) : 0.5;
+      const bN = beds != null ? M.clamp(beds / 8, 0, 1) : 0.5;
+      out.vul = M.clamp(0.5 * (1 - gN) + 0.5 * (1 - bN), 0.05, 0.95);
+      out.lcc = M.clamp(1 - bN, 0.05, 0.95);
+      out.prov = 'World Bank';
+    } catch (e) { /* keep defaults */ }
+    return out;
+  };
+
+  AA.data = D;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/workspace.js */
+/* Workspace: people, roles, saved plans, watch areas, inventory sources. Skill: skills/workspace/SKILL.md
+   Works fully in the browser (localStorage). When a Supabase project is configured in Settings, the same calls
+   go to the shared team database instead (js/cloud.js), where row-level security enforces the roles. */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const W = {};
+  const LS = (() => { try { const k = '__aa'; root.localStorage.setItem(k, '1'); root.localStorage.removeItem(k); return root.localStorage; } catch (e) { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; } })();
+  W._ls = LS;
+  const get = (k, d) => { try { const v = LS.getItem('aa.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const set = (k, v) => { try { LS.setItem('aa.' + k, JSON.stringify(v)); } catch (e) { /* quota: ignore */ } };
+  W.get = get; W.set = set;
+
+  // ---------------- roles ----------------
+  /** viewer: read plans and reports · planner: also change and save plans, manage watch areas · admin: also team and settings
+   *  field: field-app teams, send field reports (and read plans) */
+  W.ROLES = {
+    viewer: { label: 'Viewer', can: ['view', 'report'] },
+    planner: { label: 'Planner', can: ['view', 'report', 'edit', 'save', 'watch', 'inventory', 'field'] },
+    admin: { label: 'Admin', can: ['view', 'report', 'edit', 'save', 'watch', 'inventory', 'team', 'settings', 'field'] },
+    field: { label: 'Field team', can: ['view', 'report', 'field'] },
+  };
+  const DEFAULT_ME = { name: 'Local user', email: '', org: '', role: 'planner' };
+  W.me = () => (W.cloud?.user ? { ...W.cloud.user } : { ...DEFAULT_ME, ...get('me', {}) });
+  W.setMe = (p) => { const cur = get('me', {}); set('me', { ...cur, ...p, role: W.ROLES[p.role || cur.role] ? p.role || cur.role : 'planner' }); emit('me'); };
+  W.can = (action) => (W.ROLES[W.me().role] || W.ROLES.viewer).can.includes(action);
+  W.mode = () => (W.cloud?.ready ? 'cloud' : 'local');
+
+  // local team list (who is involved; real access control needs the cloud back end)
+  W.team = () => get('team', []);
+  W.setTeam = (list) => { if (!W.can('team')) throw new Error('Only an admin can change the team.'); set('team', list.filter((x) => x && x.name).map((x) => ({ name: String(x.name).slice(0, 80), email: String(x.email || '').slice(0, 120), role: W.ROLES[x.role] ? x.role : 'viewer' }))); emit('team'); };
+
+  const listeners = new Set();
+  W.on = (fn) => listeners.add(fn);
+  const emit = (type, data) => listeners.forEach((fn) => { try { fn(type, data); } catch (e) { console.error(e); } });
+  W._emit = emit;
+
+  // ---------------- saved plans ----------------
+  const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  W.plans = {
+    async list() {
+      if (W.mode() === 'cloud') return W.cloud.listPlans();
+      return get('plans', []).map(({ id, name, savedAt, savedBy, summary }) => ({ id, name, savedAt, savedBy, summary })).sort((a, b) => (b.savedAt > a.savedAt ? 1 : -1));
+    },
+    async save(snap, id) {
+      if (!W.can('save')) throw new Error(`Your role (${W.me().role}) cannot save plans.`);
+      if (W.mode() === 'cloud') {
+        try { return await W.cloud.savePlan(snap, id); }
+        catch (e) { if (typeof navigator === 'undefined' || navigator.onLine !== false) throw e; // offline: keep it here, share it when back online
+          const pend = get('pendingCloud', []); const pid = id || uid(); set('pendingCloud', [...pend.filter((p) => p.id !== pid), { ...snap, id: pid, cloudId: id || null }]); emit('plans'); return pid; }
+      }
+      const all = get('plans', []);
+      const rec = { ...snap, id: id || uid() };
+      const i = all.findIndex((p) => p.id === rec.id);
+      if (i >= 0) { rec.versions = [...(all[i].versions || []), { savedAt: all[i].savedAt, savedBy: all[i].savedBy, summary: all[i].summary }].slice(-20); all[i] = rec; } else all.push(rec);
+      set('plans', all.slice(-50));
+      if (JSON.stringify(get('plans', [])).length < 10) throw new Error('Browser storage is full or blocked; use “Download plan file” instead.');
+      emit('plans');
+      return rec.id;
+    },
+    /** Plans saved while offline in the shared workspace: upload them now. Returns how many were sent. */
+    async syncPending() {
+      const pend = get('pendingCloud', []); if (!pend.length || W.mode() !== 'cloud') return 0;
+      let n = 0; const left = [];
+      for (const p of pend) { try { const { id, cloudId, ...snap } = p; await W.cloud.savePlan(snap, cloudId); n++; } catch (e) { left.push(p); } }
+      set('pendingCloud', left); if (n) emit('plans'); return n;
+    },
+    pending: () => get('pendingCloud', []).length,
+    async load(id) { if (W.mode() === 'cloud') return W.cloud.loadPlan(id); const p = get('plans', []).find((x) => x.id === id); if (!p) throw new Error('Plan not found'); return p; },
+    async remove(id) { if (!W.can('save')) throw new Error('Your role cannot delete plans.'); if (W.mode() === 'cloud') return W.cloud.deletePlan(id); set('plans', get('plans', []).filter((p) => p.id !== id)); emit('plans'); },
+  };
+
+  /** Decision log → CSV (one row per decision). */
+  W.decisionsCSV = (decisions) => {
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    return ['time,plan_hour,by,role,action,what_changed,note', ...(decisions || []).map((d) => [d.at, `T+${(d.epoch || 0) * AA.config.epochHours}h`, d.by, d.role, d.type, d.reason, d.note].map(q).join(','))].join('\n');
+  };
+
+  // ---------------- watch areas ----------------
+  const ALERT_RANK = { Green: 1, Orange: 2, Red: 3 };
+  W.watch = {
+    async list() { if (W.mode() === 'cloud') return W.cloud.listWatch(); return get('watch', []); },
+    async add(a) {
+      if (!W.can('watch')) throw new Error(`Your role (${W.me().role}) cannot add watch areas.`);
+      const area = { id: uid(), name: String(a.name || 'Watch area').slice(0, 80), lat: +a.lat, lon: +a.lon, radiusKm: M.clamp(+a.radiusKm || 100, 5, 1000), hazards: (a.hazards && a.hazards.length ? a.hazards : ['EQ', 'TC', 'FL', 'VO', 'DR', 'WF']), minLevel: ALERT_RANK[a.minLevel] ? a.minLevel : 'Orange', email: String(a.email || '').slice(0, 120) };
+      if (!isFinite(area.lat) || !isFinite(area.lon)) throw new Error('Watch area needs a location');
+      if (W.mode() === 'cloud') return W.cloud.addWatch(area);
+      set('watch', [...get('watch', []), area]); emit('watch'); return area.id;
+    },
+    async remove(id) { if (W.mode() === 'cloud') return W.cloud.deleteWatch(id); set('watch', get('watch', []).filter((a) => a.id !== id)); emit('watch'); },
+  };
+  /** Level of a live event on the GDACS scale; USGS PAGER and severity mapped onto it. */
+  W.eventLevel = (e) => {
+    // GDACS: the current episode's level (a decayed storm keeps its old event-level Red)
+    if (e.alertlevel && ALERT_RANK[e.alertlevel]) return ALERT_RANK[e.episodealertlevel] ? e.episodealertlevel : e.alertlevel;
+    if (e.pager) return { green: 'Green', yellow: 'Orange', orange: 'Red', red: 'Red' }[e.pager] || 'Green';
+    if (e.hazard === 'EQ' && (e.magnitude ?? 0) >= 6.5) return 'Orange';
+    return 'Green';
+  };
+  /** Which events fall inside which watch areas at or above the area's minimum level. Pure function (also used by tools/watch-alerts.js). */
+  W.matchWatch = (areas, events) => {
+    const out = [];
+    (areas || []).forEach((a) => (events || []).forEach((e) => {
+      if (!a.hazards.includes(e.hazard)) return;
+      const lvl = W.eventLevel(e);
+      if (ALERT_RANK[lvl] < ALERT_RANK[a.minLevel]) return;
+      const d = M.haversine(a, e);
+      if (d <= a.radiusKm) out.push({ area: a, event: e, level: lvl, distKm: d, key: `${a.id}|${e.id}|${lvl}` });
+    }));
+    return out.sort((x, y) => ALERT_RANK[y.level] - ALERT_RANK[x.level] || x.distKm - y.distKm);
+  };
+  /** Matches not yet seen on this device (so a notification fires once per event and level). */
+  W.newMatches = (matches) => {
+    const seen = new Set(get('seenAlerts', []));
+    const fresh = matches.filter((m) => !seen.has(m.key));
+    set('seenAlerts', [...seen, ...fresh.map((m) => m.key)].slice(-500));
+    return fresh;
+  };
+
+  // ---------------- inventory source (Google Sheet / CSV / JSON URL) ----------------
+  W.inventory = {
+    source: () => get('invSource', null),
+    setSource: (src) => { if (src && !W.can('inventory')) throw new Error('Your role cannot change the inventory source.'); set('invSource', src); emit('inventory'); },
+    /** Fetch and parse rows: CSV (Google Sheets export or any CSV) or JSON (array of rows, or {stores:[...]}). */
+    async fetchRows(url) {
+      const u = AA.data.sheetCsvUrl(url);
+      const text = await AA.data.fetchText(u);
+      const t = text.trim();
+      let rows;
+      if (t.startsWith('[') || t.startsWith('{')) { const j = JSON.parse(t); rows = Array.isArray(j) ? j : j.stores || j.rows || j.data || []; }
+      else rows = W.parseCSV(t);
+      return W.normaliseRows(rows);
+    },
+  };
+  /** CSV parser with quoted fields. */
+  W.parseCSV = (text) => {
+    const rows = []; let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
+      else if (c === '"') q = true; else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell.length || row.length) { row.push(cell); rows.push(row); }
+    const head = (rows.shift() || []).map((h) => h.trim().toLowerCase());
+    return rows.filter((r) => r.some((x) => x.trim() !== '')).map((r) => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
+  };
+  /** Accept common column spellings so a team's own sheet works without renaming everything. */
+  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'], address: ['address', 'location', 'addr'] };
+  W.normaliseRows = (rows) => (rows || []).map((r) => {
+    const low = Object.fromEntries(Object.entries(r).map(([k, v]) => [String(k).trim().toLowerCase().replace(/\s+/g, '_'), v]));
+    const o = {};
+    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' || k === 'address' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
+    return o;
+  }).filter((r) => isFinite(r.lat) && isFinite(r.lon) && Math.abs(r.lat) <= 90 && Math.abs(r.lon) <= 180);
+
+  AA.workspace = W;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/models/prediction.js */
+/* Prediction model. Skill: skills/prediction/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const P = {};
+
+  const ALERT_S0 = [0.35, 0.35, 0.65, 0.9]; // index by alertScore 0..3
+
+  /** Hazard intensity at distance r (km). Units: EQ → MMI, TC → km/h, others → score 0..1 */
+  P.intensity = (sit, r, mag) => {
+    const h = sit.hazard;
+    const m = mag == null ? sit.magnitude : mag;
+    if (h === 'EQ') {
+      const depth = sit.depth || 10;
+      const a = sit.mmiA != null ? sit.mmiA : 2.5;
+      // finite-fault proxy: rupture length L (Wells & Coppersmith 1994, all slip types) shortens the effective distance
+      const L = Math.pow(10, -2.44 + 0.59 * m);
+      const rEff = Math.max(0, r - 0.25 * L);
+      return Math.max(1, a + 1.5 * m - 4.0 * Math.log10(Math.sqrt(rEff * rEff + depth * depth)));
+    }
+    if (h === 'TC') {
+      const Rmax = 30;
+      return r <= Rmax ? m : m * Math.pow(Rmax / r, 0.7);
+    }
+    const s0 = M.clamp(m, 0, 1);
+    if (h === 'FL') { const L = 0.5 * (sit.radiusKm || 40); return s0 * Math.exp(-r / L); }
+    if (h === 'WF') { const Rb = Math.sqrt((sit.areaKm2 || 50) / Math.PI); return r <= Rb ? s0 : s0 * Math.exp(-(r - Rb) / 5); }
+    if (h === 'VO') return r <= 10 ? s0 : s0 * Math.exp(-(r - 10) / 10);
+    if (h === 'DR') { const R = Math.min(200, Math.sqrt((sit.areaKm2 || 5000) / Math.PI)); return r <= R ? s0 : s0 * Math.exp(-(r - R) / 20); }
+    return 0;
+  };
+
+  /** Damage fractions from intensity. shift = fragility perturbation (MC). V = country vulnerability 0..1 */
+  P.impact = (hazard, I, V = 0.5, shift = 0, sub) => {
+    if (hazard === 'EQ') {
+      const fAff = M.Phi((I - 6.5 - shift) / 0.8);
+      const fDis = 0.4 * M.Phi((I - 8.2 + 1.2 * (V - 0.5) - shift) / 0.8); // weaker housing → displaced at lower shaking
+      const sev = M.Phi((I - 8.5 - shift) / 0.8);
+      const theta = 13.5 + 2.5 * (1 - V) + shift;
+      const fFat = M.Phi(Math.log(I / theta) / 0.17);
+      return { fAff, fDis, sev, fFat, injPerFat: 3.5 };
+    }
+    if (hazard === 'TC') {
+      const k = Math.exp(shift * 0.1);
+      const fAff = M.Phi(Math.log(I / (120 * k)) / 0.25);
+      const fDis = M.Phi(Math.log(I / (160 * k)) / 0.25);
+      const sev = M.Phi(Math.log(I / (210 * k)) / 0.25);
+      return { fAff, fDis, sev, fFat: 0.002 * sev, injPerFat: 10 };
+    }
+    const s = I, sh = shift * 0.05;
+    const fAff = M.Phi((s - 0.35 - sh) / 0.15);
+    if (hazard === 'FL') { // calibrated per flood type, see P.FLOOD
+      const c = P.FLOOD[sub === 'flash' ? 'flash' : 'riverine'], k = Math.exp(shift * 0.5);
+      return { fAff, fDis: c.dis * fAff, sev: M.clamp(s, 0, 1), fFat: c.fat * k * fAff, injPerFat: c.inj };
+    }
+    const kDis = { WF: 0.5, VO: 1.0, DR: 0 }[hazard] ?? 0.3;
+    return { fAff, fDis: kDis * fAff, sev: M.clamp(s, 0, 1), fFat: hazard === 'DR' ? 0 : 1e-4 * fAff, injPerFat: 5 };
+  };
+
+  /** Flood calibration (ratios to people affected), from documented events:
+   *  flash / glacial-lake / cloudburst: Nepal Trishuli flood Aug 2026, 955 deaths / ~93,000 impacted (IFRC) = 1.0 %;
+   *    3,458 evacuated (3.7 %); 279–1,473 injured per 955 deaths (0.3–1.5).
+   *  riverine: Pakistan 2022, 1,739 deaths / 33 M affected = 0.005 %; world 1980–2009, 539,811 / 2.8 bn = 0.019 %
+   *    (Doocy et al., PLOS Currents 2013) → 0.01 % (geometric middle); homeless 2.1 M–displaced 8 M of 33 M → 20 %;
+   *    injuries per death 0.67 (world) to 7.4 (Pakistan) → 2. */
+  P.FLOOD = {
+    flash: { fat: 0.01, dis: 0.04, inj: 1, implied: true, label: 'flash flood (steep terrain, glacial-lake outburst, cloudburst or dam failure)' },
+    riverine: { fat: 1e-4, dis: 0.2, inj: 2, label: 'river / plain flood' },
+  };
+  const FLASH_WORDS = /flash|glof|glacier|glacial|cloud ?burst|dam (break|burst|failure|collapse)|debris|landslide|mudslide/i;
+  /** Classify a flood: name keywords first, else terrain relief (max − min elevation within ~20 km). */
+  P.floodKind = (name, reliefM) => (FLASH_WORDS.test(name || '') ? 'flash' : reliefM != null && reliefM >= 800 ? 'flash' : 'riverine');
+
+  /** USGS PAGER fatality bands (alert colour → estimated deaths range). */
+  P.PAGER_BANDS = { green: [0, 1], yellow: [1, 99], orange: [100, 999], red: [1000, Infinity] };
+
+  /** Rescale one forecast metric (summary + zones) so its P50 equals `target`, keeping the spread. */
+  const rescale = (fc, zones, key, target, floor) => {
+    const d = fc.summary[key], r = d.p50 > 0 ? target / d.p50 : 0;
+    if (d.p50 > 0) { d.p10 *= r; d.p50 = target; d.p90 *= r; zones.forEach((z) => ['p10', 'p50', 'p90'].forEach((q) => (z.fc[key][q] *= r))); }
+    else { // model had nothing here: spread the target by affected share
+      const totA = M.sum(zones.map((z) => z.fc.aff.p50)) || 1;
+      zones.forEach((z) => { const w = z.fc.aff.p50 / totA; z.fc[key] = { p10: (floor || 0) * w, p50: target * w, p90: target * 1.5 * w }; });
+      Object.assign(d, { p10: floor || 0, p50: target, p90: target * 1.5 });
+    }
+    if (floor != null) d.p10 = Math.max(d.p10, floor);
+    d.p90 = Math.max(d.p90, d.p50);
+  };
+
+  /** Keep the EQ fatality forecast inside the USGS PAGER band (PAGER is the agency's own loss model). */
+  P.applyPager = (fc, zones, pager) => {
+    const b = P.PAGER_BANDS[pager]; if (!b) return null;
+    const p50 = fc.summary.fat.p50; let target = null;
+    if (p50 < b[0]) target = b[0] === 1 ? 3 : b[0] * 1.5; // inside the band, near its lower part
+    else if (p50 > b[1]) target = b[1] === 1 ? 0 : b[1] * 0.7;
+    if (target == null) return { pager, kept: true };
+    const ratio = p50 > 0 ? target / p50 : 1;
+    rescale(fc, zones, 'fat', target);
+    if (p50 > 0) rescale(fc, zones, 'inj', fc.summary.inj.p50 * ratio);
+    return { pager, kept: false, from: p50, to: target };
+  };
+
+  /** Agency-reported counts are confirmed minimums: the forecast can never be below them.
+   *  rep = { deaths, missing, injured, displaced, affected }. Missing people raise the deaths P90. */
+  P.applyReported = (fc, zones, rep, calib) => {
+    if (!rep) return [];
+    const changes = [];
+    const fix = (key, val, extra = 0) => {
+      if (!(val > 0)) return;
+      const d = fc.summary[key], before = d.p50;
+      if (d.p50 < val) rescale(fc, zones, key, val + 0.5 * extra, val);
+      else d.p10 = Math.max(d.p10, val);
+      d.p90 = Math.max(d.p90, val + extra, d.p50);
+      changes.push({ key, reported: val, before, after: d.p50 });
+    };
+    const fat0 = fc.summary.fat.p50, inj0 = fc.summary.inj.p50;
+    fix('fat', rep.deaths, rep.missing || 0);
+    // no injury count reported: keep the model's injuries-per-death ratio when deaths were raised
+    if (!(rep.injured > 0) && fat0 > 0 && fc.summary.fat.p50 > fat0 && inj0 > 0) rescale(fc, zones, 'inj', inj0 * (fc.summary.fat.p50 / fat0), inj0);
+    fix('inj', rep.injured);
+    fix('dis', rep.displaced);
+    fix('aff', Math.max(rep.affected || 0, rep.displaced || 0, (rep.deaths || 0) + (rep.injured || 0) + (rep.missing || 0)));
+    // implied exposure: reported deaths ÷ calibrated death rate (flash floods only; river-flood death rates vary 4× so the inference is too loose) — e.g. Nepal 2026: 955 / 1 % ≈ 95,500 vs IFRC 93,000 impacted
+    if (calib && calib.implied && rep.deaths > 0) {
+      const impliedAff = rep.deaths / calib.fat, a = fc.summary.aff;
+      if (impliedAff > a.p50) { const before = a.p50; rescale(fc, zones, 'aff', impliedAff, a.p10); changes.push({ key: 'aff', implied: impliedAff, before, after: impliedAff }); }
+      const impliedDis = impliedAff * calib.dis;
+      if (impliedDis > fc.summary.dis.p50) rescale(fc, zones, 'dis', impliedDis, fc.summary.dis.p10);
+    }
+    // displaced and casualties cannot exceed affected
+    const A = fc.summary.aff; ['dis'].forEach((k) => { const d = fc.summary[k]; if (d.p50 > A.p50) { A.p50 = d.p50; A.p90 = Math.max(A.p90, d.p90); } });
+    return changes;
+  };
+
+  /** Radius (km) inside which at least 10 % of people are affected. */
+  P.impactRadius = (sit) => {
+    for (let r = 1; r <= 300; r += 1) {
+      const I = P.intensity(sit, r);
+      if (P.impact(sit.hazard, I, sit.countryVul, 0, sit.floodKind).fAff < 0.1) return Math.max(10, r);
+    }
+    return 300;
+  };
+
+  P.rampAt = (sit, hoursFromNow) => {
+    if (!['TC', 'FL'].includes(sit.hazard)) return 1;
+    const Tp = sit.peakInHours || 0;
+    return 1 / (1 + Math.exp(-(hoursFromNow - Tp) / 6));
+  };
+
+  const PLACE_DEFAULT_POP = { city: 250000, town: 20000, suburb: 30000, quarter: 15000, neighbourhood: 8000, village: 1500, hamlet: 150 };
+  const RURAL = { city: 0.3, town: 0.6, suburb: 0.4, quarter: 0.4, neighbourhood: 0.4, village: 1, hamlet: 1, sector: 0.7 };
+  const LOCAL = new Set(['suburb', 'quarter', 'neighbourhood']);
+  const DIRS = ['north', 'east', 'south', 'west'];
+
+  /** Build demand zones from OSM places (or modelled sectors when none). */
+  P.buildZones = (sit, places, maxZones = 12) => {
+    const R = sit.radiusKm;
+    const src = { lat: sit.lat, lon: sit.lon };
+    const c = sit.focus || src; // planning focus (land point) may differ from an offshore source
+    let zones = [];
+    const all = (places || []).filter((pl) => M.haversine(c, pl) <= R);
+    all.forEach((pl) => {
+      const tagged = pl.population > 0;
+      const pop = tagged ? pl.population : PLACE_DEFAULT_POP[pl.type] || 1000;
+      if (pl.type === 'city' || (pl.type === 'town' && pop >= 300000)) {
+        const rc = Math.max(3, Math.sqrt(pop / 4000 / Math.PI)); // urban radius at ~4,000 people/km²
+        const locals = all.filter((o) => LOCAL.has(o.type) && M.haversine(pl, o) <= rc * 1.2);
+        if (locals.length >= 3) { // the city is represented by its own sectors/suburbs (added below)
+          locals.forEach((o) => { o.parent = o.parent || pl.name; o.cityPop = pop / locals.length; });
+          return;
+        }
+        if (pop >= 300000) { // no localities mapped: four quarters, named from the map later
+          DIRS.forEach((q, k) => {
+            const p = M.destination(pl, k * 90, 0.45 * rc);
+            zones.push({ name: `${pl.name} (${q})`, lat: p.lat, lon: p.lon, pop: pop / 4, type: pl.type, popProv: tagged ? 'osm' : 'modelled', needsName: true, parent: pl.name });
+          });
+          return;
+        }
+      }
+      if (LOCAL.has(pl.type)) {
+        const p2 = pl.population > 0 ? pl.population : pl.cityPop ? Math.min(pl.cityPop, 60000) : PLACE_DEFAULT_POP[pl.type];
+        zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop: p2, type: pl.type, popProv: pl.population > 0 ? 'osm' : 'modelled', parent: pl.parent || '' });
+        return;
+      }
+      zones.push({ name: pl.name, lat: pl.lat, lon: pl.lon, pop, type: pl.type, popProv: tagged ? 'osm' : 'modelled', parent: pl.parent || '' });
+    });
+    // merge near-duplicates (< 1.5 km)
+    zones = zones.filter((z, i) => { const o = zones.find((x, j) => j < i && M.haversine(z, x) < 1.5); if (o) (o.covers = o.covers || []).push(z.name); return !o; });
+    if (zones.length < 4) { // modelled sectors (center + 6 ring)
+      const dens = sit.popDensity || 400; // persons/km² assumption, labelled
+      const ringR = 0.45 * R, areaCore = Math.PI * (0.3 * R) ** 2, areaSector = (Math.PI * R * R - areaCore) / 6;
+      // modelled areas: named from the map (reverse geocoding) by the engine; these labels are only a fallback
+      zones.push({ name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
+      for (let k = 0; k < 6; k++) {
+        const p = M.destination(c, k * 60 + 30, ringR);
+        zones.push({ name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
+      }
+    }
+    zones.forEach((z) => {
+      z.distKm = M.haversine(src, z);
+      z.I = P.intensity(sit, z.distKm);
+      const im = P.impact(sit.hazard, z.I, sit.countryVul, 0, sit.floodKind);
+      z.affEst = z.pop * im.fAff;
+      z.rural = RURAL[z.type] ?? 0.7;
+    });
+    zones.sort((a, b) => b.affEst - a.affEst);
+    // pick the worst-hit areas but keep them ≥ 2 km apart, so a dense city is covered across its extent;
+    // each skipped locality is listed under the nearest chosen area ("also covers …")
+    const cand = zones.filter((z) => z.affEst > 1), chosen = [];
+    cand.forEach((z) => { if (chosen.length < maxZones && !chosen.some((o) => M.haversine(o, z) < 2)) chosen.push(z); });
+    cand.forEach((z) => { if (chosen.includes(z)) return; const near = chosen.reduce((b, o) => (M.haversine(o, z) < M.haversine(b, z) ? o : b), chosen[0]); if (near && M.haversine(near, z) < 6) (near.covers = near.covers || []).push(z.name); });
+    zones = chosen;
+    zones.forEach((z, i) => { z.id = 'Z' + (i + 1); z.recv = {}; z.surge = 1; });
+    return zones;
+  };
+
+  /** Monte-Carlo forecast per zone → P10/P50/P90 and three weighted scenarios. */
+  P.forecast = (sit, zones, draws = AA.config.mcDraws, seed = AA.config.seed) => {
+    const rng = M.mulberry32(seed);
+    const V = sit.countryVul ?? 0.5;
+    const samples = zones.map(() => ({ aff: [], dis: [], inj: [], fat: [], sev: [] }));
+    const totals = { aff: [], dis: [], inj: [], fat: [] };
+    for (let n = 0; n < draws; n++) {
+      let mag = sit.magnitude;
+      if (sit.hazard === 'EQ') mag += 0.2 * M.gauss(rng);
+      else if (sit.hazard === 'TC') mag *= Math.exp(0.12 * M.gauss(rng));
+      else mag = M.clamp(mag * Math.exp(0.15 * M.gauss(rng)), 0, 1);
+      const shift = 0.3 * M.gauss(rng);
+      const tot = { aff: 0, dis: 0, inj: 0, fat: 0 };
+      zones.forEach((z, i) => {
+        const pop = z.pop * Math.exp(0.2 * M.gauss(rng));
+        const I = z.sObs != null ? M.clamp(z.sObs * (mag / (sit.magnitude || 1)), 0, 1) : P.intensity(sit, z.distKm, mag); // observed river flow overrides distance decay
+        const im = P.impact(sit.hazard, I, V, shift, sit.floodKind);
+        const aff = pop * im.fAff, dis = pop * im.fDis, fat = pop * im.fFat, inj = fat * im.injPerFat;
+        const s = samples[i];
+        s.aff.push(aff); s.dis.push(dis); s.inj.push(inj); s.fat.push(fat); s.sev.push(im.sev);
+        tot.aff += aff; tot.dis += dis; tot.inj += inj; tot.fat += fat;
+      });
+      Object.keys(tot).forEach((k) => totals[k].push(tot[k]));
+    }
+    const q = (a) => ({ p10: M.quantile(a, 0.1), p50: M.quantile(a, 0.5), p90: M.quantile(a, 0.9) });
+    zones.forEach((z, i) => {
+      const s = samples[i];
+      z.fc = { aff: q(s.aff), dis: q(s.dis), inj: q(s.inj), fat: q(s.fat), sev: q(s.sev) };
+      if (z.sevPost == null) z.sevMean = z.fc.sev.p50; // Bayesian posterior overrides when present
+    });
+    const summary = {}; Object.keys(totals).forEach((k) => (summary[k] = q(totals[k])));
+    return { draws, seed, summary };
+  };
+
+  /** Scenario value: s ∈ {low, base, high} → P10/P50/P90 */
+  P.scenarioValue = (dist, s) => (s === 'low' ? dist.p10 : s === 'high' ? dist.p90 : dist.p50);
+
+  /** Gaussian conjugate update. */
+  P.bayes = (mu0, s0, y, sy) => {
+    const w0 = 1 / (s0 * s0), wy = 1 / (sy * sy);
+    return { mu: (mu0 * w0 + y * wy) / (w0 + wy), sd: Math.sqrt(1 / (w0 + wy)) };
+  };
+
+  /** River-flow ratio (peak ÷ yearly median) → flood intensity 0..1: 2× ≈ bank-full (0.35, damage threshold),
+   *  5× = 0.65, 12.5× ≈ 0.95. Below 1.2× the river is in its normal range (0). */
+  P.flowToS = (ratio) => (ratio == null ? null : ratio < 1.2 ? 0 : M.clamp(0.35 + (0.3 * Math.log(ratio / 2)) / Math.log(2.5), 0, 1));
+
+  /** Catchment radius (km) for each zone: half the distance to its nearest neighbour, 1.5–15 km
+   *  (quadrants of large cities use their quadrant size). Used to count people with WorldPop. */
+  P.catchments = (zones) => zones.map((z) => {
+    const others = zones.filter((o) => o !== z).map((o) => M.haversine(z, o));
+    const nn = others.length ? Math.min(...others) : 20;
+    return M.clamp(0.5 * nn, 1.5, 15);
+  });
+
+  /** Quantile of a PAGER fatality distribution (probability bins on a log scale). */
+  P.pagerQuantile = (bins, q) => {
+    const tot = M.sum(bins.map((b) => b.p)) || 1; let acc = 0;
+    for (const b of bins) {
+      const p = b.p / tot;
+      if (acc + p >= q && p > 0) {
+        const f = (q - acc) / p;
+        if (b.min <= 0) return f * b.max; // 0–1 bin: linear
+        return Math.pow(10, Math.log10(b.min) + f * (Math.log10(b.max) - Math.log10(b.min)));
+      }
+      acc += p;
+    }
+    return bins[bins.length - 1].max;
+  };
+
+  /** Replace the fatality forecast with the USGS PAGER distribution (country-calibrated, ShakeMap-based) and
+   *  recompute affected/displaced by applying our fragility curves to PAGER's population exposure by MMI. */
+  P.applyPagerLosses = (fc, zones, pg, V = 0.5) => {
+    if (!pg?.bins) return null;
+    const q = { p10: P.pagerQuantile(pg.bins, 0.1), p50: P.pagerQuantile(pg.bins, 0.5), p90: P.pagerQuantile(pg.bins, 0.9) };
+    const before = { ...fc.summary.fat }, inj0 = fc.summary.inj.p50, fat0 = fc.summary.fat.p50;
+    rescale(fc, zones, 'fat', q.p50);
+    Object.assign(fc.summary.fat, q);
+    if (fat0 > 0 && inj0 > 0) rescale(fc, zones, 'inj', inj0 * (q.p50 / fat0)); else rescale(fc, zones, 'inj', q.p50 * 3.5);
+    const out = { quantiles: q, before, level: pg.level };
+    if (pg.exposure?.length) {
+      let aff = 0, dis = 0;
+      pg.exposure.forEach((e) => { const im = P.impact('EQ', e.mmi, V); aff += e.pop * im.fAff; dis += e.pop * im.fDis; });
+      // exposure covers the whole shaken area; our zones cover the planning radius, so only raise, never lower
+      if (aff > fc.summary.aff.p50) { rescale(fc, zones, 'aff', aff, fc.summary.aff.p10); out.aff = aff; }
+      if (dis > fc.summary.dis.p50) { rescale(fc, zones, 'dis', dis, fc.summary.dis.p10); out.dis = dis; }
+    }
+    return out;
+  };
+
+  P.ALERT_S0 = ALERT_S0;
+  AA.prediction = P;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/models/fairness.js */
+/* Fairness: need score, Sphere demand, equity metrics. Skill: skills/fairness/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const F = {};
+
+  // Sphere Handbook 2018 minimums + labelled planning ratios
+  F.RATES = {
+    water: { flow: true, f: (a, d) => (15 * d + 3 * (a - d)) / 1000 },   // kL / day
+    food: { flow: true, f: (a, d) => (0.6 * d + 0.3 * (a - d)) / 1000 }, // t / day
+    shelter: { flow: false, f: (a, d) => d / 5 },                        // tents (target)
+    medical: { flow: false, f: (a, d, inj) => inj / 50 + a / 1000 },      // modules (target)
+    staff: { flow: false, f: (a, d, inj) => inj / 20 + d / 500 },         // staff (target)
+  };
+
+  /** Cumulative demand target for zone z, commodity k, scenario s, at end of epoch t. */
+  F.targetDemand = (z, k, s, epoch, sit) => {
+    const P = AA.prediction, cfg = AA.config;
+    const a = P.scenarioValue(z.fc.aff, s), d = Math.min(a, P.scenarioValue(z.fc.dis, s)), inj = P.scenarioValue(z.fc.inj, s);
+    const sevScale = z.sevPost != null ? M.clamp(z.sevPost / Math.max(z.fc.sev.p50, 0.02), 0.2, 3) : 1;
+    const hoursEnd = (epoch + 1) * cfg.epochHours;
+    const ramp = P.rampAt(sit, hoursEnd);
+    const r = F.RATES[k];
+    const base = r.f(a, d, inj) * sevScale * (z.surge || 1) * ramp;
+    return r.flow ? base * hoursEnd / 24 : base;
+  };
+
+  /** Expected net demand d_ik (Σ_s p_s D_iks − recv), plus P90 for pre-positioning. */
+  F.netDemand = (zones, sit, epoch) => {
+    const w = AA.config.scenarioWeights;
+    zones.forEach((z) => {
+      z.D = {}; z.d = {}; z.D90 = {};
+      AA.config.commodities.forEach(({ key }) => {
+        const exp = w.low * F.targetDemand(z, key, 'low', epoch, sit) + w.base * F.targetDemand(z, key, 'base', epoch, sit) + w.high * F.targetDemand(z, key, 'high', epoch, sit);
+        z.D[key] = exp;
+        z.D90[key] = F.targetDemand(z, key, 'high', epoch, sit);
+        z.d[key] = z.served ? 0 : Math.max(0, exp - (z.recv[key] || 0));
+      });
+    });
+  };
+
+  /** Need score N_i with full breakdown for the explainer. */
+  F.needScores = (zones, sit) => {
+    const w = AA.config.needWeights;
+    const sev = zones.map((z) => (z.sevPost != null ? z.sevPost : z.sevMean));
+    const pop = zones.map((z) => z.fc.aff.p50);
+    const recvFrac = zones.map((z) => {
+      let got = 0, need = 0;
+      AA.config.commodities.forEach((c) => { got += (z.recv[c.key] || 0) * c.kg; need += (z.D?.[c.key] || 0) * c.kg; });
+      return need > 0 ? M.clamp(got / need, 0, 1) : 0;
+    });
+    const sevN = M.minmax(sev), popN = M.minmax(pop);
+    const recvN = recvFrac.every((v) => v === 0) ? recvFrac : M.minmax(recvFrac);
+    zones.forEach((z, i) => {
+      z.vul = M.clamp(0.5 * z.rural + 0.5 * (sit.countryVul ?? 0.5), 0, 1);
+      const acc = M.clamp(z.acc ?? 0.5, 0, 1);
+      const N = w.sev * sevN[i] + w.pop * popN[i] + w.vul * z.vul + w.acc * acc - w.recv * recvN[i];
+      z.need = M.clamp(N, 0, 1);
+      z.needParts = { sev: sev[i], sevN: sevN[i], pop: pop[i], popN: popN[i], vul: z.vul, acc, recvFrac: recvFrac[i], recvN: recvN[i] };
+    });
+  };
+
+  /** Gini of shortage ratios (classical, for reporting). */
+  F.gini = (q) => {
+    const n = q.length, mean = M.mean(q); if (!n || mean < 1e-9) return 0;
+    let s = 0; for (const a of q) for (const b of q) s += Math.abs(a - b);
+    return s / (2 * n * n * mean);
+  };
+
+  AA.fairness = F;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/engine.js */
+/* Orchestrator + dynamic response. Skills: orchestrator, dynamic-response */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const ENG = {};
+  const listeners = new Set();
+  ENG.on = (fn) => listeners.add(fn);
+  const emit = (type, data) => listeners.forEach((fn) => { try { fn(type, data); } catch (e) { console.error(e); } });
+
+  // Assumed starting stocks by facility type (units per commodity) — labelled "assumed" in UI.
+  ENG.STOCK = {
+    warehouse: { stock: { water: 300, food: 80, shelter: 2000, medical: 100, staff: 20 }, fleet: { truck: 10, bus: 1, amb: 0 }, repl: 0.1 },
+    staging: { stock: { water: 250, food: 60, shelter: 1500, medical: 120, staff: 50 }, fleet: { truck: 8, bus: 2, amb: 2 }, repl: 0.1 },
+    hospital: { stock: { water: 40, food: 5, shelter: 0, medical: 300, staff: 80 }, fleet: { truck: 2, bus: 2, amb: 6 }, repl: 0.05 },
+    fire_station: { stock: { water: 120, food: 5, shelter: 200, medical: 40, staff: 40 }, fleet: { truck: 4, bus: 1, amb: 2 }, repl: 0.05 },
+    police: { stock: { water: 20, food: 5, shelter: 100, medical: 20, staff: 60 }, fleet: { truck: 2, bus: 2, amb: 0 }, repl: 0.02 },
+    airlift: { stock: { water: 200, food: 60, shelter: 1000, medical: 150, staff: 40 }, fleet: { truck: 6, bus: 2, amb: 2 }, repl: 0 },
+  };
+  const TYPE_LABEL = { warehouse: 'Warehouse', staging: 'Staging site (modelled)', hospital: 'Hospital', fire_station: 'Fire station', police: 'Police station', airlift: 'New supply arrival' };
+  ENG.TYPE_LABEL = TYPE_LABEL;
+
+  // ---------------- situations ----------------
+  const S0 = AA.prediction.ALERT_S0;
+  ENG.situationFromEvent = (e) => {
+    const sit = { hazard: e.hazard, lat: e.lat, lon: e.lon, name: e.name, country: e.country, iso2: e.iso2 || '', src: e.src, prov: e.prov || 'live', event: e, peakInHours: 0 };
+    if (e.hazard === 'EQ') {
+      sit.magnitude = +(e.magnitude ?? e.severity ?? 6); sit.depth = Math.max(5, +(e.depth ?? 10));
+      if (e.mmi) sit.mmiA = M.clamp(e.mmi - 1.5 * sit.magnitude + 4.0 * Math.log10(sit.depth), 1.0, 4.0);
+    } else if (e.hazard === 'TC') {
+      sit.magnitude = Math.max(60, +(e.severity || 120));
+      // GDACS reports the storm's lifetime maximum wind; cap it to the current episode's alert band
+      const cap = { 1: 118, 2: 177 }[e.episodealertscore];
+      if (cap && sit.magnitude > cap) { sit.windNote = `Reported ${Math.round(sit.magnitude)} km/h is the lifetime maximum; the current GDACS episode is ${e.episodealertlevel}, so planning uses ${cap} km/h.`; sit.magnitude = cap; }
+    } else {
+      sit.magnitude = S0[e.alertscore || 1] ?? 0.5;
+      if (e.hazard === 'WF') sit.areaKm2 = Math.max(5, (+e.severity || 2000) / 100);
+      if (e.hazard === 'DR') sit.areaKm2 = Math.max(500, +e.severity || 20000);
+      if (e.hazard === 'FL') sit.radiusKm = 40;
+    }
+    return sit;
+  };
+  ENG.situationFromPlan = (p) => {
+    const sit = { hazard: p.hazard, lat: p.lat, lon: p.lon, name: p.name, country: p.country, iso2: p.iso2, src: 'Planning scenario', prov: 'scenario', peakInHours: +p.peakInHours || 0 };
+    if (p.hazard === 'EQ') { sit.magnitude = +p.magnitude; sit.depth = +p.depth || 10; }
+    else if (p.hazard === 'TC') sit.magnitude = +p.magnitude;
+    else { sit.magnitude = M.clamp(+p.magnitude, 0.1, 1); if (p.hazard === 'FL') sit.radiusKm = +p.radiusKm || 40; if (p.hazard === 'WF') sit.areaKm2 = +p.areaKm2 || 50; if (p.hazard === 'DR') sit.areaKm2 = +p.areaKm2 || 20000; }
+    return sit;
+  };
+
+  // ---------------- depots ----------------
+  const mkDepot = (f, sit, scale, kind) => {
+    const t = ENG.STOCK[kind] || ENG.STOCK.warehouse;
+    const I = AA.prediction.intensity(sit, M.haversine(sit, f));
+    const sev = AA.prediction.impact(sit.hazard, I, sit.countryVul).sev;
+    const stock = {}; Object.entries(t.stock).forEach(([k, v]) => (stock[k] = v * scale));
+    return { id: '', name: f.name, type: kind, typeLabel: TYPE_LABEL[kind], lat: f.lat, lon: f.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { ...t.fleet }, repl: t.repl, prov: kind === 'staging' ? 'modelled' : kind === 'airlift' ? 'event' : 'osm-location / assumed-stock', osm: f.osm, beds: f.beds, address: f.address || '', unnamed: !!f.unnamed || kind === 'staging' };
+  };
+  ENG.pickDepots = (sit, facs, scale = 1) => {
+    const c = sit.focus || sit, R = sit.radiusKm;
+    const near = (type, n) => facs.filter((f) => f.type === type).map((f) => ({ f, d: M.haversine(c, f) })).filter((x) => x.d <= R + 30).sort((a, b) => a.d - b.d).slice(0, n).map((x) => x.f);
+    const chosen = [...near('warehouse', 3).map((f) => [f, 'warehouse']), ...near('hospital', 3).map((f) => [f, 'hospital']), ...near('fire_station', 2).map((f) => [f, 'fire_station']), ...near('police', 1).map((f) => [f, 'police'])];
+    let depots = chosen.map(([f, k]) => mkDepot(f, sit, scale, k));
+    // ensure capacity outside the damage footprint: staging sites on a ring when too few are usable
+    if (depots.filter((d) => d.open).length < 3 || !depots.some((d) => d.type === 'warehouse')) {
+      const ring = Math.min(R + 10, 80);
+      [45, 135, 225, 315].forEach((b, k) => { const p = M.destination(c, b, ring); depots.push(mkDepot({ ...p, name: `Staging site ${'ABCD'[k]}` }, sit, scale, 'staging')); });
+    }
+    depots = depots.slice(0, 10);
+    depots.forEach((d, j) => (d.id = 'D' + (j + 1)));
+    return depots;
+  };
+
+  // ---------------- build a planning state ----------------
+  ENG.state = null;
+  const progress = (msg) => emit('progress', msg);
+
+  const clone = (o) => JSON.parse(JSON.stringify(o, (k, v) => (v instanceof Set ? [...v] : v)));
+
+  ENG.build = async (sit, opts = {}) => {
+    const D = AA.data, P = AA.prediction;
+    const sit0 = clone(sit);
+    // every external read goes through io(): recorded for saved plans, replayed from the snapshot when restoring
+    const snap = opts.snapshot || null, inputs = {};
+    const io = async (k, fn) => { if (snap && k in snap) { inputs[k] = snap[k]; if (snap[k] && snap[k].__error) throw new Error(snap[k].__error); return snap[k]; } try { const v = await fn(); inputs[k] = v; return v; } catch (e) { inputs[k] = { __error: e.message }; throw e; } };
+    const notes = sit.windNote ? [sit.windNote] : [];
+    const ev = sit.event || {};
+    const isLive = ev.prov === 'live';
+    progress('Reading country vulnerability');
+    if (!sit.iso2 || !sit.country) { try { const r = await io('reverse', () => D.reverse(sit.lat, sit.lon)); sit.iso2 = sit.iso2 || r.iso2; sit.country = sit.country || r.country; sit.placeName = r.short; } catch (e) { notes.push('Reverse geocoding unavailable'); } }
+    sit.countryIdx = await io('country', () => D.countryIndex(sit.iso2));
+    sit.countryVul = sit.countryIdx.vul;
+    progress('Locating the impact focus on land');
+    try {
+      const n = await io('nearest', () => D.osrmNearest(sit));
+      if (n && n.offKm > 25) { sit.focus = { lat: n.lat, lon: n.lon, offKm: n.offKm }; notes.push(`Event centre is ${Math.round(n.offKm)} km from the nearest road; planning focus moved to the nearest reachable land point.`); }
+    } catch (e) { notes.push('OSRM nearest unavailable'); }
+    const gid = ev.eventid || (/^(EQ|TC|FL|VO|DR|WF)-(\d+)$/.exec(ev.id || '') || [])[2];
+    const isGdacs = gid && /GDACS/.test(ev.src || '');
+    // flood outline published by GDACS: decides where to look for people
+    if (sit.hazard === 'FL' && isGdacs) {
+      progress('Reading the flood outline (GDACS)');
+      try {
+        const polys = await io('footprint', () => D.gdacsGeometry('FL', gid, ev.episodeid));
+        if (polys) {
+          const bb = M.polysBBox(polys), half = Math.max(M.haversine({ lat: bb.s, lon: bb.c.lon }, { lat: bb.n, lon: bb.c.lon }), M.haversine({ lat: bb.c.lat, lon: bb.w }, { lat: bb.c.lat, lon: bb.e })) / 2;
+          sit.footprint = polys; sit.footprintBox = bb;
+          sit.radiusKm = M.clamp(half, 20, 120);
+          if (!M.inPolys(sit.focus || sit, polys)) sit.focus = { ...bb.c, offKm: 0 };
+          notes.push(`Flood outline from GDACS: about ${Math.round(2 * half)} km across; towns are searched inside it.`);
+        }
+      } catch (e) { notes.push('GDACS flood outline unavailable; a circle around the event point is used.'); }
+    }
+    sit.radiusKm = sit.hazard === 'FL' ? (sit.radiusKm || 40) : P.impactRadius(sit);
+    const focus = sit.focus || sit;
+    const searchKm = Math.min(sit.radiusKm, 120);
+    progress('Finding towns, hospitals, fire stations and warehouses (OpenStreetMap)');
+    const [pr, fr] = await Promise.allSettled([io('places', () => D.places(focus, searchKm)), io('facs', () => D.facilitiesAny(focus, Math.min(searchKm, 50) + 20))]);
+    let places = pr.status === 'fulfilled' ? pr.value : [];
+    const facs = fr.status === 'fulfilled' ? fr.value : [];
+    if (sit.footprint && places.length) {
+      const inside = places.filter((pl) => M.distToPolys(pl, sit.footprint) <= 5);
+      if (inside.length >= 3) places = inside;
+    }
+    if (!places.length) notes.push('No populated places returned by OpenStreetMap; modelled population sectors used.');
+    if (!facs.length) notes.push('No facilities returned by OpenStreetMap; modelled staging sites used.');
+    if (sit.hazard === 'FL' && !sit.floodKind) {
+      progress('Reading terrain to classify the flood (Open-Meteo elevation)');
+      try { sit.reliefM = await io('relief', () => D.relief(focus)); } catch (e) { sit.reliefM = null; }
+      sit.floodKind = P.floodKind(sit.name, sit.reliefM);
+      notes.push(`Flood type: ${P.FLOOD[sit.floodKind].label}${sit.reliefM != null ? ` (terrain relief ${Math.round(sit.reliefM)} m within 20 km)` : ''}. Deaths are modelled at ${sit.floodKind === 'flash' ? '1 in 100' : '1 in 10,000'} people affected.`);
+    }
+    facs.forEach((f) => { if (!f.name) { f.name = `${TYPE_LABEL[f.type] || 'Facility'} (unnamed on the map)`; f.unnamed = true; } });
+    const zones = P.buildZones({ ...sit, lat: sit.lat, lon: sit.lon, focus }, places, 12);
+    // name modelled areas and city quarters after the real locality at that spot (Nominatim reverse geocoding)
+    const addrCache = (snap && snap.addr) || {};
+    inputs.addr = addrCache;
+    const toName = zones.filter((z) => z.needsName);
+    if (toName.length) {
+      progress('Naming areas from the map (OpenStreetMap)');
+      const used = new Set(zones.filter((z) => !z.needsName).map((z) => z.name));
+      for (const z of toName) {
+        const a = await ENG.lookup(z, 16, addrCache);
+        if (a && a.locality) {
+          let n = z.parent && a.locality !== z.parent ? `${a.locality}, ${z.parent}` : a.locality;
+          if (used.has(n)) n = `${n} (${compass(focus, z)})`;
+          z.name = n; z.address = a.address; z.locality = a.locality;
+        }
+        used.add(z.name);
+      }
+    }
+    // population: WorldPop 100 m grid counts people around each zone (replaces OSM tags / defaults)
+    if (AA.config.worldpop !== false && !AA.config.lowBandwidth && zones.length) {
+      progress('Counting people around each area (WorldPop 100 m grid)');
+      try {
+        const pops = await io('worldpop', () => ENG.worldpopZones(zones));
+        let n = 0;
+        zones.forEach((z, i) => { const v = pops.counts[i]; if (v > 0) { z.popOSM = z.pop; z.pop = v; z.popProv = 'WorldPop 2020'; z.catchKm = pops.radii[i]; n++; } });
+        if (n) notes.push(`Population from WorldPop 2020 (100 m grid) for ${n} of ${zones.length} areas; each area counts people within ${Math.round(Math.min(...pops.radii))}–${Math.round(Math.max(...pops.radii))} km.`);
+        else notes.push('WorldPop returned no counts; OpenStreetMap populations used.');
+      } catch (e) { notes.push('WorldPop unavailable; OpenStreetMap populations or defaults used.'); }
+    }
+    // observed river flow (live floods only): GloFAS discharge vs its yearly median at each zone
+    if (sit.hazard === 'FL' && isLive && zones.length) {
+      progress('Reading river flow at each area (GloFAS)');
+      try {
+        const fl = await io('flow', () => D.flowRatios(zones));
+        let n = 0;
+        zones.forEach((z, i) => { const f = fl[i]; if (f && f.ratio != null) { z.flow = f; z.sObs = P.flowToS(f.ratio); n++; } });
+        if (n) notes.push(`River flow read at ${n} of ${zones.length} areas (GloFAS): flood intensity there comes from flow ÷ yearly median (2× = water leaves the river bed).`);
+      } catch (e) { notes.push('River-flow data unavailable; flood intensity modelled from distance.'); }
+    }
+    zones.forEach((z) => { const I = z.sObs != null ? z.sObs : z.I; z.affEst = z.pop * P.impact(sit.hazard, I, sit.countryVul, 0, sit.floodKind).fAff; });
+    progress('Forecasting impact (Monte Carlo)');
+    const fcast = P.forecast(sit, zones);
+    fcast.modelled = JSON.parse(JSON.stringify(fcast.summary));
+    // agency evidence: USGS PAGER loss model for earthquakes, GDACS reported counts for any GDACS event
+    if (sit.hazard === 'EQ') {
+      const uid = D.usgsIdOf(ev);
+      let pg = null;
+      if (uid) { progress('Reading the USGS PAGER loss estimate'); try { pg = await io('pager', () => D.pagerLosses(uid)); } catch (e) { notes.push('USGS PAGER loss estimate unavailable.'); } }
+      if (pg) {
+        fcast.pagerLosses = P.applyPagerLosses(fcast, zones, pg, sit.countryVul); fcast.pagerLosses.url = pg.url; fcast.pagerLosses.median = pg.median;
+        const q = fcast.pagerLosses.quantiles;
+        notes.push(`USGS PAGER (${pg.level}): deaths most likely ${Math.round(q.p50).toLocaleString()} (10–90 % range ${Math.round(q.p10).toLocaleString()}–${Math.round(q.p90).toLocaleString()}); used instead of our curve${fcast.pagerLosses.aff ? `; people affected from PAGER shaking exposure ${Math.round(fcast.pagerLosses.aff).toLocaleString()}` : ''}.`);
+      } else if (ev.pager) {
+        const r = P.applyPager(fcast, zones, ev.pager);
+        if (r && !r.kept) notes.push(`USGS PAGER alert is ${ev.pager}; fatalities were moved into its band (model ${Math.round(r.from)} → ${Math.round(r.to)}).`);
+        fcast.pager = r;
+      }
+    }
+    if (isGdacs) {
+      progress('Reading agency-reported impact (GDACS)');
+      try {
+        const rep = await io('reported', () => D.gdacsImpacts(sit.hazard, gid));
+        if (rep) {
+          fcast.reported = rep; fcast.reportChanges = P.applyReported(fcast, zones, rep, sit.hazard === 'FL' ? P.FLOOD[sit.floodKind] : null);
+          notes.push(`Reported by agencies (GDACS, ${rep.asOf || 'latest'}): ${['deaths', 'missing', 'injured', 'displaced', 'affected'].filter((k) => rep[k] > 0).map((k) => `${Math.round(rep[k]).toLocaleString()} ${k}`).join(', ')}. Forecast raised so it is never below these confirmed counts.`);
+        }
+      } catch (e) { notes.push('GDACS impact reports unavailable; figures are modelled only.'); }
+    }
+    const depots = ENG.pickDepots(sit, facs, opts.supplyScale || 1);
+    const hospitals = facs.filter((f) => f.type === 'hospital').map((h) => ({ ...h, d: M.haversine(focus, h), sev: P.impact(sit.hazard, P.intensity(sit, M.haversine(sit, h)), sit.countryVul, 0, sit.floodKind).sev }))
+      .filter((h) => h.sev < 0.6).sort((a, b) => a.d - b.d).slice(0, 5).map((h, k) => ({ ...h, id: 'H' + (k + 1), beds: Math.round((h.beds || 150) * 0.3), bedsProv: h.beds ? 'osm×30% free' : 'assumed 150×30% free' }));
+    ENG.state = { sit, sit0, opts: { mode: opts.mode, supplyScale: opts.supplyScale || 1, warehouses: !!opts.warehouses }, inputs, zones, depots, hospitals, places, facs, fcast, epoch: 0, closures: [], shocks: [], congestion: 1, log: [], decisions: [], events: [], blocked: new Set(), transported: {}, notes, mode: opts.mode, supplyScale: opts.supplyScale || 1, routeCache: new Map(), restoring: !!snap };
+    await ENG.refreshTable(snap ? (k, fn) => io(k, fn) : io);
+    if (opts.warehouses) await ENG.planWarehouses();
+    ENG.decide('build', {}, `Plan created: ${sit.name || 'scenario'}`);
+    await ENG.solve('Initial plan');
+    if (opts.addresses !== false && !AA.config.lowBandwidth) ENG.enrichAddresses(); // the API (server/api.js) skips the slow street-address lookups
+    return ENG.state;
+  };
+
+  /** WorldPop counts for each zone's catchment circle; 3 requests at a time; overall budget ~60 s. */
+  ENG.worldpopZones = async (zones) => {
+    const radii = AA.prediction.catchments(zones), out = new Array(zones.length).fill(null);
+    let next = 0; const t0 = Date.now();
+    const worker = async () => { while (next < zones.length && Date.now() - t0 < 60000) { const i = next++; try { out[i] = await AA.data.worldpop(M.circleRing(zones[i], radii[i])); } catch (e) { out[i] = null; } } };
+    await Promise.all([worker(), worker(), worker()]);
+    if (!out.some((v) => v > 0)) throw new Error('WorldPop: no counts');
+    return { counts: out, radii };
+  };
+
+  // ---------------- addresses ----------------
+  const compass = (c, p) => { const b = (Math.atan2((p.lon - c.lon) * Math.cos(M.toRad(c.lat)), p.lat - c.lat) * 180 / Math.PI + 360) % 360; return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(b / 45) % 8]; };
+  ENG.compass = compass;
+  /** Reverse-geocode a point once; results kept in the plan (state.inputs.addr) so saved plans reopen without lookups. */
+  ENG.lookup = async (p, zoom = 18, cache = ENG.state?.inputs?.addr || {}) => {
+    const key = `${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)},${zoom}`;
+    if (key in cache) return cache[key];
+    try { const a = await AA.data.reverseDetail(p.lat, p.lon, zoom); cache[key] = a; return a; } catch (e) { return null; }
+  };
+  /** Fill in street addresses for storage sites, supply stores, hospitals and areas (in that order), in the background.
+   *  Uses OSM address tags when present; otherwise Nominatim at ≤ 1 request/s. Emits 'addresses' after each group. */
+  let enriching = null, enrichAgain = false;
+  ENG.enrichAddresses = () => {
+    if (enriching) { enrichAgain = true; return enriching; }
+    enriching = (async () => {
+      do {
+        enrichAgain = false;
+        const st = ENG.state; if (!st) break;
+        const sites = st.warehouses ? st.warehouses.sizes.map((x) => st.warehouses.cand[x.j]) : [];
+        const groups = [['storage', sites], ['stores', st.depots], ['hospitals', st.hospitals], ['areas', st.zones]];
+        for (const [g, items] of groups) {
+          let changed = false;
+          for (const it of items) {
+            if (ENG.state !== st) return;
+            if (it.address && !it.unnamed) continue;
+            const a = await ENG.lookup(it, g === 'areas' ? 17 : 18, st.inputs.addr);
+            if (!a) { it.addressPending = false; changed = true; continue; }
+            if (!it.address) it.address = a.address;
+            it.locality = it.locality || a.locality;
+            if (it.unnamed) {
+              const where = a.road ? `${a.road}${a.locality ? `, ${a.locality}` : ''}` : a.locality;
+              it.name = it.type === 'staging' ? `${it.name.split(' near ')[0]}${where ? ` near ${where}` : ''}` : `${TYPE_LABEL[it.type] || 'Facility'}${where ? ` on ${where}` : ''}`;
+              it.unnamed = false;
+            }
+            changed = true;
+          }
+          if (changed) emit('addresses', g);
+        }
+      } while (enrichAgain);
+    })().finally(() => { enriching = null; });
+    return enriching;
+  };
+
+  // ---------------- decision log ----------------
+  /** Append an entry to the decision log (who, when, what, why). */
+  ENG.decide = (type, p = {}, reason = '', note = '') => {
+    const st = ENG.state; if (!st) return;
+    const who = AA.workspace ? AA.workspace.me() : { name: 'Local user', role: 'planner' };
+    st.decisions.push({ at: new Date().toISOString(), epoch: st.epoch, by: who.name, role: who.role, type, reason, note: note || p.note || '' });
+    emit('decision', st.decisions[st.decisions.length - 1]);
+  };
+
+  // ---------------- saved plans ----------------
+  /** Everything needed to rebuild this plan later, offline: original situation, recorded inputs, and the event list. */
+  ENG.snapshot = (name) => {
+    const st = ENG.state; if (!st) return null;
+    const sm = st.fcast.summary;
+    return {
+      v: 1, name: name || st.sit.name || 'Plan', savedAt: new Date().toISOString(), savedBy: AA.workspace ? AA.workspace.me().name : 'Local user',
+      sit0: st.sit0, opts: st.opts, inputs: clone(st.inputs), events: clone(st.events), decisions: clone(st.decisions), collab: AA.collab ? AA.collab.snapshot(st) : undefined,
+      summary: { hazard: st.sit.hazard, place: st.sit.placeName || st.sit.country || '', epoch: st.epoch, zones: st.zones.length, affected: Math.round(sm.aff.p50), displaced: Math.round(sm.dis.p50), deaths: Math.round(sm.fat.p50), cost: Math.round(st.lastRun?.alloc?.cost?.total || 0) },
+    };
+  };
+  /** Rebuild a saved plan: same inputs (no new downloads unless missing), then replay every decision in order. */
+  ENG.restore = async (snap) => {
+    if (!snap || snap.v !== 1) throw new Error('Not an AidAtlas plan file');
+    await ENG.build(clone(snap.sit0), { ...snap.opts, snapshot: snap.inputs || {} });
+    const st = ENG.state;
+    for (const e of snap.events || []) await ENG.event(e.type, clone(e.p), { replay: true });
+    st.decisions = clone(snap.decisions || st.decisions);
+    if (snap.collab && AA.collab) AA.collab.restore(st, snap.collab);
+    st.restoring = false; st.savedName = snap.name;
+    emit('restored', snap);
+    return st;
+  };
+
+  ENG.refreshTable = async (io) => {
+    const st = ENG.state;
+    const pts = [...st.depots, ...st.zones, ...st.hospitals];
+    progress('Building road travel-time matrix (OSRM)');
+    try { st.table = io ? await io('table0', () => AA.data.osrmTable(pts)) : await AA.data.osrmTable(pts); st.tableProv = 'OSRM road network'; }
+    catch (e) { st.table = null; st.tableProv = 'estimated (haversine × 1.35 at 40 km/h)'; st.notes.push('OSRM table unavailable; travel times estimated.'); }
+    st.tableIdx = { d: st.depots.map((x) => x.id), z: st.zones.map((x) => x.id), h: st.hospitals.map((x) => x.id) };
+  };
+  const sub = (st, fromKind, fromList, toKind, toList) => {
+    if (!st.table) return null;
+    const ix = st.tableIdx; const nD = ix.d.length, nZ = ix.z.length;
+    const off = { d: 0, z: nD, h: nD + nZ };
+    const fi = fromList.map((x) => ix[fromKind].indexOf(x.id)), ti = toList.map((x) => ix[toKind].indexOf(x.id));
+    if (fi.some((v) => v < 0) || ti.some((v) => v < 0)) return null;
+    return { dur: fi.map((a) => ti.map((b) => st.table.dur[off[fromKind] + a]?.[off[toKind] + b])), dist: fi.map((a) => ti.map((b) => st.table.dist[off[fromKind] + a]?.[off[toKind] + b])) };
+  };
+
+  // ---------------- one optimisation pass ----------------
+  let solving = Promise.resolve();
+  ENG.solve = (reason) => (solving = solving.then(() => solveInner(reason)).catch((e) => { console.error(e); emit('error', e.message); }));
+
+  const solveInner = async (reason, depth = 0, basePrev = null) => {
+    const st = ENG.state, sit = st.sit, R = AA.routing, F = AA.fairness, E = AA.efficiency;
+    progress('Optimising allocation');
+    F.netDemand(st.zones, sit, st.epoch);
+    const dz = R.adjustMatrix(sit, st, st.depots, st.zones, sub(st, 'd', st.depots, 'z', st.zones));
+    const zz = R.adjustMatrix(sit, st, st.zones, st.zones, sub(st, 'z', st.zones, 'z', st.zones));
+    const zh = R.adjustMatrix(sit, st, st.zones, st.hospitals, sub(st, 'z', st.zones, 'h', st.hospitals));
+    st.depots.forEach((d, j) => st.zones.forEach((z, i) => { if (st.blocked.has(`${d.id}>${z.id}`)) dz.tau[j][i] = Infinity; }));
+    // accessibility difficulty: nearest open depot time × (1 + access damage)
+    const accRaw = st.zones.map((z, i) => {
+      const ts = st.depots.map((d, j) => (d.open ? dz.tau[j][i] : Infinity)).filter(isFinite);
+      z.theta = M.mean(st.depots.map((_, j) => dz.theta[j][i]));
+      return (ts.length ? Math.min(...ts) : 12) * (1 + z.theta);
+    });
+    const accN = M.minmax(accRaw); st.zones.forEach((z, i) => { z.acc = accN[i]; z.accHours = accRaw[i]; });
+    F.needScores(st.zones, sit);
+    const pb = { zones: st.zones, depots: st.depots, tau: dz.tau, dist: dz.dist };
+    const alloc = E.allocate(pb, { objective: st.objective });
+    const cons = E.consolidate(pb, alloc, zz.tau);
+    // casualties → hospitals
+    const ramp = AA.prediction.rampAt(sit, (st.epoch + 1) * AA.config.epochHours);
+    const cas = st.zones.map((z) => Math.max(0, 0.25 * z.fc.inj.p50 * ramp * (z.surge || 1) - (st.transported[z.id] || 0)));
+    const A = M.sum(st.depots.filter((d) => d.open).map((d) => d.fleet.amb || 0));
+    const casualty = E.casualties(cas, st.hospitals, zh.tau, A);
+    const prev = depth ? basePrev : st.lastRun;
+    st.lastRun = { reason, epoch: st.epoch, at: new Date().toISOString(), pb, alloc, cons, casualty, cas, ambulances: A, matrices: { dz, zz, zh }, legs: [], routing: 'pending' };
+    st.lastRun.diff = diffRuns(prev, st.lastRun);
+    if (depth) st.log.shift(); // a re-solve replaces its own entry
+    st.log.unshift({ epoch: st.epoch, reason, diff: st.lastRun.diff, cost: alloc.cost.total, method: alloc.method });
+    emit('solved', st.lastRun);
+    // route legs progressively, then re-solve once if any (depot, zone) pair turned out isolated
+    const newlyBlocked = await routeAll(st.lastRun);
+    if (newlyBlocked && depth < 2) { await solveInner(`${reason.split(' → ')[0]} → re-solved without ${st.blocked.size} isolated road arc(s)`, depth + 1, prev); }
+  };
+
+  const routeAll = async (run) => {
+    const st = ENG.state, sit = st.sit, R = AA.routing;
+    const pairs = new Map();
+    run.cons.tours.forEach((t, ti) => {
+      let prev = { kind: 'd', idx: t.j };
+      t.stops.forEach((i) => { const key = `${prev.kind}${prev.idx}>z${i}|${t.cls}`; if (!pairs.has(key)) pairs.set(key, { from: prev, to: { kind: 'z', idx: i }, cls: t.cls, tours: [] }); pairs.get(key).tours.push(ti); prev = { kind: 'z', idx: i }; });
+    });
+    const ptOf = (p) => (p.kind === 'd' ? st.depots[p.idx] : st.zones[p.idx]);
+    let blocked = 0;
+    const closuresKey = st.closures.map((c) => c.lat.toFixed(4) + c.lon.toFixed(4)).join('|') + '#' + st.epoch + '#' + st.shocks.length + '#' + st.congestion;
+    for (const [key, p] of pairs) {
+      if (st.lastRun !== run) return 0; // superseded by a newer solve
+      const a = ptOf(p.from), b = ptOf(p.to);
+      const ck = `${a.lat.toFixed(4)},${a.lon.toFixed(4)}>${b.lat.toFixed(4)},${b.lon.toFixed(4)}|${p.cls}|${closuresKey}`;
+      let res = st.routeCache.get(ck);
+      if (!res) { res = await R.routeLeg(sit, st, a, b, p.cls); st.routeCache.set(ck, res); }
+      const leg = { key, from: p.from, to: p.to, cls: p.cls, tours: p.tours, a, b, ...res };
+      run.legs.push(leg);
+      emit('leg', leg);
+      if (res.airdrop && p.from.kind === 'd') { const k = `${st.depots[p.from.idx].id}>${st.zones[p.to.idx].id}`; if (!st.blocked.has(k)) { st.blocked.add(k); blocked++; } }
+    }
+    run.routing = 'done';
+    emit('routed', run);
+    return blocked;
+  };
+
+  const diffRuns = (a, b) => {
+    if (!a) return null;
+    const K = AA.config.commodities;
+    const unmet = (r) => { const o = {}; K.forEach((k) => (o[k.key] = M.sum(r.alloc.unmet.map((u) => u[k.key] || 0)))); return o; };
+    const ua = unmet(a), ub = unmet(b);
+    const trips = (r) => { const o = {}; r.alloc.trips.forEach((t) => { const id = r.pb.zones[t.i].id; o[id] = (o[id] || 0) + t.n; }); return o; };
+    const ta = trips(a), tb = trips(b);
+    const ids = new Set([...Object.keys(ta), ...Object.keys(tb)]);
+    const redirected = [...ids].map((id) => ({ id, before: ta[id] || 0, after: tb[id] || 0 })).filter((x) => x.before !== x.after);
+    return { unmet: K.map((k) => ({ k: k.key, before: ua[k.key], after: ub[k.key] })), cost: { before: a.alloc.cost.total, after: b.alloc.cost.total }, redirected };
+  };
+
+  // ---------------- warehouses (pre-positioning) ----------------
+  ENG.planWarehouses = async () => {
+    const st = ENG.state, sit = st.sit, FL = AA.facility;
+    progress('Choosing storage sites (MCLP)');
+    const cand = FL.candidates(sit);
+    st.depots.forEach((d) => cand.push({ lat: d.lat, lon: d.lon, sev: d.sev, safe: d.sev <= 0.3, kind: 'existing', name: d.name }));
+    let base = null;
+    try {
+      const t = await AA.data.osrmTable([...cand, ...st.zones]);
+      const n = cand.length;
+      base = { dur: cand.map((_, a) => st.zones.map((_, b) => t.dur[a][n + b])), dist: cand.map((_, a) => st.zones.map((_, b) => t.dist[a][n + b])) };
+      cand.forEach((c, k) => { if (c.kind === 'grid' && t.snapped[k] && t.snapped[k].offKm < 5) { c.lat = t.snapped[k].lat; c.lon = t.snapped[k].lon; } });
+    } catch (e) { st.notes.push('Warehouse travel times estimated (OSRM unavailable).'); }
+    const m = AA.routing.adjustMatrix(sit, st, cand, st.zones, base);
+    const sol = FL.mclp(st.zones, cand, m.tau);
+    const sizes = FL.size(st.zones, sol);
+    st.warehouses = { cand, sol, sizes, tau: m.tau };
+    emit('warehouses', st.warehouses);
+    return st.warehouses;
+  };
+
+  // ---------------- dynamic events ----------------
+  ENG.event = async (type, p = {}, meta = {}) => {
+    const st = ENG.state; if (!st) return;
+    if (!meta.replay && AA.workspace && !AA.workspace.can('edit')) { emit('error', `Your role (${AA.workspace.me().role}) can view plans but not change them.`); return; }
+    if (type !== 'advance') st.events.push({ type, p: clone(p), at: new Date().toISOString() });
+    const z = p.zoneId ? st.zones.find((x) => x.id === p.zoneId) : null;
+    const d = p.depotId ? st.depots.find((x) => x.id === p.depotId) : null;
+    let reason = '';
+    switch (type) {
+      case 'surge': z.surge = (z.surge || 1) * 1.5; z.served = false; reason = `Demand surge +50 % in ${z.name}`; break;
+      case 'served': z.served = true; reason = `${z.name} marked sufficiently served`; break;
+      case 'unserved': z.served = false; reason = `${z.name} needs aid again`; break;
+      case 'depot': d.open = !d.open; reason = `${d.name} ${d.open ? 'back online' : 'offline'}`; break;
+      case 'breakdown': d.fleet.truck = Math.max(0, d.fleet.truck - 1); reason = `Truck breakdown at ${d.name}`; break;
+      case 'closure': st.closures.push({ lat: p.lat, lon: p.lon }); reason = `Road closed near ${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}`; break;
+      case 'clearClosures': st.closures = []; st.blocked.clear(); reason = 'All road closures cleared'; break;
+      case 'aftershock': {
+        st.shocks.push({ lat: p.lat ?? st.sit.lat, lon: p.lon ?? st.sit.lon, radiusKm: 0.5 * st.sit.radiusKm, eta: 0.35, epoch: st.epoch });
+        st.zones.forEach((zz) => { if (M.haversine(zz, { lat: p.lat ?? st.sit.lat, lon: p.lon ?? st.sit.lon }) < 0.5 * st.sit.radiusKm) zz.surge = (zz.surge || 1) * 1.15; });
+        reason = 'Aftershock / new damage: roads degraded, demand +15 % nearby'; break;
+      }
+      case 'supply': {
+        const nd = mkDepot({ lat: p.lat, lon: p.lon, name: `Supply arrival ${st.depots.length + 1}` }, st.sit, st.supplyScale, 'airlift');
+        nd.id = 'D' + (st.depots.length + 1); st.depots.push(nd); await ENG.refreshTable();
+        reason = `New supplies arrived at ${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}`; break;
+      }
+      case 'congestion': st.congestion = st.congestion > 1 ? 1 : 1.4; reason = st.congestion > 1 ? 'Congestion: travel times +40 %' : 'Congestion cleared'; break;
+      case 'spread': {
+        const P = AA.prediction;
+        let pl = p._place;
+        if (pl === undefined) { let places = []; try { places = await AA.data.places(p, 6); } catch (e) {} pl = places.sort((a, b) => M.haversine(p, a) - M.haversine(p, b))[0] || null; st.events[st.events.length - 1].p._place = pl; }
+        const pop = pl ? pl.population || 1500 : 400 * Math.PI * 25;
+        const nz = { id: 'Z' + (st.zones.length + 1), name: pl ? `${pl.name} (spread)` : 'New affected area', lat: p.lat, lon: p.lon, pop, type: pl?.type || 'sector', popProv: pl?.population ? 'osm' : 'modelled', rural: 0.8, recv: {}, surge: 1, spread: true };
+        nz.distKm = 0.3 * st.sit.radiusKm; nz.I = P.intensity(st.sit, nz.distKm);
+        P.forecast(st.sit, [nz]); st.zones.push(nz); await ENG.refreshTable();
+        reason = `Disaster spread to ${nz.name}`; break;
+      }
+      case 'report': {
+        const prior = { mu: z.sevPost ?? z.sevMean, sd: z.sevSd ?? 0.15 };
+        const post = AA.prediction.bayes(prior.mu, prior.sd, p.value, p.sd || 0.1);
+        z.sevPost = M.clamp(post.mu, 0, 1); z.sevSd = post.sd;
+        z.bayes = { prior, obs: { y: p.value, sd: p.sd || 0.1 }, post };
+        reason = `Field report for ${z.name}: severity ${prior.mu.toFixed(2)} → ${post.mu.toFixed(2)}`; break;
+      }
+      case 'supplyScale': {
+        st.supplyScale = p.value; st.depots.forEach((dp) => { const t = ENG.STOCK[dp.type]; if (!t) return; Object.keys(dp.stock).forEach((k) => { const used = dp.init[k] - dp.stock[k]; dp.init[k] = t.stock[k] * p.value; dp.stock[k] = Math.max(0, dp.init[k] - used); }); });
+        reason = `Supply level set to ${p.value}×`; break;
+      }
+      case 'importDepots': {
+        const scaleOf = { water_l: ['water', 1 / 1000], food_kg: ['food', 1 / 1000], tents: ['shelter', 1], medkits: ['medical', 1], staff: ['staff', 1] };
+        const nd = p.rows.map((r, k) => {
+          const stock = { water: 0, food: 0, shelter: 0, medical: 0, staff: 0 };
+          Object.entries(scaleOf).forEach(([col, [key, f]]) => (stock[key] = (+r[col] || 0) * f));
+          const I = AA.prediction.intensity(st.sit, M.haversine(st.sit, r));
+          const sev = AA.prediction.impact(st.sit.hazard, I, st.sit.countryVul).sev;
+          return { id: 'D' + (k + 1), name: r.name || `Store ${k + 1}`, type: r.type || 'warehouse', typeLabel: `${TYPE_LABEL[r.type] || 'Store'} (your inventory)`, lat: +r.lat, lon: +r.lon, sev, open: sev < 0.6, damaged: sev >= 0.6, stock, init: { ...stock }, fleet: { truck: +r.trucks || 0, bus: +r.buses || 0, amb: +r.ambulances || 0 }, repl: 0, prov: 'imported inventory', beds: +r.beds || 0, address: r.address || '' };
+        }).filter((d) => isFinite(d.lat) && isFinite(d.lon));
+        if (!nd.length) return;
+        st.depots = nd; st.blocked.clear(); await ENG.refreshTable();
+        reason = `Imported ${nd.length} supply stores from your inventory`; break;
+      }
+      case 'objective': st.objective = { ...AA.config.objective, ...p }; reason = 'Policy weights changed'; break;
+      case 'advance': {
+        // record what was actually dispatched, so a restored plan reproduces the same deliveries and stock
+        const run = st.lastRun; if (!run) return;
+        const executed = p.executed || { ship: run.alloc.ship.map((x) => ({ i: x.i, j: x.j, k: x.k, qty: x.qty })), cas: run.casualty.flows.map((x) => ({ i: x.i, h: x.h, n: x.n })) };
+        if (!meta.replay) st.events.push({ type: 'advance', p: { executed }, at: new Date().toISOString() });
+        return ENG.advance(meta, executed);
+      }
+      default: return;
+    }
+    st.routeCache.clear();
+    if (!meta.replay) ENG.decide(type, p, reason, meta.note);
+    const done = ENG.solve(reason);
+    if (['supply', 'importDepots', 'spread'].includes(type)) done.then(() => ENG.enrichAddresses());
+    return done;
+  };
+
+  /** Rolling-horizon step: execute first-epoch decisions only, then re-optimise. */
+  ENG.advance = async (meta = {}, executed = null) => {
+    const st = ENG.state, run = st.lastRun; if (!run) return;
+    const ex = executed || { ship: run.alloc.ship, cas: run.casualty.flows };
+    ex.ship.forEach((s) => {
+      const z = st.zones[s.i], dp = st.depots[s.j];
+      z.recv[s.k] = (z.recv[s.k] || 0) + s.qty;
+      dp.stock[s.k] = Math.max(0, dp.stock[s.k] - s.qty);
+    });
+    ex.cas.forEach((f) => { const id = st.zones[f.i].id; st.transported[id] = (st.transported[id] || 0) + f.n; st.hospitals[f.h].beds = Math.max(0, st.hospitals[f.h].beds - f.n); });
+    st.depots.forEach((dp) => { if (dp.open && dp.repl) Object.keys(dp.stock).forEach((k) => (dp.stock[k] += dp.init[k] * dp.repl)); });
+    st.epoch += 1;
+    st.routeCache.clear();
+    if (!meta.replay) ENG.decide('advance', {}, `Advanced to T+${st.epoch * AA.config.epochHours} h`, meta.note);
+    return ENG.solve(`Advanced to T+${st.epoch * AA.config.epochHours} h: deliveries recorded, stock replenished, roads partly cleared`);
+  };
+
+  AA.engine = ENG;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/pipelines.js */
+/* Multi-step analyses shared by the app and the public API (server/api.js): risk grid for a place,
+   design scenarios for its high-risk areas, pre-season readiness. Network reads happen here; the maths is in
+   js/models/*. Skill: skills/risk-assessment/SKILL.md, skills/readiness/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const PL = {};
+  const noop = () => {};
+
+  /** Forecast only (no stores, no routing): country vulnerability → impact radius → places (OSM) → zones →
+   *  optional WorldPop counts → 400-draw Monte Carlo. Shared by the API (/v1/forecast) and the back-test. */
+  PL.forecast = async (sit, opts = {}) => {
+    const D = AA.data, P = AA.prediction, notes = [], step = opts.step || noop;
+    if (!sit.iso2 && opts.reverse !== false) { try { const r = await D.reverse(sit.lat, sit.lon); sit.iso2 = r.iso2; sit.country = sit.country || r.country; } catch (e) { notes.push('Country lookup unavailable.'); } }
+    try { sit.countryIdx = await D.countryIndex(sit.iso2); } catch (e) { sit.countryIdx = { vul: 0.5, lcc: 0.5, prov: 'assumed' }; notes.push('Country indicators unavailable; vulnerability assumed 0.5.'); }
+    sit.countryVul = sit.countryIdx.vul;
+    sit.radiusKm = sit.hazard === 'FL' ? (sit.radiusKm || 40) : P.impactRadius(sit);
+    step('Finding towns (OpenStreetMap)…');
+    let places = []; try { places = await D.places(sit, Math.min(sit.radiusKm, 120)); } catch (e) { notes.push('OpenStreetMap places unavailable; modelled population sectors used.'); }
+    const zones = P.buildZones(sit, places, 12);
+    if (opts.worldpop && zones.length) {
+      step('Counting people (WorldPop)…');
+      try { const pops = await AA.engine.worldpopZones(zones); zones.forEach((z, i) => { const v = pops.counts[i]; if (v > 0) { z.pop = v; z.popProv = 'WorldPop 2020'; } }); } catch (e) { notes.push('WorldPop unavailable; OpenStreetMap populations used.'); }
+    }
+    const fc = P.forecast(sit, zones);
+    return { sit, zones, fc, places: places.length, notes };
+  };
+
+  /** Default design intensity per hazard (same as the Plan-mode defaults). */
+  PL.DESIGN = { TC: 200, FL: 0.8, WF: 0.8, VO: 0.9, DR: 0.7 };
+
+  /** 6 × 6 risk grid (~120 × 120 km) around a place, top 5 cells named after their locality. */
+  PL.risk = async (place, step = noop, opts = {}) => {
+    const D = AA.data, RK = AA.risk, half = opts.halfKm || 60, n = opts.n || 6;
+    const cells = RK.grid(place, half, n);
+    step('Reading earthquake catalogue (USGS, since 1973)…');
+    const eq = await D.usgsHistory(place.lat, place.lon, 400, 4.5, '1973-01-01').catch(() => []);
+    step('Reading storm, flood, fire and volcano records (GDACS, EONET)…');
+    const deg = 2.5;
+    const [g, e] = await Promise.allSettled([place.country ? D.gdacsHistory(place.country) : Promise.resolve([]), D.eonetHistory([place.lon - deg, place.lat - deg, place.lon + deg, place.lat + deg])]);
+    const events = [...(g.status === 'fulfilled' ? g.value : []), ...(e.status === 'fulfilled' ? e.value : [])].filter((x) => x.hazard !== 'EQ' && M.haversine(place, x) < 300);
+    step('Reading 20 years of river discharge (GloFAS) and elevation…');
+    let q100 = null, elev = null;
+    try {
+      const lats = cells.map((c) => c.lat.toFixed(3)), lons = cells.map((c) => c.lon.toFixed(3));
+      const y1 = new Date().getUTCFullYear() - 1;
+      const [fl, el] = await Promise.all([D.floodSeries(lats, lons, `${y1 - 19}-01-01`, `${y1}-12-31`), D.elevation(lats, lons)]);
+      elev = el.elevation;
+      const arr = Array.isArray(fl) ? fl : [fl];
+      q100 = arr.map((loc) => {
+        const t = loc.daily.time, q = loc.daily.river_discharge; const byY = {};
+        t.forEach((d, k) => { const y = d.slice(0, 4); if (q[k] != null) byY[y] = Math.max(byY[y] ?? 0, q[k]); });
+        const gm = RK.gumbel(Object.values(byY)); return gm ? Math.max(0, gm.q(100)) : NaN;
+      });
+    } catch (err) { /* discharge unavailable: flood hazard falls back to event frequency */ }
+    step('Reading population and hospitals (OpenStreetMap)…');
+    const [pl, fac, ci] = await Promise.all([D.places(place, half + 10).catch(() => []), D.facilities(place, half + 10).catch(() => []), D.countryIndex(place.iso2)]);
+    const res = RK.assess(cells, { eq, eqYears: new Date().getUTCFullYear() - 1973, events, eventYears: new Date().getUTCFullYear() - 2000, q100, elev, places: pl, hospitals: fac.filter((x) => x.type === 'hospital'), country: ci });
+    res.cells.forEach((c) => { const near = pl.slice().sort((a, b) => M.haversine(c, a) - M.haversine(c, b))[0]; c.name = near && M.haversine(c, near) < 15 ? `Around ${near.name}` : `Cell ${c.id.slice(1)} (${c.lat.toFixed(2)}, ${c.lon.toFixed(2)})`; });
+    const top = res.cells.slice().sort((a, b) => b.R - a.R).slice(0, 5);
+    const compass = (c) => { const b = (Math.atan2(c.lon - place.lon, c.lat - place.lat) * 180 / Math.PI + 360) % 360; return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(b / 45) % 8]; };
+    step('Naming the high-risk areas…');
+    for (const c of top) {
+      try { const a = await D.reverseDetail(c.lat, c.lon, 14); if (a.locality) { c.name = `${a.locality}${a.city && a.city !== a.locality ? `, ${a.city}` : ''}`; c.address = a.address; } } catch (err) { /* keep the fallback name */ }
+    }
+    top.forEach((c) => { if (top.filter((o) => o.name === c.name).length > 1) c.name = `${c.name} (${compass(c)}, ${Math.round(M.haversine(place, c))} km)`; });
+    return { place: place.short || place.name, placeObj: place, gr: res.gr, top, cells: res.cells, counts: `${eq.length} earthquakes, ${events.length} other events, ${q100 ? 'GloFAS discharge' : 'no discharge data'}`, places: pl, facs: fac, country: ci };
+  };
+
+  /** Design scenario for one high-risk cell: its dominant hazard at a 1-in-475-year size (earthquakes) or the default intensity. */
+  PL.scenario = (c, rr) => {
+    const hzd = c.dominant, place = rr.placeObj || {};
+    const mag = hzd === 'EQ' ? Math.min(8, Math.max(6.5, rr.gr.a != null ? (rr.gr.a - Math.log10(1 / 475)) / rr.gr.b : 6.5)) : PL.DESIGN[hzd];
+    return AA.engine.situationFromPlan({ lat: c.lat, lon: c.lon, name: `${AA.HAZARDS[hzd].label} risk scenario · ${c.name}`, country: rr.country ? place.country : '', iso2: place.iso2, hazard: hzd, magnitude: mag, depth: 10, peakInHours: 24, areaKm2: 200 });
+  };
+
+  /** Readiness of the district for each of its top-5 high-risk areas. opts.rows = inventory rows (else OSM + assumed stock). */
+  PL.readiness = async (rr, opts = {}) => {
+    const P = AA.prediction, RD = AA.readiness, step = opts.step || noop;
+    step('Forecasting the worst likely case (P90) in each high-risk area…');
+    const areas = rr.top.map((c) => {
+      const sit = PL.scenario(c, rr);
+      sit.countryVul = rr.country?.vul ?? 0.5;
+      sit.radiusKm = sit.hazard === 'FL' ? (sit.radiusKm || 40) : P.impactRadius(sit);
+      const zones = P.buildZones(sit, rr.places || [], 12);
+      P.forecast(sit, zones);
+      const { need, affP90 } = RD.need72(zones);
+      return { name: c.name, lat: c.lat, lon: c.lon, R: c.R, hazard: c.dominant, sit, need, affP90, zones: zones.length };
+    });
+    const stores = opts.rows?.length ? RD.storesFromRows(opts.rows) : RD.storesFromFacilities(rr.facs);
+    let tau = null;
+    if (opts.roads !== false && stores.length && stores.length <= 90) {
+      step('Reading road travel times from stores to each area (OSRM)…');
+      try { const t = await AA.data.osrmTable([...stores, ...areas]); const n = stores.length; tau = stores.map((_, j) => areas.map((_, a) => (t.dur[j][n + a] != null ? t.dur[j][n + a] / 3600 : NaN))); } catch (e) { tau = null; }
+    }
+    const out = RD.score(areas, stores, tau);
+    out.place = rr.place; out.source = opts.rows?.length ? (opts.sourceLabel || 'your inventory') : 'OpenStreetMap facilities with assumed stock';
+    out.roads = tau ? 'OSRM road network' : `estimated (straight line × ${AA.config.circuity} at ${AA.config.fallbackSpeedKmh} km/h)`;
+    out.at = new Date().toISOString();
+    return out;
+  };
+
+  AA.pipelines = PL;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/models/backtest.js */
+/* Back-test: replay past disasters through the forecast model and compare with what was reported.
+   Catalogue: NOAA NCEI Global Significant Earthquake Database (deaths ≥ 250, 2001–2025), snapshot taken 2026-10-02 from
+   https://www.ngdc.noaa.gov/hazel/hazard-service/api/v1/earthquakes?minYear=2001&maxYear=2025&minDeaths=250
+   Skill: skills/backtest/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const BT = {};
+  BT.SOURCE = { name: 'NOAA NCEI Global Significant Earthquake Database', url: 'https://www.ngdc.noaa.gov/hazel/view/hazards/earthquake/search', snapshot: '2026-10-02', query: 'deaths ≥ 250, 2001–2025' };
+
+  // mode: 'shaking' = deaths mainly from shaking (scored) · 'tsunami' = mainly tsunami / liquefaction (shown, not scored:
+  // the model has no tsunami component) · 'disputed' = official toll strongly contested (shown, not scored)
+  const E = (date, name, iso2, lat, lon, mag, depth, deaths, mode = 'shaking', note = '') => ({ id: `EQ-${date}`, hazard: 'EQ', date, name, iso2, lat, lon, mag, depth, deaths, mode, note });
+  BT.CATALOG = [
+    E('2001-01-13', 'El Salvador', 'SV', 13.049, -88.66, 7.7, 60, 844, 'shaking', 'Most deaths from the Las Colinas landslide'),
+    E('2001-01-26', 'Gujarat (Bhuj), India', 'IN', 23.388, 70.326, 7.6, 17, 20005),
+    E('2001-02-13', 'San Vicente, El Salvador', 'SV', 13.671, -88.938, 6.6, 10, 315),
+    E('2002-03-25', 'Nahrin, Afghanistan', 'AF', 36.062, 69.315, 6.1, 8, 1000),
+    E('2002-06-22', 'Avaj, Iran', 'IR', 35.626, 49.047, 6.5, 10, 261),
+    E('2003-02-24', 'Bachu, Xinjiang, China', 'CN', 39.61, 77.23, 6.3, 11, 261),
+    E('2003-05-21', 'Boumerdès, Algeria', 'DZ', 36.964, 3.634, 6.8, 12, 2287),
+    E('2003-12-26', 'Bam, Iran', 'IR', 28.995, 58.311, 6.6, 10, 31000),
+    E('2004-02-24', 'Al Hoceima, Morocco', 'MA', 35.142, -3.997, 6.4, 1, 628),
+    E('2004-12-26', 'Sumatra–Andaman (Indian Ocean tsunami)', 'ID', 3.295, 95.982, 9.1, 30, 227899, 'tsunami'),
+    E('2005-02-22', 'Zarand, Iran', 'IR', 30.754, 56.816, 6.4, 14, 612),
+    E('2005-03-28', 'Nias, Sumatra, Indonesia', 'ID', 2.085, 97.108, 8.6, 30, 1319),
+    E('2005-10-08', 'Kashmir (Muzaffarabad), Pakistan', 'PK', 34.451, 73.649, 7.6, 15, 76213),
+    E('2006-05-26', 'Yogyakarta, Java, Indonesia', 'ID', -7.961, 110.446, 6.3, 13, 6234),
+    E('2007-08-15', 'Pisco, Peru', 'PE', -13.386, -76.603, 8.0, 39, 596),
+    E('2008-05-12', 'Sichuan (Wenchuan), China', 'CN', 30.98, 103.396, 7.9, 10, 87652),
+    E('2009-04-06', "L'Aquila, Italy", 'IT', 42.334, 13.334, 6.3, 9, 309),
+    E('2009-09-30', 'Padang, Sumatra, Indonesia', 'ID', -0.72, 99.867, 7.5, 81, 1117),
+    E('2010-01-12', 'Port-au-Prince, Haiti', 'HT', 18.457, -72.533, 7.0, 13, 316000, 'disputed', 'Government figure; independent estimates range from about 46,000 to 160,000'),
+    E('2010-02-27', 'Maule, Chile', 'CL', -36.122, -72.898, 8.8, 22, 558, 'tsunami', 'A large share of deaths from the tsunami'),
+    E('2010-04-13', 'Yushu, Qinghai, China', 'CN', 33.165, 96.548, 6.9, 17, 2968),
+    E('2011-03-11', 'Tōhoku, Japan', 'JP', 38.297, 142.373, 9.1, 29, 18423, 'tsunami'),
+    E('2011-10-23', 'Van (Erciş), Türkiye', 'TR', 38.722, 43.513, 7.1, 16, 604),
+    E('2012-08-11', 'Ahar–Varzaqan, Iran', 'IR', 38.329, 46.826, 6.5, 11, 306),
+    E('2013-09-24', 'Awaran, Pakistan', 'PK', 26.951, 65.501, 7.7, 15, 825),
+    E('2014-08-03', 'Ludian, Yunnan, China', 'CN', 27.189, 103.409, 6.2, 12, 615),
+    E('2015-04-25', 'Gorkha, Nepal', 'NP', 28.231, 84.731, 7.8, 8, 8957),
+    E('2015-10-26', 'Hindu Kush, Afghanistan', 'AF', 36.524, 70.368, 7.5, 231, 399),
+    E('2016-04-15', 'Kumamoto, Japan', 'JP', 32.791, 130.754, 7.0, 10, 273),
+    E('2016-04-16', 'Manabí, Ecuador', 'EC', 0.382, -79.922, 7.8, 21, 663),
+    E('2016-08-24', 'Amatrice, Italy', 'IT', 42.723, 13.188, 6.2, 4, 299),
+    E('2017-09-19', 'Puebla–Mexico City, Mexico', 'MX', 18.55, -98.489, 7.1, 48, 369),
+    E('2017-11-12', 'Kermanshah, Iran–Iraq', 'IR', 34.911, 45.959, 7.3, 19, 630),
+    E('2018-08-05', 'Lombok, Indonesia', 'ID', -8.258, 116.438, 6.9, 34, 560),
+    E('2018-09-28', 'Palu, Sulawesi, Indonesia', 'ID', -0.256, 119.846, 7.5, 20, 4340, 'tsunami', 'Tsunami and liquefaction'),
+    E('2021-08-14', 'Nippes, Haiti', 'HT', 18.408, -73.475, 7.2, 10, 2248),
+    E('2022-06-21', 'Paktika, Afghanistan', 'AF', 33.092, 69.514, 6.0, 4, 1039),
+    E('2022-11-21', 'Cianjur, West Java, Indonesia', 'ID', -6.836, 106.997, 5.6, 10, 635),
+    E('2023-02-06', 'Kahramanmaraş, Türkiye–Syria', 'TR', 37.166, 37.042, 7.8, 17, 56697),
+    E('2023-09-08', 'Al Haouz (Marrakech), Morocco', 'MA', 31.073, -8.407, 6.8, 18, 2946),
+    E('2023-10-07', 'Herat, Afghanistan', 'AF', 34.61, 61.924, 6.3, 14, 1482),
+    E('2024-01-01', 'Noto, Ishikawa, Japan', 'JP', 37.487, 137.271, 7.5, 10, 549, 'shaking', 'Includes disaster-related deaths'),
+    E('2025-03-28', 'Mandalay–Sagaing, Myanmar', 'MM', 22.011, 95.936, 7.7, 10, 3815),
+    E('2025-08-31', 'Kunar, Afghanistan', 'AF', 34.706, 70.793, 6.0, 8, 2205),
+  ];
+
+  /** Situation for a catalogue event, as Plan mode would build it. */
+  BT.situation = (ev) => AA.engine.situationFromPlan({ lat: ev.lat, lon: ev.lon, name: `${ev.name} (${ev.date.slice(0, 4)})`, iso2: ev.iso2, hazard: ev.hazard, magnitude: ev.mag, depth: Math.max(2, ev.depth || 10) });
+
+  /** Score one event: where the reported toll falls in the forecast range. */
+  BT.scoreOne = (ev, fat) => {
+    const p50 = Math.max(1, fat.p50), obs = Math.max(1, ev.deaths);
+    const logErr = Math.log10(p50 / obs);
+    return { inside: ev.deaths >= fat.p10 && ev.deaths <= fat.p90, below: ev.deaths < fat.p10, above: ev.deaths > fat.p90, logErr, factor: Math.pow(10, Math.abs(logErr)), within3: Math.abs(logErr) <= Math.log10(3), within10: Math.abs(logErr) <= 1 };
+  };
+  /** Summary over scored events. */
+  BT.summarise = (results) => {
+    const s = results.filter((r) => r.scored && r.fat);
+    if (!s.length) return { n: 0 };
+    const le = s.map((r) => r.score.logErr);
+    const absMed = M.quantile(le.map(Math.abs), 0.5);
+    return {
+      n: s.length, inside: s.filter((r) => r.score.inside).length, coverage: s.filter((r) => r.score.inside).length / s.length,
+      below: s.filter((r) => r.score.below).length, above: s.filter((r) => r.score.above).length,
+      typicalFactor: Math.pow(10, absMed), bias: Math.pow(10, M.quantile(le, 0.5)),
+      within3: s.filter((r) => r.score.within3).length / s.length, within10: s.filter((r) => r.score.within10).length / s.length,
+    };
+  };
+
+  /** Run the catalogue. opts: { worldpop, step(msg, k, n), cache: {get,set}, events } — results keep the forecast range. */
+  BT.run = async (opts = {}) => {
+    const events = opts.events || BT.CATALOG, out = [], step = opts.step || (() => {});
+    for (let k = 0; k < events.length; k++) {
+      const ev = events[k];
+      const key = `${AA.MODEL_VERSION}|${opts.worldpop ? 'wp' : 'osm'}|${ev.id}`;
+      let hit = opts.cache?.get(key);
+      if (!hit) {
+        step(`Replaying ${ev.name} (${ev.date.slice(0, 4)})…`, k, events.length);
+        try {
+          const r = await AA.pipelines.forecast(BT.situation(ev), { worldpop: !!opts.worldpop, reverse: false });
+          const f = r.fc.summary.fat;
+          hit = { fat: { p10: f.p10, p50: f.p50, p90: f.p90 }, aff: { p50: r.fc.summary.aff.p50 }, zones: r.zones.length, places: r.places, radiusKm: r.sit.radiusKm, vul: r.sit.countryVul, notes: r.notes };
+          if (!r.notes.length) opts.cache?.set(key, hit); // cache only clean runs
+        } catch (e) { hit = { error: e.message }; }
+      }
+      const scored = ev.mode === 'shaking' && !hit.error;
+      out.push({ ...ev, ...hit, scored, score: hit.fat ? BT.scoreOne(ev, hit.fat) : null });
+    }
+    step('Done', events.length, events.length);
+    return { model: AA.MODEL_VERSION, worldpop: !!opts.worldpop, at: new Date().toISOString(), source: BT.SOURCE, results: out, summary: BT.summarise(out) };
+  };
+
+  /** CSV of a run (one row per event). */
+  BT.csv = (run) => {
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = run.results.map((r) => [r.id, r.date, r.name, r.iso2, r.mag, r.depth, r.deaths, r.mode, r.fat ? Math.round(r.fat.p10) : '', r.fat ? Math.round(r.fat.p50) : '', r.fat ? Math.round(r.fat.p90) : '', r.score ? (r.score.inside ? 'yes' : 'no') : '', r.score ? r.score.factor.toFixed(2) : '', r.error || ''].map(q).join(','));
+    return ['id,date,event,country,magnitude,depth_km,reported_deaths,scoring,p10_deaths,p50_deaths,p90_deaths,inside_p10_p90,error_factor,error', ...rows].join('\n');
+  };
+
+  AA.backtest = BT;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/models/cards.js */
+/* Model cards: what each model does, what it was checked against, and where it should not be trusted.
+   Written from the code in js/models/*.js — change the card when you change the model. Skill: skills/backtest/SKILL.md */
+(function (root) {
+  const AA = root.AA;
+  const C = {};
+  // status: 'validated' (systematic back-test) · 'tested' (automated checks) · 'calibrated' (fitted to a few documented events) · 'indicative' (order of magnitude only)
+  C.CARDS = [
+    {
+      id: 'EQ', title: 'Earthquake impact', status: 'validated',
+      purpose: 'People affected, displaced, injured and killed around an earthquake, by area, with a 10–90 % range.',
+      method: [
+        'Shaking (Modified Mercalli intensity) = a + 1.5·M − 4·log10(distance), with distance measured from the rupture (length from Wells & Coppersmith 1994) and the depth; a = 2.5, or fitted to the USGS observed intensity for live events.',
+        'Damage curves (lognormal, of the kind used by USGS PAGER): affected from intensity 6.5, displaced from about 8, deaths rise steeply above about 9; weaker housing (country vulnerability from World Bank indicators) shifts the curves down.',
+        '400 simulations vary magnitude (±0.2), population (±20 %) and building fragility; P10, P50 and P90 are read from them.',
+        'Live events: the USGS PAGER loss estimate replaces the model’s deaths when published; GDACS-reported counts are a floor.',
+      ],
+      inputs: 'Magnitude, depth and location (USGS / GDACS or user); towns and populations (OpenStreetMap, WorldPop 2020 in plans); World Bank country indicators.',
+      evidence: 'Systematic back-test against the NOAA NCEI catalogue (every earthquake since 2001 with 250+ deaths, run on this page). Automated checks: Nepal 2015 and Türkiye 2023 inside the forecast range.',
+      limits: ['No tsunami, landslide or liquefaction: those deaths are not modelled (such events are shown but not scored).', 'Uses today’s population for past events.', 'Building quality only through a national vulnerability index, so places with strict building codes may be over-forecast and very weak housing under-forecast (see the back-test table).', 'Aftershocks only when a planner adds one.'],
+    },
+    {
+      id: 'TC', title: 'Tropical cyclone impact', status: 'indicative',
+      purpose: 'People affected and displaced by wind around a cyclone track point.',
+      method: ['Wind decays beyond 30 km as V·(30/r)^0.7.', 'Lognormal damage curves at 120 (affected), 160 (displaced) and 210 km/h (severe damage); deaths 0.2 % of the severely damaged.', 'GDACS lifetime-maximum wind is capped to the current episode’s alert band.'],
+      inputs: 'Maximum sustained wind and position (GDACS / user); populations as above.',
+      evidence: 'Not yet back-tested. Wind-damage shapes follow published fragility work; death rates are a planning assumption.',
+      limits: ['No storm surge or rainfall flooding, which cause most cyclone deaths (Nargis 2008, Haiyan 2013): deaths can be badly under-forecast on low coasts.', 'One track point, not the full track.'],
+    },
+    {
+      id: 'FL', title: 'Flood impact', status: 'calibrated',
+      purpose: 'People affected, displaced, injured and killed by river floods and flash floods.',
+      method: ['Flood intensity falls off with distance from the flood centre; for live floods, GloFAS river flow at each area against its yearly median replaces the distance rule, and the GDACS flood outline decides where towns are searched.', 'Flash floods (steep terrain, glacial-lake outbursts, cloudbursts, dam failures) and river floods have separate death and displacement rates.', 'Agency-reported deaths, missing and displaced are a floor.'],
+      inputs: 'GDACS event and outline, GloFAS discharge (Open-Meteo), elevation, populations.',
+      evidence: 'Calibrated on the Nepal 2026 flash flood (IFRC: about 1 death per 100 people affected) and Pakistan 2022 river floods plus the 1980–2009 world average (Doocy et al. 2013: about 1 per 10,000).',
+      limits: ['Not systematically back-tested yet.', 'Flood depth and flood defences are not modelled.', 'The flash/river choice changes deaths a hundredfold; check the flood type shown in the plan.'],
+    },
+    {
+      id: 'VO', title: 'Volcano, wildfire and drought impact', status: 'indicative',
+      purpose: 'A rough count of people affected near an eruption, a fire or across a drought area.',
+      method: ['An intensity score 0–1 from the agency alert level, decaying with distance (fire and drought use their reported area).', 'Affected from score 0.35; displaced 100 % of affected for volcanoes, 50 % for fires, none for droughts; deaths 1 in 10,000 affected (none for droughts).'],
+      inputs: 'GDACS / NASA EONET events; populations.',
+      evidence: 'None beyond plausibility checks.',
+      limits: ['Order of magnitude only. Use for preparing stock, not for casualty figures.'],
+    },
+    {
+      id: 'PLAN', title: 'Relief plan (allocation and routing)', status: 'tested',
+      purpose: 'Which store sends what to which area, by which road, each 6 hours, by need and at the lowest cost.',
+      method: ['Need score: severity 35 %, people 20 %, vulnerability 20 %, access 15 %, already received −10 % (editable).', 'Demand from Sphere standards (water 15 L, food 0.6 kg per displaced person per day, a tent per 5 displaced, medical modules, staff).', 'Mixed-integer allocation with minimum shares of water and medical, a need-weighted fairness term and road congestion; Clarke–Wright multi-stop runs; OSRM roads adjusted for modelled damage and closures; a survival-weighted model sends the injured to hospitals with free beds.', 'Compared every time with the nearest-store rule (cost-saving report).'],
+      inputs: 'The forecast above; stores and hospitals (OpenStreetMap or your inventory); OSRM road times.',
+      evidence: 'Automated checks: stock, fleet and fairness constraints hold; optimised plan never worse per tonne than nearest-store when stock is plentiful; high-need areas get more water when stock is scarce.',
+      limits: ['Stock and vehicles are assumed by facility type until real inventory is connected.', 'Road damage is modelled, not observed, unless closures or field reports are entered.'],
+    },
+  ];
+  C.STATUS = { validated: 'Back-tested', tested: 'Checked by automated tests', calibrated: 'Calibrated on a few events', indicative: 'Indicative only' };
+  AA.cards = C;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/ui/validation.js */
+/* Validation page: back-test runner, chart, table and model cards. Skill: skills/backtest/SKILL.md */
+(function (root) {
+  const AA = root.AA, BT = AA.backtest, f = AA.fmt;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const BLUE = '#1f5fbf', ORANGE = '#c2410c', GREY = '#8a9099', INK = '#23262b', MUTED = '#5b6068', RULE = '#e2e5e9';
+  const LS = AA.workspace._ls;
+  const cache = { get: (k) => { try { return JSON.parse(LS.getItem('aa.bt.' + k) || 'null'); } catch (e) { return null; } }, set: (k, v) => { try { LS.setItem('aa.bt.' + k, JSON.stringify(v)); } catch (e) { /* storage full */ } } };
+  let run = null;
+
+  const pct = (x) => `${Math.round(x * 100)} %`;
+  const stats = () => {
+    const s = run?.summary;
+    const tile = (v, l) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+    $('#btStats').innerHTML = s && s.n ? [
+      tile(`${s.inside}/${s.n}`, `reported tolls inside the forecast range (${pct(s.coverage)}; ideal about 80 %)`),
+      tile(`×${s.typicalFactor.toFixed(1)}`, 'typical gap between the most likely forecast and the reported toll'),
+      tile(pct(s.within3), 'most-likely forecast within a factor of 3'),
+      tile(s.bias >= 1 ? `×${s.bias.toFixed(1)} high` : `×${(1 / s.bias).toFixed(1)} low`, `median bias (${s.above} tolls above the range, ${s.below} below)`),
+    ].join('') : [tile('–', 'events scored'), tile('–', 'typical gap'), tile('–', 'within ×3'), tile('–', 'bias')].join('');
+  };
+
+  // log axis 1 … 1,000,000 deaths
+  const chart = () => {
+    const svg = $('#btChart'), rows = run ? run.results : BT.CATALOG.map((e) => ({ ...e }));
+    const W = 1000, L = 300, R = 24, T = 34, RH = 22, H = T + rows.length * RH + 10;
+    const lo = 0, hi = 6, x = (v) => L + ((Math.log10(Math.max(1, v)) - lo) / (hi - lo)) * (W - L - R);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('width', W); svg.setAttribute('height', H);
+    let g = '';
+    for (let p = 0; p <= 6; p++) { const xx = x(10 ** p); g += `<line x1="${xx}" x2="${xx}" y1="${T - 6}" y2="${H - 6}" stroke="${RULE}" stroke-width="1"/><text x="${xx}" y="${T - 12}" text-anchor="middle" font-size="12" fill="${MUTED}" font-family="IBM Plex Mono, monospace">${['1', '10', '100', '1k', '10k', '100k', '1M'][p]}</text>`; }
+    g += `<text x="${L - 10}" y="${T - 12}" text-anchor="end" font-size="12" fill="${MUTED}">deaths (log scale)</text>`;
+    rows.forEach((r, k) => {
+      const y = T + k * RH + RH / 2, scored = r.mode === 'shaking';
+      g += `<g class="row" data-k="${k}"><rect class="hit" x="0" y="${y - RH / 2}" width="${W}" height="${RH}" fill="transparent"/>`;
+      g += `<text x="${L - 10}" y="${y + 4}" text-anchor="end" font-size="12.5" fill="${INK}">${esc(r.name.length > 34 ? r.name.slice(0, 33) + '…' : r.name)} ${r.date.slice(0, 4)}</text>`;
+      if (r.fat) {
+        const a = x(r.fat.p10), b = x(r.fat.p90);
+        g += `<rect x="${a}" y="${y - 3}" width="${Math.max(4, b - a)}" height="6" rx="3" fill="${BLUE}" opacity="${scored ? 1 : 0.45}"/><circle cx="${x(r.fat.p50)}" cy="${y}" r="5" fill="${BLUE}" stroke="#fff" stroke-width="2" opacity="${scored ? 1 : 0.6}"/>`;
+      } else if (r.error) g += `<text x="${L + 4}" y="${y + 4}" font-size="12" fill="${MUTED}">not run: ${esc(r.error).slice(0, 60)}</text>`;
+      const dx = x(r.deaths);
+      g += scored ? `<rect x="${dx - 5}" y="${y - 5}" width="10" height="10" transform="rotate(45 ${dx} ${y})" fill="${ORANGE}" stroke="#fff" stroke-width="2"/>` : `<rect x="${dx - 5}" y="${y - 5}" width="10" height="10" transform="rotate(45 ${dx} ${y})" fill="#fff" stroke="${GREY}" stroke-width="2"/>`;
+      g += '</g>';
+    });
+    svg.innerHTML = g;
+    const tip = $('#btTip');
+    svg.querySelectorAll('.row').forEach((el) => {
+      el.addEventListener('mousemove', (e) => {
+        const r = rows[+el.dataset.k];
+        tip.innerHTML = `<b>${esc(r.name)}</b> · ${esc(r.date)} · M ${r.mag}<br>Reported: <b>${f.n(r.deaths)}</b> deaths${r.note ? `<br><i>${esc(r.note)}</i>` : ''}${r.fat ? `<br>Forecast: ${f.n(r.fat.p10)} – <b>${f.n(r.fat.p50)}</b> – ${f.n(r.fat.p90)}` : ''}${r.score ? `<br>${r.mode !== 'shaking' ? 'Not scored' : r.score.inside ? 'Inside the range' : r.score.above ? 'Above the range (under-forecast)' : 'Below the range (over-forecast)'} · gap ×${r.score.factor.toFixed(1)}` : r.mode !== 'shaking' ? `<br>Not scored (${r.mode === 'tsunami' ? 'tsunami or liquefaction deaths' : 'disputed toll'})` : ''}`;
+        tip.hidden = false; tip.style.left = `${Math.min(innerWidth - 310, e.clientX + 14)}px`; tip.style.top = `${e.clientY + 14}px`;
+      });
+      el.addEventListener('mouseleave', () => (tip.hidden = true));
+    });
+  };
+
+  const table = () => {
+    const rows = run ? run.results : BT.CATALOG;
+    $('#btTable tbody').innerHTML = rows.map((r) => {
+      const res = !r.fat ? (r.error ? `<span class="tag">not run</span>` : '<span class="tag">–</span>') : r.mode !== 'shaking' ? `<span class="tag">not scored: ${r.mode === 'tsunami' ? 'tsunami' : 'disputed'}</span>` : r.score.inside ? '<span class="tag in">inside</span>' : `<span class="tag out">${r.score.above ? 'under' : 'over'} ×${r.score.factor.toFixed(1)}</span>`;
+      return `<tr><td class="mono">${r.date}</td><td>${esc(r.name)}${r.note ? `<br><span class="small muted">${esc(r.note)}</span>` : ''}</td><td class="num">${r.mag}</td><td class="num">${f.n(r.deaths)}</td><td class="num">${r.fat ? f.n(r.fat.p10) : ''}</td><td class="num">${r.fat ? f.n(r.fat.p50) : ''}</td><td class="num">${r.fat ? f.n(r.fat.p90) : ''}</td><td>${res}</td></tr>`;
+    }).join('');
+    $('#btSrc').innerHTML = `Reported deaths: <a href="${BT.SOURCE.url}" target="_blank" rel="noopener">${esc(BT.SOURCE.name)}</a> (${esc(BT.SOURCE.query)}, snapshot ${BT.SOURCE.snapshot}). Forecast: AidAtlas model ${esc(run?.model || AA.MODEL_VERSION)}, model alone (no USGS PAGER, no reported counts), ${run?.worldpop ? 'WorldPop 2020' : 'OpenStreetMap'} populations of today${run ? `, run ${esc(new Date(run.at).toLocaleString())}` : ''}.`;
+  };
+
+  const cards = () => {
+    const s = run?.summary;
+    $('#mCards').innerHTML = AA.cards.CARDS.map((c) => `<article class="vcard mcard"><h3>${esc(c.title)}</h3><span class="st ${c.status}">${esc(AA.cards.STATUS[c.status])}</span><p class="small" style="margin:0">${esc(c.purpose)}</p><dl>
+      <dt>How it works</dt><dd><ul>${c.method.map((m) => `<li>${esc(m)}</li>`).join('')}</ul></dd>
+      <dt>Data</dt><dd>${esc(c.inputs)}</dd>
+      <dt>Evidence</dt><dd>${esc(c.evidence)}${c.id === 'EQ' && s && s.n ? ` <b>Latest run on this device: ${s.inside} of ${s.n} reported tolls inside the range; typical gap ×${s.typicalFactor.toFixed(1)}.</b>` : ''}</dd>
+      <dt>Do not rely on it for</dt><dd><ul>${c.limits.map((m) => `<li>${esc(m)}</li>`).join('')}</ul></dd></dl></article>`).join('');
+  };
+
+  const render = () => { stats(); chart(); table(); cards(); $('#btCsv').disabled = $('#btJson').disabled = !run; };
+  const download = (name, text, type) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); };
+
+  const boot = () => {
+    $('#mVer').textContent = AA.MODEL_VERSION;
+    try { const last = JSON.parse(LS.getItem('aa.btLast') || 'null'); if (last && last.model === AA.MODEL_VERSION) { run = last; $('#btStatus').textContent = `Results from ${new Date(run.at).toLocaleString()} on this device. Run again to refresh.`; } } catch (e) { /* none */ }
+    render();
+    $('#btRun').addEventListener('click', async () => {
+      const b = $('#btRun'); b.disabled = true;
+      try {
+        run = await BT.run({ worldpop: $('#btWp').checked, cache, step: (m, k, n) => ($('#btStatus').innerHTML = `<span class="spin"></span> ${esc(m)} (${k + 1 > n ? n : k + 1} of ${n})`) });
+        try { LS.setItem('aa.btLast', JSON.stringify(run)); } catch (e) { /* storage full */ }
+        const errs = run.results.filter((r) => r.error).length;
+        $('#btStatus').textContent = `Done: ${run.summary.n} earthquakes scored${errs ? `, ${errs} could not be run (data service unavailable; run again later)` : ''}.`;
+        render();
+      } catch (e) { $('#btStatus').textContent = `Back-test failed: ${e.message}`; }
+      finally { b.disabled = false; }
+    });
+    $('#btCsv').addEventListener('click', () => run && download(`aidatlas-backtest-${run.model}.csv`, BT.csv(run), 'text/csv'));
+    $('#btJson').addEventListener('click', () => run && download(`aidatlas-backtest-${run.model}.json`, JSON.stringify(run, null, 1), 'application/json'));
+    $('#btLoad').addEventListener('change', async (e) => { const file = e.target.files[0]; if (!file) return; try { const j = JSON.parse(await file.text()); if (!Array.isArray(j.results)) throw new Error('not a back-test results file'); j.summary = BT.summarise(j.results); run = j; render(); $('#btStatus').textContent = `Loaded results from ${file.name} (model ${j.model}).`; } catch (er) { $('#btStatus').textContent = `Could not open it: ${er.message}`; } });
+  };
+  AA.validation = { render, get run() { return run; } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})(window);
+
+</script>
+</body>
+</html>

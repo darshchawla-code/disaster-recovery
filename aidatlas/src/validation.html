@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AidAtlas · Validation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../css/aidatlas.css">
+<style>
+  body.valpage { background: var(--paper-2); }
+  .vp { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
+  .vp-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+  .vp-top .wordmark { font-size: 28px; text-decoration: none; color: var(--ink); }
+  .vp-top nav { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+  .vp h1 { font-family: var(--display); font-size: 48px; margin: 18px 0 4px; line-height: 1; }
+  .vp h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); margin: 28px 0 8px; }
+  .vp .lead { color: var(--graphite); max-width: 760px; margin: 0 0 12px; }
+  .vcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; }
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .stat { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px; }
+  .stat .v { font: 600 30px/1.1 var(--mono); }
+  .stat .l { font-size: 12.5px; color: var(--graphite); }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+  .controls label { font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+  .chartwrap { overflow-x: auto; }
+  #btChart { display: block; min-width: 640px; }
+  #btChart .row:hover rect.hit { fill: rgba(31,95,191,.06); }
+  .legendrow { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--graphite); margin: 6px 0; }
+  .legendrow i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .bt-tip { position: fixed; z-index: 20; pointer-events: none; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.16); max-width: 300px; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .mcard h3 { margin: 0 0 4px; font-size: 18px; }
+  .mcard .st { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; margin-bottom: 6px; }
+  .st.validated { background: #dcfce7; color: #166534; } .st.tested { background: #dbeafe; color: #1e3a8a; } .st.calibrated { background: #fef3c7; color: #92400e; } .st.indicative { background: #fee2e2; color: #991b1b; }
+  .mcard dl { margin: 0; font-size: 13px; } .mcard dt { font-weight: 600; margin-top: 8px; } .mcard dd { margin: 2px 0 0; color: var(--graphite); }
+  .mcard ul { margin: 2px 0 0; padding-left: 18px; }
+  .tag { font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--rule); }
+  .tag.in { background: #dcfce7; color: #166534; } .tag.out { background: #fee2e2; color: #991b1b; }
+  @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cards { grid-template-columns: minmax(0, 1fr); } .vp h1 { font-size: 38px; } }
+</style>
+</head>
+<body class="valpage">
+<header class="vp-top"><a class="wordmark" href="index.html">Aid<b>Atlas</b></a><nav><a href="app.html">Map</a><a href="guide.html#validation">Guide</a><a href="#cards">Model cards</a></nav></header>
+<main class="vp">
+  <h1>How accurate is AidAtlas?</h1>
+  <p class="lead">Every earthquake since 2001 that killed 250 or more people (NOAA NCEI catalogue) is replayed through the same forecast the map uses, with no knowledge of what happened. The chart shows the forecast range for deaths beside the toll that was reported. A good model has about 8 in 10 reported tolls inside its 10–90 % range.</p>
+
+  <section aria-labelledby="h-sum"><h2 id="h-sum">Summary</h2>
+    <div class="stats" id="btStats"></div>
+    <div class="controls">
+      <button class="btn primary" id="btRun" type="button">Run the back-test</button>
+      <label><input type="checkbox" id="btWp"> Use WorldPop population (slower, closer to the map)</label>
+      <button class="btn" id="btCsv" type="button" disabled>Download CSV</button>
+      <button class="btn" id="btJson" type="button" disabled>Download JSON</button>
+      <label class="btn" style="cursor:pointer">Open results file<input id="btLoad" type="file" accept=".json,application/json" hidden></label>
+    </div>
+    <p class="small muted" id="btStatus">Not run on this device yet. A run reads towns for each event from OpenStreetMap (about 2–4 minutes); results are kept on this device.</p>
+  </section>
+
+  <section aria-labelledby="h-chart"><h2 id="h-chart">Forecast vs reported deaths</h2>
+    <div class="vcard">
+      <div class="legendrow"><span><i style="width:28px;height:6px;border-radius:3px;background:#1f5fbf"></i>Forecast range (P10–P90), dot = most likely (P50)</span><span><i style="width:10px;height:10px;background:#c2410c;transform:rotate(45deg)"></i>Reported deaths (NOAA NCEI)</span><span><i style="width:10px;height:10px;border:2px solid #8a9099;transform:rotate(45deg)"></i>Not scored (tsunami or disputed toll)</span></div>
+      <div class="chartwrap"><svg id="btChart" role="img" aria-label="Forecast death range and reported deaths for each past earthquake"></svg></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-table"><h2 id="h-table">Event by event</h2>
+    <div class="vcard tablewrap"><table class="t" id="btTable"><thead><tr><th>Date</th><th>Earthquake</th><th class="num">M</th><th class="num">Reported</th><th class="num">P10</th><th class="num">P50</th><th class="num">P90</th><th>Result</th></tr></thead><tbody></tbody></table></div>
+    <p class="small muted" id="btSrc"></p>
+  </section>
+
+  <section aria-labelledby="h-cards" id="cards"><h2 id="h-cards">Model cards</h2>
+    <p class="lead">What each model does, what it has been checked against, and where it should not be trusted.</p>
+    <div class="cards" id="mCards"></div>
+  </section>
+  <p class="small muted">AidAtlas · model version <span id="mVer"></span> · built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></p>
+</main>
+<div class="bt-tip" id="btTip" hidden></div>
+
+<script src="../js/core.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/workspace.js"></script>
+<script src="../js/models/prediction.js"></script>
+<script src="../js/models/fairness.js"></script>
+<script src="../js/engine.js"></script>
+<script src="../js/pipelines.js"></script>
+<script src="../js/models/backtest.js"></script>
+<script src="../js/models/cards.js"></script>
+<script src="../js/ui/validation.js"></script>
+</body>
+</html>

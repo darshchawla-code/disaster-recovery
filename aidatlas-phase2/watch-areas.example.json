@@ -1,4 +1,0 @@
-[
-  { "name": "Gurugram district", "lat": 28.46, "lon": 77.03, "radiusKm": 150, "hazards": ["EQ", "FL", "TC"], "minLevel": "Orange" },
-  { "name": "Bagmati Province, Nepal", "lat": 27.7, "lon": 85.3, "radiusKm": 200, "hazards": ["EQ", "FL"], "minLevel": "Orange" }
-]

@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Built from src/field.html by tools/build-standalone.js — edit the sources, not this file. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5fbf">
+<title>AidAtlas · Field</title>
+<link rel="manifest" href="field.webmanifest">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f5fbf'/%3E%3Cpath d='M32 12c-8 0-14 6-14 14 0 10 14 26 14 26s14-16 14-26c0-8-6-14-14-14zm0 19a5 5 0 110-10 5 5 0 010 10z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* AidAtlas — skill: ui-sketch.
+   Layout concept: a white field-notebook page; pencil-sketched landscape underlies every screen;
+   the satellite map is the working surface, the notebook panel is the plan. Single light theme by design. */
+:root {
+  --paper: #ffffff;
+  --paper-2: #f7f8f9;
+  --ink: #23262b;
+  --graphite: #5b6068;
+  --faint: #8a9099;
+  --rule: #e2e5e9;
+  --accent: #1f5fbf;
+  --accent-ink: #ffffff;
+  --affected: #16a34a;
+  --supply: #dc2626;
+  --storage: #7c3aed;
+  --warn: #b45309;
+  --truck: #f59e0b;
+  --bus: #0ea5e9;
+  --casualty: #db2777;
+  --display: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r: 6px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.wordmark { font-family: var(--display); font-weight: 700; letter-spacing: 0.5px; line-height: 1; }
+.wordmark b { color: var(--accent); font-weight: 700; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--graphite); font-weight: 600; }
+.sketch-bg { position: relative; isolation: isolate; }
+.sketch-bg::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMTYwMCA1MjAiIHByZXNlcnZlQXNwZWN0UmF0aW89InhNaWRZTWF4IHNsaWNlIiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUb3pZalptTURFNE55MDRZV1E1TFRRNFpqTXRPR1E1TlMxbE9XRTRaamt3TlRJMU5qY0FBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphUE04dFFZdEQ0Y2M2djl1ZnpROThMc0FBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEcGhaREF5TkRRM05TMWhaakV5TFRRM09UQXRPRE5tT0MwNU5HUXhOalZrWXpWbU16VnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob05rZ0h1bC84MXZTNzBaVWVOeWZCY0FBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2crRm1VRjEySzBVTUtaVFpmM1k5VFg2R29oSWQ5WnI0WHlmUWlYeFh4cHdTa1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphTmx5TnRJRTVvT0tmeGpMZ0h2eE0vQUFBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDQWFtN1BRbzE2cy9qbHFaSkt4dDF3eXBsN21aeGxFRGRHbEIya1piTXNOSkdSdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCak9abXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qTmlObVl3TVRnM0xUaGhaRGt0TkRobU15MDRaRGsxTFdVNVlUaG1PVEExTWpVMk55OWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qQTRZVFEwTURBNUxUZzVaR1V0TkdReE5DMWhPVGhpTFRZNE9EY3pPVGxsTnpVM1luSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NENFdaUVhYWXJSUXdwbE5sL2RqMU5mb2FpRWgzMW12aGZKOUNKZkZmR25CS0pqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnbkJWTDhWaG1pVkpiNmh4YnQrOFMxdndhckFnelJ2amZROW5XS0w3RGs2dWlZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dSb3d5M1hoM0ZpYXpHdURuY252SUpRcmJJNFNmcFZoSkhNeGhPcjRQLzE1MFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRT1dJbnh4WUd3WFVLQWh5TTFPMTRVNVJUZEI0Z2x2VXJYNytoU0NUYnRabjFEV28xa0lpNnpYWnUrdENXSzAxb1FiTHQxMjFYUWJpaytNTk4veHp0Vm89PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+CjxkZWZzPgo8ZmlsdGVyIGlkPSJyMSIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjAzNSIgbnVtT2N0YXZlcz0iMiIgc2VlZD0iMyIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjMuMiIvPjwvZmlsdGVyPgo8ZmlsdGVyIGlkPSJyMiIgeD0iLTUlIiB5PSItNSUiIHdpZHRoPSIxMTAlIiBoZWlnaHQ9IjExMCUiPjxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjA1IiBudW1PY3RhdmVzPSIyIiBzZWVkPSIxMSIvPjxmZURpc3BsYWNlbWVudE1hcCBpbj0iU291cmNlR3JhcGhpYyIgc2NhbGU9IjQuNSIvPjwvZmlsdGVyPgo8ZyBpZD0ic2NlbmUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CjxwYXRoIGQ9Ik0yNzAuMCAyMDAuMCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAyMDguMiBBNi4zIDYuMyAwIDAgMSAyNTIuOSAyMTAuMiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAyMDQuNiBBNi4zIDYuMyAwIDAgMSAyNDMuNCAxOTUuNCBBNi4zIDYuMyAwIDAgMSAyNTIuOSAxODkuOCBBNi4zIDYuMyAwIDAgMSAyNjQuNyAxOTEuOCBBNi4zIDYuMyAwIDAgMSAyNzAuMCAyMDAuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTI5Ni4wIDE2Mi4wIEE5LjAgOS4wIDAgMCAxIDI4OC41IDE3My43IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE3Ni42IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE2OC41IEE5LjAgOS4wIDAgMCAxIDI1OC4wIDE1NS41IEE5LjAgOS4wIDAgMCAxIDI3MS41IDE0Ny40IEE5LjAgOS4wIDAgMCAxIDI4OC41IDE1MC4zIEE5LjAgOS4wIDAgMCAxIDI5Ni4wIDE2Mi4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMjk0LjAgMTE4LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMzMuMiBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDEzNy4wIEExMS43IDExLjcgMCAwIDEgMjQ0LjYgMTI2LjUgQTExLjcgMTEuNyAwIDAgMSAyNDQuNiAxMDkuNSBBMTEuNyAxMS43IDAgMCAxIDI2Mi4yIDk5LjAgQTExLjcgMTEuNyAwIDAgMSAyODQuMiAxMDIuOCBBMTEuNyAxMS43IDAgMCAxIDI5NC4wIDExOC4wIiBzdHJva2Utd2lkdGg9IjEuMyIvPgo8cGF0aCBkPSJNMzMyLjAgNzQuMCBBMTQuNCAxNC40IDAgMCAxIDMyMC4wIDkyLjggQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA5Ny40IEExNC40IDE0LjQgMCAwIDEgMjcxLjIgODQuNCBBMTQuNCAxNC40IDAgMCAxIDI3MS4yIDYzLjYgQTE0LjQgMTQuNCAwIDAgMSAyOTIuOSA1MC42IEExNC40IDE0LjQgMCAwIDEgMzIwLjAgNTUuMiBBMTQuNCAxNC40IDAgMCAxIDMzMi4wIDc0LjAiIHN0cm9rZS13aWR0aD0iMS4zIi8+CjxwYXRoIGQ9Ik0zODAuMCA0Mi4wIEExMy41IDEzLjUgMCAwIDEgMzY4LjcgNTkuNiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDYzLjkgQTEzLjUgMTMuNSAwIDAgMSAzMjMuMCA1MS44IEExMy41IDEzLjUgMCAwIDEgMzIzLjAgMzIuMiBBMTMuNSAxMy41IDAgMCAxIDM0My4zIDIwLjEgQTEzLjUgMTMuNSAwIDAgMSAzNjguNyAyNC40IEExMy41IDEzLjUgMCAwIDEgMzgwLjAgNDIuMCIgc3Ryb2tlLXdpZHRoPSIxLjMiLz4KPHBhdGggZD0iTTAgNDAyIEMgMTYwIDM5OCwgMzIwIDQwNiwgNTIwIDQwMSBTIDgyMCAzOTgsIDEwMDAgNDA0IFMgMTE2MCA0MDAsIDExODAgNDA0IiBzdHJva2Utd2lkdGg9IjEuNiIvPgo8cGF0aCBkPSJNNDAgNDAyIEwxNzUgMjYyIFEyMDUgMjM4IDIzNiAyMzEgTDI2NiAyMzEgUTI5NiAyMzggMzI2IDI2MiBMNDcwIDQwMiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0yMzYgMjMxIFEyNTEgMjQwIDI2NiAyMzEiIHN0cm9rZS13aWR0aD0iMS42Ii8+CjxwYXRoIGQ9Ik0yNDYgMjM0IFEyMzYgMjgwIDIyMiAzMzAgUTIxNiAzNTAgMjA2IDM3MiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTI1OCAyMzQgUTI3MiAyODYgMzAwIDMzNiBRMzEyIDM1NiAzMTggMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNMzgwIDQwMiBMNDY4IDMwMCBMNTE4IDMzMiBMNjAwIDIyOCBMNjc2IDMxOCBMNzI0IDI4OCBMODEyIDQwMiIgc3Ryb2tlLXdpZHRoPSIxLjgiLz4KPHBhdGggZD0iTTU3NCAyNjIgTDYwMCAyMjggTDYyOCAyNjIgTDYxNCAyNTQgTDYwMSAyNzAgTDU4OCAyNTQgWiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz4KPHBhdGggZD0iTTY0MCAzMzIgQyA2NjggMzcyLCA2MTAgNDEyLCA3MDYgNDQ2IFMgOTA2IDQ4MiwgMTEwNiA0NzAgUyAxMjU2IDQ1MiwgMTMzNiA0MzQiIHN0cm9rZS13aWR0aD0iMS40Ii8+CjxwYXRoIGQ9Ik02NjQgMzM2IEMgNjkwIDM3NiwgNjQwIDQwNCwgNzI0IDQzMiBTIDkxNiA0NjYsIDExMTIgNDU2IFMgMTI2MiA0NDAsIDEzNDAgNDI0IiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNNzA2IDQwMiBMNzA2IDM4NyBNNjg4LjAgMzg3IEw3MDYgMzQyLjAgTDcyNC4wIDM4NyBaIE02OTIgMzcyIEw3MDYgMzMzIEw3MjAgMzcyIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzM0IDQwMiBMNzM0IDM5MCBNNzE5LjYgMzkwIEw3MzQgMzU0LjAgTDc0OC40IDM5MCBaIE03MjIgMzc4IEw3MzQgMzQ3IEw3NDYgMzc4IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzYwIDQwMiBMNzYwIDM4NiBNNzQwLjIgMzg2IEw3NjAgMzM2LjAgTDc3OS44IDM4NiBaIE03NDQgMzY5IEw3NjAgMzI2IEw3NzYgMzY5IiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNNzg4IDQwMiBMNzg4IDM5MSBNNzc0LjUgMzkxIEw3ODggMzU3LjAgTDgwMS41IDM5MSBaIE03NzcgMzgwIEw3ODggMzUwIEw3OTkgMzgwIiBzdHJva2Utd2lkdGg9IjEuMiIvPgo8cGF0aCBkPSJNODEyIDM5OCBxLTkgLTE4IDMgLTMyIHEtMSAxMyA4IDE1IHE1IC0xNCAtMSAtMjYgcTE5IDEzIDkgNDMiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik04MjggMzk2IHEtOSAtMTggMyAtMzIgcS0xIDEzIDggMTUgcTUgLTE0IC0xIC0yNiBxMTkgMTMgOSA0MyIgc3Ryb2tlLXdpZHRoPSIxLjEiLz4KPHBhdGggZD0iTTg0NiA0MDAgcS05IC0xOCAzIC0zMiBxLTEgMTMgOCAxNSBxNSAtMTQgLTEgLTI2IHExOSAxMyA5IDQzIiBzdHJva2Utd2lkdGg9IjEuMSIvPgo8cGF0aCBkPSJNODcwIDQwMiBWMzUyIEg5MjAgVjQwMiBNODY0IDM1NCBMODk1IDMyMiBMOTI2IDM1NCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTg4NCA0MDIgdi0yMiBoMTIgdjIyIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTk0MCA0MDIgVjM0MCBIMTAwMCBWNDAyIE05MzQgMzQyIEw5NzAgMzA0IEwxMDA2IDM0MiIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KPHBhdGggZD0iTTk3MCAzNDAgTDk2MiAzNTggTDk3NSAzNjggTDk2NiAzODYgTDk3MyA0MDIiIHN0cm9rZS13aWR0aD0iMS4yIi8+CjxwYXRoIGQ9Ik05NDggMzU2IGgxNCB2MTIgaC0xNCBaIE05ODIgMzU2IGgxMiB2MTIgaC0xMiBaIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEwMjIgNDAyIFYyOTYgSDEwNjggVjQwMiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTEwMjggMzA2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMDYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMwNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzIxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMjEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMyMSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzM2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzMzYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDMzNiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzUxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNTEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM1MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzY2IGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzNjYgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM2NiBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwMjggMzgxIGg4IHY5IGgtOCBaIiBzdHJva2Utd2lkdGg9IjAuOCIvPgo8cGF0aCBkPSJNMTA0MSAzODEgaDggdjkgaC04IFoiIHN0cm9rZS13aWR0aD0iMC44Ii8+CjxwYXRoIGQ9Ik0xMDU0IDM4MSBoOCB2OSBoLTggWiIgc3Ryb2tlLXdpZHRoPSIwLjgiLz4KPHBhdGggZD0iTTEwODYgNDAyIEwxMDk0IDM1NiBMMTEzOCAzNjQgTDExMzIgNDAyIE0xMDg4IDM1OCBMMTEyMCAzMzAgTDExNDQgMzY2IiBzdHJva2Utd2lkdGg9IjEuNSIvPgo8cGF0aCBkPSJNNzgwIDQxNCBMODAwIDQyNCBMODE2IDQxNCBMODM2IDQzMiBMODUyIDQyMCBMODgyIDQzNiBMOTAyIDQyNCBMOTMwIDQ0MCIgc3Ryb2tlLXdpZHRoPSIxLjQiLz4KPHBhdGggZD0iTTkyMCA0NzAgUTk2MCA0NTIgMTAwMCA0NzAiIHN0cm9rZS13aWR0aD0iMS4wIi8+CjxwYXRoIGQ9Ik04OTAgNDc0IFE5NjAgNDM4IDEwMzAgNDc0IiBzdHJva2Utd2lkdGg9IjEuMCIvPgo8cGF0aCBkPSJNODYwIDQ3OCBROTYwIDQyNSAxMDYwIDQ3OCIgc3Ryb2tlLXdpZHRoPSIxLjAiLz4KPHBhdGggZD0iTTg3MiAxNTAgUTg1OCAxMjAgODkwIDExMyBROTAwIDg0IDkzNiA5MyBROTU2IDY2IDk5MiA4NiBRMTAyOCA4MCAxMDM0IDExMiBRMTA2NiAxMTggMTA1NCAxNTAgWiIgc3Ryb2tlLXdpZHRoPSIxLjciLz4KPHBhdGggZD0iTTg4NCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNODk4IDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05MTIgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTkyNiAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTQwIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05NTQgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk2OCAxNjIgbC05IDI2IiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNOTgyIDE2OCBsLTkgMjYiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik05OTYgMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMTAgMTYyIGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMjQgMTY4IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTEwMzggMTc0IGwtOSAyNiIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTk4MCAxNTYgTDk2MiAyMDAgTDk4NCAyMDAgTDk2NCAyNTAiIHN0cm9rZS13aWR0aD0iMS44Ii8+CjxwYXRoIGQ9Ik0xNDQ0LjAgMTI4LjAgTDE0NDQuNSAxMjguNCBMMTQ0NC45IDEyOC44IEwxNDQ1LjMgMTI5LjQgTDE0NDUuNSAxMzAuMCBMMTQ0NS43IDEzMC42IEwxNDQ1LjcgMTMxLjMgTDE0NDUuNiAxMzIuMSBMMTQ0NS40IDEzMi44IEwxNDQ1LjAgMTMzLjYgTDE0NDQuNSAxMzQuMyBMMTQ0My45IDEzNS4wIEwxNDQzLjEgMTM1LjcgTDE0NDIuMiAxMzYuMyBMMTQ0MS4yIDEzNi45IEwxNDQwLjAgMTM3LjMgTDE0MzguNyAxMzcuNyBMMTQzNy40IDEzNy45IEwxNDM1LjkgMTM4LjAgTDE0MzQuNCAxMzguMCBMMTQzMi45IDEzNy44IEwxNDMxLjQgMTM3LjUgTDE0MjkuOCAxMzcuMCBMMTQyOC4zIDEzNi40IEwxNDI2LjkgMTM1LjYgTDE0MjUuNSAxMzQuNyBMMTQyNC4yIDEzMy42IEwxNDIzLjEgMTMyLjQgTDE0MjIuMSAxMzEuMCBMMTQyMS4zIDEyOS42IEwxNDIwLjcgMTI4LjAgTDE0MjAuMyAxMjYuMyBMMTQyMC4xIDEyNC42IEwxNDIwLjIgMTIyLjkgTDE0MjAuNSAxMjEuMSBMMTQyMS4xIDExOS4zIEwxNDIxLjkgMTE3LjUgTDE0MjMuMCAxMTUuOCBMMTQyNC40IDExNC4xIEwxNDI2LjAgMTEyLjUgTDE0MjcuOCAxMTEuMSBMMTQyOS45IDEwOS44IEwxNDMyLjEgMTA4LjcgTDE0MzQuNiAxMDcuNyBMMTQzNy4yIDEwNy4wIEwxNDQwLjAgMTA2LjQgTDE0NDIuOSAxMDYuMiBMMTQ0NS44IDEwNi4xIEwxNDQ4LjggMTA2LjMgTDE0NTEuOCAxMDYuOCBMMTQ1NC44IDEwNy42IEwxNDU3LjYgMTA4LjYgTDE0NjAuNCAxMDkuOSBMMTQ2My4xIDExMS40IEwxNDY1LjUgMTEzLjIgTDE0NjcuOCAxMTUuMiBMMTQ2OS43IDExNy40IEwxNDcxLjUgMTE5LjggTDE0NzIuOCAxMjIuNCBMMTQ3My45IDEyNS4xIEwxNDc0LjYgMTI4LjAgTDE0NzQuOSAxMzAuOSBMMTQ3NC44IDEzMy45IEwxNDc0LjQgMTM2LjkgTDE0NzMuNSAxMzkuOSBMMTQ3Mi4yIDE0Mi45IEwxNDcwLjUgMTQ1LjcgTDE0NjguNCAxNDguNCBMMTQ2NS45IDE1MS4wIEwxNDYzLjAgMTUzLjQgTDE0NTkuOCAxNTUuNSBMMTQ1Ni40IDE1Ny40IEwxNDUyLjYgMTU5LjAgTDE0NDguNiAxNjAuMyBMMTQ0NC40IDE2MS4yIEwxNDQwLjAgMTYxLjggTDE0MzUuNSAxNjIuMCBMMTQzMS4wIDE2MS45IEwxNDI2LjUgMTYxLjMgTDE0MjIuMCAxNjAuNCBMMTQxNy42IDE1OS4wIEwxNDEzLjQgMTU3LjMgTDE0MDkuMyAxNTUuMiBMMTQwNS42IDE1Mi44IEwxNDAyLjEgMTUwLjAgTDEzOTkuMCAxNDYuOSBMMTM5Ni4zIDE0My42IEwxMzk0LjAgMTQwLjAgTDEzOTIuMiAxMzYuMSBMMTM5MC45IDEzMi4xIEwxMzkwLjEgMTI4LjAgTDEzODkuOSAxMjMuOCBMMTM5MC4yIDExOS41IEwxMzkxLjEgMTE1LjMgTDEzOTIuNiAxMTEuMSBMMTM5NC42IDEwNy4wIEwxMzk3LjIgMTAzLjEgTDE0MDAuMyA5OS40IEwxNDAzLjkgOTUuOSBMMTQwOC4wIDkyLjcgTDE0MTIuNSA4OS45IEwxNDE3LjQgODcuNCBMMTQyMi43IDg1LjQgTDE0MjguMiA4My44IEwxNDM0LjAgODIuNiBMMTQ0MC4wIDgyLjAgTDE0NDYuMSA4MS44IEwxNDUyLjIgODIuMiBMMTQ1OC4zIDgzLjAgTDE0NjQuMiA4NC40IEwxNDcwLjAgODYuNCBMMTQ3NS42IDg4LjggTDE0ODAuOSA5MS43IEwxNDg1LjggOTUuMCBMMTQ5MC4zIDk4LjggTDE0OTQuMyAxMDIuOSBMMTQ5Ny43IDEwNy40IEwxNTAwLjYgMTEyLjMgTDE1MDIuOCAxMTcuMyBMMTUwNC4zIDEyMi42IiBzdHJva2Utd2lkdGg9IjEuNCIvPgo8cGF0aCBkPSJNMTI5MCA2MCBxMzAgLTggNjAgMCIgc3Ryb2tlLXdpZHRoPSIxIi8+CjxwYXRoIGQ9Ik0xMjk2IDg4IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDIgMTE2IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMDggMTQ0IHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTEzMTQgMTcyIHEzMCAtOCA2MCAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBhdGggZD0iTTExNTAgNDMyIEMgMTIyMiA0MjAsIDEyNjIgMzMyLCAxMzQyIDMwMCBDIDE0MjIgMjcwLCAxNTAyIDI5OCwgMTQ5NCAzNTggQyAxNDg2IDM5OCwgMTQzMiAzOTIsIDE0NDAgMzYyIEMgMTQ0OCAzMzgsIDE0ODIgMzQyLCAxNDc2IDM2MiIgc3Ryb2tlLXdpZHRoPSIyIi8+CjxwYXRoIGQ9Ik0xMTcwIDQzMCBDIDEyNDAgNDEyLCAxMjgyIDM0NiwgMTM1MCAzMTgiIHN0cm9rZS13aWR0aD0iMS4xIi8+CjxwYXRoIGQ9Ik0xMTUwIDQ0MCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPHBhdGggZD0iTTExNjAgNDU2IHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIHExNSAtNyAzMCAwIiBzdHJva2Utd2lkdGg9IjAuOSIvPgo8cGF0aCBkPSJNMTE3MCA0NzIgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAgcTE1IC03IDMwIDAiIHN0cm9rZS13aWR0aD0iMC45Ii8+CjxwYXRoIGQ9Ik0xMTgwIDQ4OCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCBxMTUgLTcgMzAgMCIgc3Ryb2tlLXdpZHRoPSIwLjkiLz4KPC9nPgo8ZyBpZD0iaGF0Y2giIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIwLjgiPgo8cGF0aCBkPSJNMzAwIDI3MCBsMTggMjIiLz4KPHBhdGggZD0iTTMxNSAyODMgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zMzAgMjk2IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzQ1IDMwOSBsMTggMjIiLz4KPHBhdGggZD0iTTM2MCAzMjIgbDE4IDIyIi8+CjxwYXRoIGQ9Ik0zNzUgMzM1IGwxOCAyMiIvPgo8cGF0aCBkPSJNMzkwIDM0OCBsMTggMjIiLz4KPHBhdGggZD0iTTQwNSAzNjEgbDE4IDIyIi8+CjxwYXRoIGQ9Ik00MjAgMzc0IGwxOCAyMiIvPgo8cGF0aCBkPSJNMTIwIDMzMCBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xMzIgMzIyIGwtMTAgMTYiLz4KPHBhdGggZD0iTTE0NCAzMTQgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTU2IDMwNiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik0xNjggMjk4IGwtMTAgMTYiLz4KPHBhdGggZD0iTTE4MCAyOTAgbC0xMCAxNiIvPgo8cGF0aCBkPSJNMTkyIDI4MiBsLTEwIDE2Ii8+CjxwYXRoIGQ9Ik02MjAgMjYyIGwxNCAtNCIvPgo8cGF0aCBkPSJNNjI5IDI3MSBsMTQgLTQiLz4KPHBhdGggZD0iTTYzOCAyODAgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NDcgMjg5IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjU2IDI5OCBsMTQgLTQiLz4KPHBhdGggZD0iTTY2NSAzMDcgbDE0IC00Ii8+CjxwYXRoIGQ9Ik02NzQgMzE2IGwxNCAtNCIvPgo8cGF0aCBkPSJNNjgzIDMyNSBsMTQgLTQiLz4KPHBhdGggZD0iTTY5MiAzMzQgbDE0IC00Ii8+CjxwYXRoIGQ9Ik03MDEgMzQzIGwxNCAtNCIvPgo8cGF0aCBkPSJNNDg2IDMxOCBsMTIgLTMiLz4KPHBhdGggZD0iTTQ5MyAzMjggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MDAgMzM4IGwxMiAtMyIvPgo8cGF0aCBkPSJNNTA3IDM0OCBsMTIgLTMiLz4KPHBhdGggZD0iTTUxNCAzNTggbDEyIC0zIi8+CjxwYXRoIGQ9Ik01MjEgMzY4IGwxMiAtMyIvPgo8cGF0aCBkPSJNMTAyMiAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDI4IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwMzQgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA0MCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDQ2IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEwNTIgMzAwIGwtNiAxMCIvPgo8cGF0aCBkPSJNMTA1OCAzMDAgbC02IDEwIi8+CjxwYXRoIGQ9Ik0xMDY0IDMwMCBsLTYgMTAiLz4KPHBhdGggZD0iTTEzNjAgMzAwIGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzY5IDMwOCBsOCAxOCIvPgo8cGF0aCBkPSJNMTM3OCAzMTYgbDggMTgiLz4KPHBhdGggZD0iTTEzODcgMzI0IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xMzk2IDMwMCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQwNSAzMDggbDggMTgiLz4KPHBhdGggZD0iTTE0MTQgMzE2IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDIzIDMyNCBsOCAxOCIvPgo8cGF0aCBkPSJNMTQzMiAzMDAgbDggMTgiLz4KPHBhdGggZD0iTTE0NDEgMzA4IGw4IDE4Ii8+CjxwYXRoIGQ9Ik0xNDUwIDMxNiBsOCAxOCIvPgo8cGF0aCBkPSJNMTQ1OSAzMjQgbDggMTgiLz4KPC9nPgo8L2RlZnM+CjxnIHN0cm9rZT0iIzRhNGY1NyI+Cjx1c2UgeGxpbms6aHJlZj0iI3NjZW5lIiBocmVmPSIjc2NlbmUiIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuODUiLz4KPHVzZSB4bGluazpocmVmPSIjc2NlbmUiIGhyZWY9IiNzY2VuZSIgZmlsdGVyPSJ1cmwoI3IyKSIgb3BhY2l0eT0iMC4zNSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMS41IDEpIi8+Cjx1c2UgeGxpbms6aHJlZj0iI2hhdGNoIiBocmVmPSIjaGF0Y2giIGZpbHRlcj0idXJsKCNyMSkiIG9wYWNpdHk9IjAuNTUiLz4KPC9nPgo8L3N2Zz4=') center bottom / cover no-repeat; opacity: var(--sketch-opacity, 0.14); pointer-events: none; }
+
+/* ---------------- landing ---------------- */
+.landing { min-height: 100%; display: flex; flex-direction: column; padding-inline: 16px; --sketch-opacity: 0.9; }
+.landing::before { background-size: max(1400px, 100%) auto; background-position: center bottom; }
+.landing header { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.landing header .wordmark { font-size: 40px; }
+.landing nav { display: flex; gap: 18px; font-size: 13px; }
+.landing nav a { color: var(--graphite); text-decoration: none; }
+.landing nav a:hover { color: var(--ink); text-decoration: underline; }
+.hero { max-width: 1120px; width: 100%; margin: 0 auto; padding-block: 28px 12px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.hero h1 { font-family: var(--display); font-size: clamp(40px, 6vw, 68px); line-height: 0.95; margin: 0 0 14px; font-weight: 700; text-wrap: balance; }
+.hero h1 .hl { background: linear-gradient(transparent 62%, #fde68a 62%, #fde68a 92%, transparent 92%); }
+.hero p.lead { font-size: 17px; color: var(--graphite); max-width: 56ch; margin: 0 0 18px; }
+.loop { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--graphite); }
+.loop span { border: 1px solid var(--rule); background: var(--paper); padding: 2px 8px; border-radius: 999px; }
+.loop i { font-style: normal; color: var(--faint); }
+.livebox { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+.livebox h2 { margin: 0 0 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.livebox ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.livebox li a { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 4px; border-radius: 6px; text-decoration: none; color: var(--ink); }
+.livebox li a:hover { background: var(--paper-2); }
+.livebox .rk { font-family: var(--mono); color: var(--faint); font-size: 12px; }
+.livebox .ttl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livebox small { color: var(--faint); font-size: 11px; }
+.modes { max-width: 1120px; width: 100%; margin: 18px auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.mode { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: rgba(255,255,255,.92); border: 1.5px solid var(--ink); border-radius: 12px 14px 11px 13px; padding: 16px; transition: transform .15s ease, box-shadow .15s ease; }
+.mode:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); }
+.mode .n { font-family: var(--mono); font-size: 11px; color: var(--graphite); }
+.mode h3 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; }
+.mode p { margin: 0; color: var(--graphite); font-size: 13px; }
+.mode .go { margin-top: auto; font-size: 13px; color: var(--accent); font-weight: 600; }
+.mode svg { width: 44px; height: 44px; }
+.landing footer { max-width: 1120px; width: 100%; margin: auto auto 0; padding-block: 220px 24px; position: relative; font-size: 12px; color: var(--graphite); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+@media (max-width: 900px) { .hero { grid-template-columns: minmax(0, 1fr); } .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .landing footer { padding-block: 140px 18px; } }
+@media (max-width: 480px) { .modes { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------------- app shell ---------------- */
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.topbar { display: flex; align-items: center; gap: 14px; padding: 8px 16px; border-bottom: 1px solid var(--rule); background: var(--paper); position: relative; z-index: 1001; flex-wrap: wrap; }
+.topbar .wordmark { font-size: 28px; text-decoration: none; color: var(--ink); }
+.tabs { display: flex; gap: 2px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 2px; }
+.tabs a { padding: 5px 12px; border-radius: 6px; text-decoration: none; color: var(--graphite); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.tabs a[aria-current='page'] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { flex: 1 1 260px; min-width: 0; position: relative; max-width: 520px; }
+.search input { width: 100%; padding: 7px 12px 7px 32px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235b6068' stroke-width='1.8'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='m11 11 4 4'/%3E%3C/svg%3E") 10px 50% no-repeat; }
+.search ul { position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; list-style: none; margin: 0; padding: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 320px; overflow: auto; }
+.search li button { width: 100%; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.search li button:hover, .search li button:focus { background: var(--paper-2); }
+.iconbtn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: var(--graphite); }
+.iconbtn:hover { color: var(--ink); border-color: var(--graphite); }
+.main { display: grid; grid-template-columns: 400px minmax(0, 1fr); min-height: 0; }
+.panel { overflow: auto; border-right: 1px solid var(--rule); background: var(--paper); --sketch-opacity: 0.11; }
+.panel::before { background-size: 1200px auto; background-position: 18% bottom; position: fixed; left: 0; width: 400px; top: auto; bottom: 0; height: 60%; }
+.panel-inner { padding: 14px 16px 40px; display: grid; gap: 16px; }
+.mapwrap { position: relative; min-height: 0; }
+#map { position: absolute; inset: 0; background: #1b1e22; }
+#map3d { position: absolute; inset: 0; z-index: 450; background: #1b1e22; }
+/* keep the 3D canvas laid out while hidden: collapsing it to 0×0 makes MapLibre re-render mid-frame */
+#map3d[hidden] { display: block !important; visibility: hidden; pointer-events: none; }
+#map.is3d .leaflet-pane, #map.is3d .leaflet-control-zoom, #map.is3d .leaflet-control-layers, #map.is3d .leaflet-control-scale, #map.is3d .leaflet-control-attribution { visibility: hidden; }
+.maplibregl-popup.aa-tip3d { pointer-events: none; }
+/* 2D | 3D switch, top right of the map; the map's own top-right controls sit below it */
+.viewtoggle { position: absolute; top: 10px; right: 10px; z-index: 1001; display: inline-flex; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+.viewtoggle button { border: 0; background: transparent; border-radius: 999px; padding: 5px 14px; font: 600 12.5px/1 var(--sans); color: var(--graphite); cursor: pointer; min-width: 44px; min-height: 30px; }
+.viewtoggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.viewtoggle button:focus-visible { outline: 2px solid #2563eb; outline-offset: 1px; }
+.viewtoggle.busy button[data-view="3d"] { opacity: .6; cursor: progress; }
+.mapwrap .leaflet-top.leaflet-right, .mapwrap .maplibregl-ctrl-top-right { top: 48px; }
+.maplibregl-popup.aa-tip3d .maplibregl-popup-content { font: 12.5px/1.45 var(--sans); padding: 6px 9px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.maplibregl-popup.aa-pop3d .maplibregl-popup-content { font: 13px/1.45 var(--sans); padding: 10px 12px; border-radius: 8px; }
+.maplibregl-popup.aa-pop3d h4 { margin: 0 0 4px; }
+@media (max-width: 860px) {
+  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 46vh minmax(0, 1fr); }
+  .mapwrap { order: -1; }
+  .panel { border-right: 0; border-top: 1px solid var(--rule); }
+  .panel::before { width: 100%; }
+}
+
+/* ---------------- panel components ---------------- */
+.ph { display: grid; gap: 4px; }
+.ph h2 { font-family: var(--display); font-size: 30px; margin: 0; line-height: 1; text-wrap: balance; }
+.ph p { margin: 0; color: var(--graphite); font-size: 13px; }
+.sec { display: grid; gap: 8px; }
+.sec > h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--graphite); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sec > h3 a { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; }
+.card { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; }
+.evt { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: start; width: 100%; text-align: left; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.evt:hover { border-color: var(--graphite); }
+.evt .rk { font-family: var(--mono); font-size: 13px; color: var(--faint); padding-top: 2px; }
+.evt .t { font-weight: 600; line-height: 1.3; }
+.evt .s { color: var(--graphite); font-size: 12px; }
+.evt .score { text-align: right; font-family: var(--mono); font-size: 12px; color: var(--graphite); }
+.evt .score b { display: block; font-size: 16px; color: var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.EQ { color: #92400e; } .chip.TC { color: #0369a1; } .chip.FL { color: #1d4ed8; } .chip.VO { color: #b91c1c; } .chip.DR { color: #a16207; } .chip.WF { color: #c2410c; }
+.alert { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: 0; border: 1px solid rgba(0,0,0,.25); }
+.alert.Green { background: #22c55e; } .alert.Orange { background: #f97316; } .alert.Red { background: #ef4444; } .alert.na { background: #cbd5e1; }
+.prov { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); border: 1px dashed var(--faint); border-radius: 4px; padding: 0 5px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tile { background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; }
+.tile .v { font-family: var(--mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: 11px; color: var(--graphite); }
+.tile .band { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+table.t { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.t th { text-align: left; font-weight: 600; color: var(--graphite); font-size: 11px; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+table.t td { padding: 5px 6px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+table.t td.num, table.t th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; background: rgba(255,255,255,.94); border: 1px solid var(--rule); border-radius: 10px; }
+.bar { height: 6px; border-radius: 3px; background: var(--rule); overflow: hidden; min-width: 50px; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+.bar.need > i { background: var(--affected); }
+.bar.cov > i { background: #0f766e; }
+.covrow { display: grid; grid-template-columns: 74px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 12px; }
+.covrow .bar { height: 8px; }
+.bar.ready > i { background: #0f766e; }
+.good { color: #0f766e; font-weight: 600; font-size: 12px; }
+.readiness .ready-head { display: flex; gap: 14px; align-items: center; }
+.ready-score { min-width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; align-content: center; border: 6px solid #0f766e; background: var(--paper); }
+.ready-score b { font: 700 26px/1 var(--mono, monospace); }
+.ready-score span { font-size: 11px; color: var(--graphite); }
+.readiness.partly .ready-score { border-color: #d97706; } .readiness.partly .bar.ready > i { background: #d97706; }
+.readiness.not .ready-score { border-color: #b91c1c; } .readiness.not .bar.ready > i { background: #b91c1c; }
+.ready-grade { font-weight: 700; font-size: 17px; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1px solid var(--rule); background: var(--paper); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--ink); }
+.btn:hover { border-color: var(--graphite); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.on { background: #eef4ff; border-color: var(--accent); color: var(--accent); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.field { display: grid; gap: 4px; font-size: 12px; color: var(--graphite); }
+.field input, .field select { padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 13px; width: 100%; }
+.field input[type=range] { padding: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.note { font-size: 12px; color: var(--graphite); border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; }
+.note.warn { border-color: var(--warn); color: #78350f; }
+.log { display: grid; gap: 6px; font-size: 12px; }
+.log .e { border-left: 2px solid var(--accent); padding-left: 8px; }
+.log .e b { font-weight: 600; }
+.log .e .d { color: var(--graphite); font-family: var(--mono); font-size: 11px; }
+.back { border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; font-size: 13px; justify-self: start; }
+.muted { color: var(--graphite); }
+.small { font-size: 12px; }
+.empty { color: var(--graphite); font-size: 13px; padding: 10px 0; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.8s linear infinite; vertical-align: -2px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ---------------- map overlays ---------------- */
+.toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.18); max-width: calc(100% - 32px); }
+.toast.err { border-color: #fecaca; color: #991b1b; }
+.hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--ink); color: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; max-width: calc(100% - 32px); }
+.hint button { background: none; border: 1px solid rgba(255,255,255,.5); color: #fff; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+.legend { position: absolute; right: 10px; bottom: 24px; z-index: 900; background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; padding: 10px 12px; font-size: 12px; width: 270px; max-height: calc(100% - 120px); overflow: auto; box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.legend h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); display: flex; justify-content: space-between; }
+.legend h4 button { border: 0; background: none; cursor: pointer; color: var(--graphite); font-size: 11px; }
+.legend ul { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 4px; }
+.legend li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: center; }
+.legend .sw { width: 18px; height: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.legend .dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.legend .ln { width: 18px; height: 0; border-top: 3px solid; }
+.legend .ln.dash { border-top-style: dashed; }
+.legend a { text-decoration: none; border-bottom: 1px dotted var(--accent); }
+.legend.collapsed ul, .legend.collapsed p { display: none; }
+@media (max-width: 860px) { .legend { width: 220px; bottom: 10px; right: 8px; max-height: 40%; } }
+.leaflet-tooltip.aa-tip { font: 12px/1.45 var(--sans); max-width: 320px; white-space: normal; border-radius: 8px; padding: 8px 10px; }
+.leaflet-tooltip.aa-tip .m { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--rule); color: var(--accent); font-size: 11px; }
+.leaflet-popup-content { font: 12.5px/1.45 var(--sans); }
+.leaflet-popup-content h4 { margin: 0 0 4px; font-size: 13px; }
+.leaflet-popup-content .btns { margin-top: 8px; }
+.pulse { width: 22px; height: 22px; border-radius: 50%; background: var(--affected); border: 3px solid #fff; box-shadow: 0 0 0 0 rgba(22,163,74,.7); animation: pl 1.8s infinite; }
+@keyframes pl { 70% { box-shadow: 0 0 0 18px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+.closure-x { color: #111; font: 700 20px/1 var(--sans); text-shadow: 0 0 3px #fff, 0 0 6px #fff; }
+.site-diamond { width: 16px; height: 16px; background: var(--storage); border: 2px solid #fff; transform: rotate(45deg); box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+.airdrop-label { color: #fff; background: var(--supply); font: 600 10px/1 var(--sans); padding: 3px 5px; border-radius: 4px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } .mode { transition: none; } }
+
+/* ---------------- explainer drawer ---------------- */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(620px, 100%); background: var(--paper); z-index: 2000; box-shadow: -12px 0 32px rgba(0,0,0,.18); display: grid; grid-template-rows: auto minmax(0, 1fr); transform: translateX(105%); transition: transform .25s ease; --sketch-opacity: .08; }
+.drawer.open { transform: none; }
+.drawer header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--rule); }
+.drawer header h2 { font-family: var(--display); font-size: 30px; margin: 0; }
+.drawer .body { overflow: auto; padding: 8px 18px 60px; }
+.drawer nav { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
+.drawer section { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.drawer section h3 { font-family: var(--display); font-size: 26px; margin: 0 0 4px; }
+.drawer section p { margin: 6px 0; max-width: 70ch; }
+.drawer .tex { overflow-x: auto; padding: 6px 0; }
+.drawer .applied { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+.drawer .applied h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--graphite); }
+.drawer .src { font-size: 11px; color: var(--graphite); }
+.drawer section:target h3, .drawer section.flash h3 { background: linear-gradient(transparent 60%, #fde68a 60%); }
+.modal { position: fixed; inset: 0; background: rgba(15,17,20,.45); z-index: 2100; display: grid; place-items: center; padding: 16px; }
+.modal .box { background: var(--paper); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; overflow: auto; padding: 16px 18px; display: grid; gap: 12px; }
+.modal h2 { font-family: var(--display); font-size: 28px; margin: 0; }
+.aa-tip .addr, .addr { display: inline-block; margin-top: 2px; color: #374151; font-size: 12px; }
+.where { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rule); }
+.maplabel { display: inline-block; white-space: nowrap; font: 600 11.5px/1.2 var(--sans); color: #111; background: rgba(255,255,255,.88); border: 1px solid rgba(0,0,0,.18); border-radius: 4px; padding: 1px 5px; box-shadow: 0 1px 2px rgba(0,0,0,.25); pointer-events: none; }
+.maplabel.zone { border-left: 3px solid var(--affected); }
+.maplabel.store { border-left: 3px solid var(--supply); }
+.maplabel.site { border-left: 3px solid var(--storage); }
+
+/* ---------- workspace (Phase 1) ---------- */
+.wsbadge { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; background: var(--rule); color: var(--ink); }
+.wsbadge.viewer { background: #fef3c7; color: #92400e; }
+.wsbadge.admin { background: #dbeafe; color: #1e3a8a; }
+.modal .box.wide { width: min(720px, 100%); }
+.modal .box section { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.plist li { border-bottom: 1px dashed var(--rule); padding-bottom: 6px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; text-align: left; }
+.linkbtn:hover { text-decoration: underline; }
+.linkbtn.danger { color: var(--supply); font-size: 12px; }
+.alerthit { font-size: 12.5px; }
+.alerthit.Red { color: #b91c1c; font-weight: 600; }
+.alerthit.Orange { color: var(--warn); font-weight: 600; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; }
+details.card > summary { cursor: pointer; }
+details.card[open] { display: grid; gap: 8px; }
+
+/* ---------------- key actions ---------------- */
+.actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.act { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; width: 100%; text-align: left; background: rgba(255,255,255,.96); border: 1px solid var(--rule); border-left: 3px solid var(--supply); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; line-height: 1.4; }
+.act:hover { border-color: var(--graphite); border-left-color: var(--supply); }
+.ai { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font: 700 12px/1 var(--sans); flex: none; }
+.actions-box { background: rgba(255,255,255,.97); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.2); padding: 8px 10px; width: 300px; max-width: calc(100vw - 80px); font: 12.5px/1.4 var(--sans); color: var(--ink); }
+.actions-box .ab-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.actions-box .ab-tog { border: 0; background: none; color: var(--graphite); cursor: pointer; font-size: 11px; }
+.actions-box ol { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow: auto; }
+.actions-box li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 6px; align-items: start; padding: 4px; border-radius: 6px; cursor: pointer; }
+.actions-box li:hover { background: var(--paper-2); }
+.actions-box .ab-rep { width: 100%; }
+.fleet-tog { display: flex; gap: 6px; align-items: center; margin: 2px 0 6px; font-weight: 500; }
+@media (max-width: 860px) { .actions-box { width: 230px; } }
+
+/* ---------------- report modal ---------------- */
+.report-modal { place-items: start center; overflow: auto; }
+.report-box { width: min(860px, 100%); max-height: none; padding: 0; margin-block: 16px; }
+.report-bar { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--paper-2); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; }
+.landing footer span { background: rgba(255,255,255,.92); border-radius: 6px; padding: 2px 6px; position: relative; z-index: 1; }
+
+/* ---------- Phase 2: field reports in the plan view ---------- */
+.field-pin { width: 18px; height: 18px; border-radius: 4px; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.45); color: #fff; font: 700 10px/14px var(--sans); text-align: center; }
+.flist { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.frow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: 12.5px; padding: 6px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.frow.done { opacity: .7; }
+.fthumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
+.fthumb.none { display: grid; place-items: center; background: var(--paper-2); color: var(--graphite); font-size: 18px; }
+.frow .fact { display: grid; gap: 4px; justify-items: end; }
+.dmg.d0 { color: #15803d; } .dmg.d1 { color: #4d7c0f; } .dmg.d2 { color: #b45309; } .dmg.d3 { color: #c2410c; } .dmg.d4 { color: #b91c1c; }
+#fieldSec textarea { width: 100%; box-sizing: border-box; font: 12px/1.4 var(--mono, monospace); border: 1px solid var(--rule); border-radius: 6px; padding: 6px; margin-top: 6px; }
+.wsbadge.field { background: #fef3c7; color: #92400e; }
+
+/* ---------- Phase 3: tasks and comments ---------- */
+.tlist, .clist { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
+.trow { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: 12.5px; padding: 6px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.trow select { width: 100%; font-size: 12px; padding: 3px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+.trow.done { opacity: .65; } .trow.done b { text-decoration: line-through; }
+.trow.late { border-color: #fca5a5; }
+.warn { color: #b45309; }
+.clist li { font-size: 12.5px; padding: 6px 8px; background: var(--paper-2); border-radius: 8px; }
+.live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 5px; box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+
+</style>
+<style>
+  body.fieldapp { background: var(--paper-2); min-height: 100%; }
+  .fa { max-width: 560px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+  .fa-top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); }
+  .fa-top .wordmark { font-size: 26px; text-decoration: none; color: var(--ink); }
+  .fa-top .wordmark small { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--graphite); margin-left: 4px; letter-spacing: 0; }
+  .net { margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; }
+  .net.off { background: #fee2e2; color: #991b1b; }
+  .fa h1 { font-size: 20px; margin: 16px 0 2px; }
+  .fa .lead { margin: 0 0 10px; color: var(--graphite); font-size: 13px; }
+  .fcard { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 12px; margin: 10px 0; }
+  .fcard h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--graphite); margin: 0 0 8px; display: flex; gap: 8px; align-items: center; }
+  .fcard h2 .n { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; letter-spacing: 0; }
+  .big { width: 100%; min-height: 48px; border-radius: 10px; border: 1px solid var(--rule); background: var(--paper); font-weight: 600; cursor: pointer; padding: 10px 12px; }
+  .big.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .loc { font-family: var(--mono); font-size: 13px; margin: 8px 0 0; }
+  .loc.ok { color: #166534; } .loc.bad { color: #991b1b; }
+  .dmgs { display: grid; gap: 6px; }
+  .dmgs button { text-align: left; min-height: 52px; border-radius: 10px; border: 2px solid var(--rule); background: var(--paper); padding: 8px 12px; cursor: pointer; }
+  .dmgs button b { display: block; }
+  .dmgs button span { font-size: 12px; color: var(--graphite); }
+  .dmgs button[aria-pressed="true"] { border-color: var(--ink); background: var(--paper-2); }
+  .dmgs button i { float: right; width: 14px; height: 14px; border-radius: 3px; margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips label, .seg label { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); cursor: pointer; font-size: 13px; }
+  .chips input, .seg input { accent-color: var(--accent); width: 18px; height: 18px; }
+  .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .seg label { justify-content: center; border-radius: 10px; text-align: center; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .fa .field input, .fa .field textarea, .fa .field select { width: 100%; min-height: 44px; border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; background: var(--paper); }
+  .fa .field textarea { min-height: 70px; resize: vertical; }
+  .photo-prev { display: block; max-width: 100%; max-height: 220px; border-radius: 10px; margin-top: 8px; }
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.97); border-top: 1px solid var(--rule); }
+  .savebar .big { max-width: 528px; margin: 0 auto; display: block; }
+  .ob { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .ob li { border: 1px solid var(--rule); border-radius: 10px; padding: 8px 10px; background: var(--paper); font-size: 13px; }
+  .ob .st { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--rule); }
+  .ob .st.sent { background: #dcfce7; color: #166534; } .ob .st.queued { background: #fef3c7; color: #92400e; } .ob .st.shared { background: #dbeafe; color: #1e3a8a; }
+  .ob .btns { margin-top: 6px; }
+  .codebox { width: 100%; font: 11px/1.4 var(--mono); border: 1px solid var(--rule); border-radius: 6px; padding: 6px; margin-top: 6px; }
+  .planbanner { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 10px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
+  .ftoast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 7; background: var(--ink); color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; max-width: calc(100% - 32px); text-align: center; }
+</style>
+</head>
+<body class="fieldapp">
+<header class="fa-top"><a class="wordmark" href="index.html">Aid<b>Atlas</b><small>Field</small></a><span class="net" id="net">online</span></header>
+<main class="fa">
+  <h1>Report what you see</h1>
+  <p class="lead">Your report goes to the control room and updates the relief plan for this area. It is saved on this phone first, so it is safe even without a signal.</p>
+  <div class="planbanner" id="planBanner" hidden></div>
+
+  <section class="fcard" aria-labelledby="h-loc"><h2 id="h-loc"><span class="n">1</span>Where are you?</h2>
+    <button class="big" id="gps" type="button">Use my location</button>
+    <p class="loc" id="locTxt">Location not set yet.</p>
+    <details style="margin-top:6px"><summary class="small">Type the location instead</summary>
+      <div class="grid2"><label class="field">Latitude<input id="lat" type="number" step="0.00001" inputmode="decimal"></label><label class="field">Longitude<input id="lon" type="number" step="0.00001" inputmode="decimal"></label></div></details>
+    <label class="field" style="margin-top:8px">Place name (village, ward, landmark)<input id="place" type="text" maxlength="120" placeholder="e.g. Sector 29, near the water tank"></label>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-photo"><h2 id="h-photo"><span class="n">2</span>Photo <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></h2>
+    <label class="big" style="display:grid;place-items:center">Take or choose a photo<input id="photo" type="file" accept="image/*" capture="environment" hidden></label>
+    <img class="photo-prev" id="photoPrev" alt="Photo preview" hidden>
+    <p class="small muted" id="photoTxt" style="margin:6px 0 0">Photos are shrunk to about 150 KB before sending.</p>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-dmg"><h2 id="h-dmg"><span class="n">3</span>How bad is the damage here?</h2>
+    <div class="dmgs" id="dmgs" role="group" aria-label="Damage level"></div>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-needs"><h2 id="h-needs"><span class="n">4</span>What do people need most?</h2>
+    <div class="chips" id="needs"></div>
+    <div class="grid3" style="margin-top:10px"><label class="field">People affected<input id="pAff" type="number" min="0" inputmode="numeric" placeholder="about"></label><label class="field">Injured<input id="pInj" type="number" min="0" inputmode="numeric"></label><label class="field">Trapped / missing<input id="pTrap" type="number" min="0" inputmode="numeric"></label></div>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-road"><h2 id="h-road"><span class="n">5</span>Can trucks reach this place?</h2>
+    <div class="seg" id="road" role="radiogroup" aria-label="Road access">
+      <label><input type="radio" name="road" value="open" checked> Open</label><label><input type="radio" name="road" value="partly"> Partly blocked</label><label><input type="radio" name="road" value="blocked"> Blocked</label></div>
+    <label class="field" style="margin-top:10px">Anything else (optional)<textarea id="note" maxlength="500" placeholder="e.g. bridge on the main road is down; 40 families in the school"></textarea></label>
+  </section>
+
+  <section class="fcard" aria-labelledby="h-me"><h2 id="h-me">About you</h2>
+    <div class="grid2"><label class="field">Your name<input id="by" type="text" maxlength="80" autocomplete="name"></label><label class="field">Team<input id="team" type="text" maxlength="80" placeholder="e.g. NDRF 8th Bn"></label></div>
+    <div class="chips" style="margin-top:8px"><label><input type="checkbox" id="trained"> I am a trained damage assessor</label></div>
+  </section>
+
+  <section class="fcard" id="outboxSec" aria-labelledby="h-ob"><h2 id="h-ob">My reports</h2><ul class="ob" id="outbox"></ul><p class="small muted" id="obEmpty" style="margin:0">Nothing saved yet.</p></section>
+
+  <section class="fcard" aria-labelledby="h-conn"><h2 id="h-conn">Sending</h2>
+    <p class="small" id="connTxt" style="margin:0 0 6px"></p>
+    <details><summary class="small"><b>Send automatically to the control room</b> (shared workspace)</summary>
+      <p class="small muted">Ask your control room for the project link and key, then sign in with the e-mail they invited (role: Field team). Reports and photos then arrive in their plan on their own; without this, use Share and send the message by WhatsApp or SMS.</p>
+      <div class="grid2"><label class="field">Project URL<input id="sbUrl" type="url" placeholder="https://xxxx.supabase.co"></label><label class="field">Public key<input id="sbKey" type="text"></label></div>
+      <div class="btns"><button class="btn" id="sbSave" type="button">Connect</button><button class="btn" id="sbOff" type="button">Disconnect</button></div>
+      <div class="grid2"><label class="field">Your e-mail<input id="sbEmail" type="email" autocomplete="email"></label><label class="field">6-digit code<input id="sbCode" type="text" inputmode="numeric" maxlength="10"></label></div>
+      <div class="btns"><button class="btn" id="sbSend" type="button">Send code</button><button class="btn primary" id="sbVerify" type="button">Sign in</button></div>
+      <p class="small" id="sbMsg"></p></details>
+  </section>
+  <p class="small muted">AidAtlas field app · <a href="guide.html#field-app">How it works</a> · built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a></p>
+</main>
+<div class="savebar"><button class="big primary" id="save" type="button">Save report</button></div>
+<div class="ftoast" id="ftoast" hidden></div>
+
+<script>/* js/core.js */
+/* AidAtlas core: namespace, maths utilities, configuration. Skill: orchestrator */
+(function (root) {
+  const AA = (root.AA = root.AA || {});
+
+  // ---------- maths ----------
+  const M = {};
+  M.EPS = 1e-6;
+  M.clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  // Abramowitz–Stegun 7.1.26 erf, |error| < 1.5e-7
+  M.erf = (x) => {
+    const s = Math.sign(x); x = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  };
+  M.Phi = (z) => 0.5 * (1 + M.erf(z / Math.SQRT2));
+  M.toRad = (d) => d * Math.PI / 180;
+  M.haversine = (a, b) => { // km
+    const R = 6371.0088, dLat = M.toRad(b.lat - a.lat), dLon = M.toRad(b.lon - a.lon);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(M.toRad(a.lat)) * Math.cos(M.toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+  };
+  M.destination = (p, bearingDeg, km) => {
+    const R = 6371.0088, d = km / R, br = M.toRad(bearingDeg);
+    const la1 = M.toRad(p.lat), lo1 = M.toRad(p.lon);
+    const la2 = Math.asin(Math.sin(la1) * Math.cos(d) + Math.cos(la1) * Math.sin(d) * Math.cos(br));
+    const lo2 = lo1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(la1), Math.cos(d) - Math.sin(la1) * Math.sin(la2));
+    return { lat: la2 * 180 / Math.PI, lon: ((lo2 * 180 / Math.PI + 540) % 360) - 180 };
+  };
+  // point-to-segment distance (km) using local equirectangular projection
+  M.pointSegDist = (p, a, b) => {
+    const k = Math.cos(M.toRad(p.lat)) * 111.32, kl = 110.57;
+    const ax = (a.lon - p.lon) * k, ay = (a.lat - p.lat) * kl, bx = (b.lon - p.lon) * k, by = (b.lat - p.lat) * kl;
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    let t = L ? -(ax * dx + ay * dy) / L : 0; t = M.clamp(t, 0, 1);
+    const x = ax + t * dx, y = ay + t * dy; return Math.sqrt(x * x + y * y);
+  };
+  M.mulberry32 = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  M.gauss = (rng) => { // Box–Muller
+    let u = 0, v = 0; while (u === 0) u = rng(); while (v === 0) v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  M.quantile = (arr, q) => {
+    const a = [...arr].sort((x, y) => x - y); if (!a.length) return 0;
+    const pos = (a.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return a[lo] + (a[hi] - a[lo]) * (pos - lo);
+  };
+  M.minmax = (vals) => {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    return vals.map((v) => (v - lo) / (hi - lo + M.EPS));
+  };
+  M.sum = (a) => a.reduce((s, x) => s + x, 0);
+  M.mean = (a) => (a.length ? M.sum(a) / a.length : 0);
+  M.std = (a) => { const m = M.mean(a); return Math.sqrt(M.mean(a.map((x) => (x - m) ** 2))); };
+  M.round = (x, d = 0) => { const f = 10 ** d; return Math.round(x * f) / f; };
+  // ---------- polygons (GeoJSON lon/lat rings) ----------
+  /** Ray-casting point-in-ring; holes are ignored (flood outlines rarely have meaningful holes). */
+  M.inRing = (p, ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if ((yi > p.lat) !== (yj > p.lat) && p.lon < ((xj - xi) * (p.lat - yi)) / (yj - yi + 1e-12) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  /** polys = array of polygons, each an array of rings (GeoJSON MultiPolygon coordinates). */
+  M.inPolys = (p, polys) => (polys || []).some((poly) => poly[0] && M.inRing(p, poly[0]));
+  M.polysBBox = (polys) => {
+    let w = 180, s = 90, e = -180, n = -90;
+    (polys || []).forEach((poly) => (poly[0] || []).forEach(([x, y]) => { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); }));
+    return { w, s, e, n, c: { lat: (s + n) / 2, lon: (w + e) / 2 } };
+  };
+  /** Distance (km) from p to the nearest polygon edge; 0 when inside. */
+  M.distToPolys = (p, polys) => {
+    if (M.inPolys(p, polys)) return 0;
+    let d = Infinity;
+    (polys || []).forEach((poly) => { const r = poly[0] || []; for (let i = 1; i < r.length; i++) d = Math.min(d, M.pointSegDist(p, { lon: r[i - 1][0], lat: r[i - 1][1] }, { lon: r[i][0], lat: r[i][1] })); });
+    return d;
+  };
+  /** Approximate circle as a closed GeoJSON polygon ring (n vertices). */
+  M.circleRing = (c, km, n = 16) => { const r = []; for (let k = 0; k <= n; k++) { const p = M.destination(c, (k % n) * (360 / n), km); r.push([+p.lon.toFixed(5), +p.lat.toFixed(5)]); } return r; };
+  AA.math = M;
+
+  /** Version of the forecast and planning models; back-test results and model cards refer to it. */
+  AA.MODEL_VERSION = '3.0.0';
+
+  // ---------- configuration (all editable in Settings) ----------
+  AA.config = {
+    epochHours: 6,
+    horizonEpochs: 4,
+    scenarioWeights: { low: 0.3, base: 0.4, high: 0.3 }, // Swanson–Megill
+    mcDraws: 400,
+    seed: 20261001,
+    needWeights: { sev: 0.35, pop: 0.2, vul: 0.2, acc: 0.15, recv: 0.1 },
+    objective: { alpha: 1, delta: 2, beta: 1, mu: 3, phi: 0.5 },
+    criticality: { water: 3, medical: 3, food: 2, staff: 2, shelter: 1.5 },
+    commodities: [
+      { key: 'water', label: 'Water', unit: 'kL', kg: 1000, critical: true, cls: 'truck' },
+      { key: 'food', label: 'Food', unit: 't', kg: 1000, critical: false, cls: 'truck' },
+      { key: 'shelter', label: 'Shelter', unit: 'tents', kg: 35, critical: false, cls: 'truck' },
+      { key: 'medical', label: 'Medical', unit: 'modules', kg: 50, critical: true, cls: 'truck' },
+      { key: 'staff', label: 'Personnel', unit: 'staff', kg: 1, critical: false, cls: 'bus' },
+    ],
+    vehicles: {
+      truck: { label: 'Truck', cap: 8000, cD: 1.2, cT: 40, cF: 150, speedFactor: 1.0, color: '#f59e0b' },
+      bus: { label: 'Responder bus', cap: 30, cD: 0.9, cT: 35, cF: 100, speedFactor: 1.0, color: '#38bdf8' },
+    },
+    loadCostPerKg: 0.02,
+    serviceHours: 0.5,
+    bprCapacityPerEpoch: 12,
+    roadAlpha: 0.7,
+    thetaMax: 0.95,
+    roadRecovery: 0.08,
+    closureBufferKm: 0.25,
+    circuity: 1.35,
+    fallbackSpeedKmh: 40,
+    coverageMinutes: 90,
+    warehouses: 3,
+    tomtomKey: '',
+    showFleet: false,
+    lowBandwidth: false, // Settings: no WorldPop, no street addresses, no 3D, street map instead of satellite
+  };
+
+  AA.fmt = {
+    n: (x, d = 0) => (x == null || isNaN(x) ? '–' : Number(x).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d })),
+    k: (x) => (x >= 1e6 ? (x / 1e6).toFixed(1) + 'M' : x >= 1e3 ? (x / 1e3).toFixed(1) + 'k' : Math.round(x) + ''),
+    usd: (x) => '$' + AA.fmt.n(x, 0),
+    min: (h) => Math.round(h * 60) + ' min',
+  };
+  AA.HAZARDS = {
+    EQ: { label: 'Earthquake', lethal: 1.0, icon: '〰' },
+    TC: { label: 'Tropical cyclone', lethal: 0.9, icon: '🌀' },
+    FL: { label: 'Flood', lethal: 0.8, icon: '≈' },
+    VO: { label: 'Volcano', lethal: 0.7, icon: '▲' },
+    DR: { label: 'Drought', lethal: 0.6, icon: '☀' },
+    WF: { label: 'Wildfire', lethal: 0.5, icon: '🔥' },
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/workspace.js */
+/* Workspace: people, roles, saved plans, watch areas, inventory sources. Skill: skills/workspace/SKILL.md
+   Works fully in the browser (localStorage). When a Supabase project is configured in Settings, the same calls
+   go to the shared team database instead (js/cloud.js), where row-level security enforces the roles. */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const W = {};
+  const LS = (() => { try { const k = '__aa'; root.localStorage.setItem(k, '1'); root.localStorage.removeItem(k); return root.localStorage; } catch (e) { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; } })();
+  W._ls = LS;
+  const get = (k, d) => { try { const v = LS.getItem('aa.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const set = (k, v) => { try { LS.setItem('aa.' + k, JSON.stringify(v)); } catch (e) { /* quota: ignore */ } };
+  W.get = get; W.set = set;
+
+  // ---------------- roles ----------------
+  /** viewer: read plans and reports · planner: also change and save plans, manage watch areas · admin: also team and settings
+   *  field: field-app teams, send field reports (and read plans) */
+  W.ROLES = {
+    viewer: { label: 'Viewer', can: ['view', 'report'] },
+    planner: { label: 'Planner', can: ['view', 'report', 'edit', 'save', 'watch', 'inventory', 'field'] },
+    admin: { label: 'Admin', can: ['view', 'report', 'edit', 'save', 'watch', 'inventory', 'team', 'settings', 'field'] },
+    field: { label: 'Field team', can: ['view', 'report', 'field'] },
+  };
+  const DEFAULT_ME = { name: 'Local user', email: '', org: '', role: 'planner' };
+  W.me = () => (W.cloud?.user ? { ...W.cloud.user } : { ...DEFAULT_ME, ...get('me', {}) });
+  W.setMe = (p) => { const cur = get('me', {}); set('me', { ...cur, ...p, role: W.ROLES[p.role || cur.role] ? p.role || cur.role : 'planner' }); emit('me'); };
+  W.can = (action) => (W.ROLES[W.me().role] || W.ROLES.viewer).can.includes(action);
+  W.mode = () => (W.cloud?.ready ? 'cloud' : 'local');
+
+  // local team list (who is involved; real access control needs the cloud back end)
+  W.team = () => get('team', []);
+  W.setTeam = (list) => { if (!W.can('team')) throw new Error('Only an admin can change the team.'); set('team', list.filter((x) => x && x.name).map((x) => ({ name: String(x.name).slice(0, 80), email: String(x.email || '').slice(0, 120), role: W.ROLES[x.role] ? x.role : 'viewer' }))); emit('team'); };
+
+  const listeners = new Set();
+  W.on = (fn) => listeners.add(fn);
+  const emit = (type, data) => listeners.forEach((fn) => { try { fn(type, data); } catch (e) { console.error(e); } });
+  W._emit = emit;
+
+  // ---------------- saved plans ----------------
+  const uid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  W.plans = {
+    async list() {
+      if (W.mode() === 'cloud') return W.cloud.listPlans();
+      return get('plans', []).map(({ id, name, savedAt, savedBy, summary }) => ({ id, name, savedAt, savedBy, summary })).sort((a, b) => (b.savedAt > a.savedAt ? 1 : -1));
+    },
+    async save(snap, id) {
+      if (!W.can('save')) throw new Error(`Your role (${W.me().role}) cannot save plans.`);
+      if (W.mode() === 'cloud') {
+        try { return await W.cloud.savePlan(snap, id); }
+        catch (e) { if (typeof navigator === 'undefined' || navigator.onLine !== false) throw e; // offline: keep it here, share it when back online
+          const pend = get('pendingCloud', []); const pid = id || uid(); set('pendingCloud', [...pend.filter((p) => p.id !== pid), { ...snap, id: pid, cloudId: id || null }]); emit('plans'); return pid; }
+      }
+      const all = get('plans', []);
+      const rec = { ...snap, id: id || uid() };
+      const i = all.findIndex((p) => p.id === rec.id);
+      if (i >= 0) { rec.versions = [...(all[i].versions || []), { savedAt: all[i].savedAt, savedBy: all[i].savedBy, summary: all[i].summary }].slice(-20); all[i] = rec; } else all.push(rec);
+      set('plans', all.slice(-50));
+      if (JSON.stringify(get('plans', [])).length < 10) throw new Error('Browser storage is full or blocked; use “Download plan file” instead.');
+      emit('plans');
+      return rec.id;
+    },
+    /** Plans saved while offline in the shared workspace: upload them now. Returns how many were sent. */
+    async syncPending() {
+      const pend = get('pendingCloud', []); if (!pend.length || W.mode() !== 'cloud') return 0;
+      let n = 0; const left = [];
+      for (const p of pend) { try { const { id, cloudId, ...snap } = p; await W.cloud.savePlan(snap, cloudId); n++; } catch (e) { left.push(p); } }
+      set('pendingCloud', left); if (n) emit('plans'); return n;
+    },
+    pending: () => get('pendingCloud', []).length,
+    async load(id) { if (W.mode() === 'cloud') return W.cloud.loadPlan(id); const p = get('plans', []).find((x) => x.id === id); if (!p) throw new Error('Plan not found'); return p; },
+    async remove(id) { if (!W.can('save')) throw new Error('Your role cannot delete plans.'); if (W.mode() === 'cloud') return W.cloud.deletePlan(id); set('plans', get('plans', []).filter((p) => p.id !== id)); emit('plans'); },
+  };
+
+  /** Decision log → CSV (one row per decision). */
+  W.decisionsCSV = (decisions) => {
+    const q = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    return ['time,plan_hour,by,role,action,what_changed,note', ...(decisions || []).map((d) => [d.at, `T+${(d.epoch || 0) * AA.config.epochHours}h`, d.by, d.role, d.type, d.reason, d.note].map(q).join(','))].join('\n');
+  };
+
+  // ---------------- watch areas ----------------
+  const ALERT_RANK = { Green: 1, Orange: 2, Red: 3 };
+  W.watch = {
+    async list() { if (W.mode() === 'cloud') return W.cloud.listWatch(); return get('watch', []); },
+    async add(a) {
+      if (!W.can('watch')) throw new Error(`Your role (${W.me().role}) cannot add watch areas.`);
+      const area = { id: uid(), name: String(a.name || 'Watch area').slice(0, 80), lat: +a.lat, lon: +a.lon, radiusKm: M.clamp(+a.radiusKm || 100, 5, 1000), hazards: (a.hazards && a.hazards.length ? a.hazards : ['EQ', 'TC', 'FL', 'VO', 'DR', 'WF']), minLevel: ALERT_RANK[a.minLevel] ? a.minLevel : 'Orange', email: String(a.email || '').slice(0, 120) };
+      if (!isFinite(area.lat) || !isFinite(area.lon)) throw new Error('Watch area needs a location');
+      if (W.mode() === 'cloud') return W.cloud.addWatch(area);
+      set('watch', [...get('watch', []), area]); emit('watch'); return area.id;
+    },
+    async remove(id) { if (W.mode() === 'cloud') return W.cloud.deleteWatch(id); set('watch', get('watch', []).filter((a) => a.id !== id)); emit('watch'); },
+  };
+  /** Level of a live event on the GDACS scale; USGS PAGER and severity mapped onto it. */
+  W.eventLevel = (e) => {
+    // GDACS: the current episode's level (a decayed storm keeps its old event-level Red)
+    if (e.alertlevel && ALERT_RANK[e.alertlevel]) return ALERT_RANK[e.episodealertlevel] ? e.episodealertlevel : e.alertlevel;
+    if (e.pager) return { green: 'Green', yellow: 'Orange', orange: 'Red', red: 'Red' }[e.pager] || 'Green';
+    if (e.hazard === 'EQ' && (e.magnitude ?? 0) >= 6.5) return 'Orange';
+    return 'Green';
+  };
+  /** Which events fall inside which watch areas at or above the area's minimum level. Pure function (also used by tools/watch-alerts.js). */
+  W.matchWatch = (areas, events) => {
+    const out = [];
+    (areas || []).forEach((a) => (events || []).forEach((e) => {
+      if (!a.hazards.includes(e.hazard)) return;
+      const lvl = W.eventLevel(e);
+      if (ALERT_RANK[lvl] < ALERT_RANK[a.minLevel]) return;
+      const d = M.haversine(a, e);
+      if (d <= a.radiusKm) out.push({ area: a, event: e, level: lvl, distKm: d, key: `${a.id}|${e.id}|${lvl}` });
+    }));
+    return out.sort((x, y) => ALERT_RANK[y.level] - ALERT_RANK[x.level] || x.distKm - y.distKm);
+  };
+  /** Matches not yet seen on this device (so a notification fires once per event and level). */
+  W.newMatches = (matches) => {
+    const seen = new Set(get('seenAlerts', []));
+    const fresh = matches.filter((m) => !seen.has(m.key));
+    set('seenAlerts', [...seen, ...fresh.map((m) => m.key)].slice(-500));
+    return fresh;
+  };
+
+  // ---------------- inventory source (Google Sheet / CSV / JSON URL) ----------------
+  W.inventory = {
+    source: () => get('invSource', null),
+    setSource: (src) => { if (src && !W.can('inventory')) throw new Error('Your role cannot change the inventory source.'); set('invSource', src); emit('inventory'); },
+    /** Fetch and parse rows: CSV (Google Sheets export or any CSV) or JSON (array of rows, or {stores:[...]}). */
+    async fetchRows(url) {
+      const u = AA.data.sheetCsvUrl(url);
+      const text = await AA.data.fetchText(u);
+      const t = text.trim();
+      let rows;
+      if (t.startsWith('[') || t.startsWith('{')) { const j = JSON.parse(t); rows = Array.isArray(j) ? j : j.stores || j.rows || j.data || []; }
+      else rows = W.parseCSV(t);
+      return W.normaliseRows(rows);
+    },
+  };
+  /** CSV parser with quoted fields. */
+  W.parseCSV = (text) => {
+    const rows = []; let row = [], cell = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (c === '"') q = false; else cell += c; }
+      else if (c === '"') q = true; else if (c === ',') { row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell.length || row.length) { row.push(cell); rows.push(row); }
+    const head = (rows.shift() || []).map((h) => h.trim().toLowerCase());
+    return rows.filter((r) => r.some((x) => x.trim() !== '')).map((r) => Object.fromEntries(head.map((h, i) => [h, (r[i] ?? '').trim()])));
+  };
+  /** Accept common column spellings so a team's own sheet works without renaming everything. */
+  const ALIASES = { name: ['name', 'store', 'depot', 'site'], lat: ['lat', 'latitude', 'y'], lon: ['lon', 'lng', 'long', 'longitude', 'x'], type: ['type', 'kind'], water_l: ['water_l', 'water_litres', 'water_liters', 'water'], food_kg: ['food_kg', 'food'], tents: ['tents', 'shelter', 'tent'], medkits: ['medkits', 'medical', 'medical_kits', 'med_kits'], staff: ['staff', 'personnel', 'workers'], trucks: ['trucks', 'truck'], buses: ['buses', 'bus'], ambulances: ['ambulances', 'ambulance'], beds: ['beds'], address: ['address', 'location', 'addr'] };
+  W.normaliseRows = (rows) => (rows || []).map((r) => {
+    const low = Object.fromEntries(Object.entries(r).map(([k, v]) => [String(k).trim().toLowerCase().replace(/\s+/g, '_'), v]));
+    const o = {};
+    Object.entries(ALIASES).forEach(([k, al]) => { const hit = al.find((a) => low[a] !== undefined && low[a] !== ''); if (hit !== undefined) o[k] = k === 'name' || k === 'type' || k === 'address' ? String(low[hit]) : +String(low[hit]).replace(/[, ]/g, ''); });
+    return o;
+  }).filter((r) => isFinite(r.lat) && isFinite(r.lon) && Math.abs(r.lat) <= 90 && Math.abs(r.lon) <= 180);
+
+  AA.workspace = W;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/cloud.js */
+/* Optional shared back end (Supabase): sign-in by e-mailed code, teams, roles enforced by row-level security,
+   shared saved plans and watch areas. Off until an admin enters the project URL and public (anon) key in Settings.
+   Database set-up: supabase/schema.sql. Skill: skills/workspace/SKILL.md */
+(function (root) {
+  const AA = root.AA;
+  const W = AA.workspace;
+  const C = { ready: false, user: null, team: null, teams: [], client: null };
+  const LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+
+  const loadLib = () => new Promise((res, rej) => {
+    if (root.supabase?.createClient) return res(root.supabase);
+    const s = document.createElement('script'); s.src = LIB; s.async = true;
+    s.onload = () => (root.supabase?.createClient ? res(root.supabase) : rej(new Error('Supabase library did not load')));
+    s.onerror = () => rej(new Error('Could not load the Supabase library (network blocked?)'));
+    document.head.appendChild(s);
+  });
+  const must = ({ data, error }) => { if (error) throw new Error(error.message || String(error)); return data; };
+
+  C.config = () => W.get('cloud', null);
+  /** Connect with { url, key }. `client` may be injected (tests). Returns true when a session exists. */
+  C.init = async (cfg = C.config(), client = null) => {
+    C.ready = false; C.user = null;
+    if (!cfg?.url || !cfg?.key) return false;
+    if (!/^https:\/\/[a-z0-9-]+\.supabase\.(co|in)\/?$/i.test(cfg.url) && !client) throw new Error('Project URL should look like https://xxxx.supabase.co');
+    C.client = client || (await loadLib()).createClient(cfg.url.replace(/\/$/, ''), cfg.key, { auth: { persistSession: true, storageKey: 'aa.sb' } });
+    const sess = must(await C.client.auth.getSession());
+    if (!sess?.session) { W._emit('cloud'); return false; }
+    await C._afterLogin(sess.session.user);
+    return true;
+  };
+  C.configure = async (cfg) => { W.set('cloud', cfg && cfg.url ? { url: cfg.url.trim(), key: cfg.key.trim() } : null); return C.init(); };
+
+  /** Step 1: send a 6-digit code (works from file:// pages too, unlike magic links). */
+  C.sendCode = async (email) => { must(await C.client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })); };
+  /** Step 2: verify the code, claim any team invites for this e-mail, load teams. */
+  C.verifyCode = async (email, token) => { const d = must(await C.client.auth.verifyOtp({ email, token: String(token).trim(), type: 'email' })); await C._afterLogin(d.user); };
+  C.signOut = async () => { try { await C.client.auth.signOut(); } catch (e) { /* ignore */ } C.ready = false; C.user = null; C.team = null; W._emit('cloud'); W._emit('me'); };
+
+  C._afterLogin = async (user) => {
+    try { await C.client.rpc('claim_invites'); } catch (e) { /* function missing → schema not installed */ }
+    const rows = must(await C.client.from('members').select('team_id, role, name, teams(name)').eq('user_id', user.id));
+    C.teams = (rows || []).map((r) => ({ id: r.team_id, name: r.teams?.name || 'Team', role: r.role, myName: r.name }));
+    const pick = C.teams.find((t) => t.id === W.get('cloudTeam', null)) || C.teams[0] || null;
+    C.useTeam(pick ? pick.id : null, user);
+    C.ready = true;
+    W._emit('cloud'); W._emit('me');
+  };
+  C.useTeam = (id, user = C._authUser) => {
+    C._authUser = user;
+    const t = C.teams.find((x) => x.id === id) || null;
+    C.team = t; W.set('cloudTeam', t ? t.id : null);
+    C.user = { name: t?.myName || user?.email || 'Signed-in user', email: user?.email || '', org: t?.name || '', role: t?.role || 'viewer', id: user?.id };
+    W._emit('me');
+  };
+  const teamId = () => { if (!C.team) throw new Error('Create or join a team first (Settings → Team).'); return C.team.id; };
+
+  C.createTeam = async (name) => {
+    const t = must(await C.client.rpc('create_team', { team_name: String(name).slice(0, 80) }));
+    await C._afterLogin(C._authUser); C.useTeam(t);
+    return t;
+  };
+
+  // ---------------- plans ----------------
+  C.listPlans = async () => (must(await C.client.from('plans').select('id, name, summary, saved_by, updated_at').eq('team_id', teamId()).order('updated_at', { ascending: false }).limit(100)) || [])
+    .map((r) => ({ id: r.id, name: r.name, savedAt: r.updated_at, savedBy: r.saved_by, summary: r.summary }));
+  C.savePlan = async (snap, id) => {
+    const row = { team_id: teamId(), name: snap.name, data: snap, summary: snap.summary, saved_by: snap.savedBy };
+    if (id) { must(await C.client.from('plans').update(row).eq('id', id)); W._emit('plans'); return id; }
+    const r = must(await C.client.from('plans').insert(row).select('id').single()); W._emit('plans'); return r.id;
+  };
+  C.loadPlan = async (id) => { const r = must(await C.client.from('plans').select('data').eq('id', id).single()); return r.data; };
+  C.deletePlan = async (id) => { must(await C.client.from('plans').delete().eq('id', id)); W._emit('plans'); };
+
+  // ---------------- watch areas ----------------
+  C.listWatch = async () => (must(await C.client.from('watch_areas').select('*').eq('team_id', teamId())) || [])
+    .map((r) => ({ id: r.id, name: r.name, lat: r.lat, lon: r.lon, radiusKm: r.radius_km, hazards: r.hazards, minLevel: r.min_level, email: r.email || '' }));
+  C.addWatch = async (a) => { const r = must(await C.client.from('watch_areas').insert({ team_id: teamId(), name: a.name, lat: a.lat, lon: a.lon, radius_km: a.radiusKm, hazards: a.hazards, min_level: a.minLevel, email: a.email }).select('id').single()); W._emit('watch'); return r.id; };
+  C.deleteWatch = async (id) => { must(await C.client.from('watch_areas').delete().eq('id', id)); W._emit('watch'); };
+
+  // ---------------- team (admins) ----------------
+  C.listMembers = async () => (must(await C.client.from('members').select('user_id, email, name, role').eq('team_id', teamId())) || []);
+  C.invite = async (email, role = 'viewer', name = '') => { must(await C.client.from('members').insert({ team_id: teamId(), email: String(email).toLowerCase().trim(), role, name })); };
+  C.setRole = async (email, role) => { must(await C.client.from('members').update({ role }).eq('team_id', teamId()).eq('email', String(email).toLowerCase())); };
+  C.removeMember = async (email) => { must(await C.client.from('members').delete().eq('team_id', teamId()).eq('email', String(email).toLowerCase())); };
+
+  W.cloud = C;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/field.js */
+/* Field reports: what a field team sees on the ground (location, photo, damage, needs, road access), shared with
+   the control room and fed into the plan's Bayesian severity update.
+   Two ways to send: (1) the shared back end (Supabase table field_reports + storage bucket field-photos), or
+   (2) with no back end, a short text code ("AA1.…") sent by WhatsApp/SMS and pasted into the plan.
+   Used by field.html (the field app) and the plan view. Skill: skills/field-app/SKILL.md */
+(function (root) {
+  const AA = root.AA, M = AA.math;
+  const FR = {};
+
+  FR.DAMAGE = [
+    { v: 0, key: 'none', label: 'No damage', hint: 'Buildings and roads intact' },
+    { v: 0.25, key: 'minor', label: 'Minor', hint: 'Cracks, broken windows, some flooding of streets' },
+    { v: 0.5, key: 'moderate', label: 'Moderate', hint: 'Some homes unsafe, water inside houses, people leaving' },
+    { v: 0.75, key: 'severe', label: 'Severe', hint: 'Many homes collapsed or flooded to the roof, injuries' },
+    { v: 1, key: 'destroyed', label: 'Destroyed', hint: 'Most buildings down or washed away' },
+  ];
+  FR.NEEDS = [['water', 'Water'], ['food', 'Food'], ['shelter', 'Shelter'], ['medical', 'Medical'], ['rescue', 'Search & rescue']];
+  FR.ROAD = { open: 'Road open', partly: 'Road partly blocked', blocked: 'Road blocked' };
+  FR.SD = { trained: 0.1, crowd: 0.2 };
+  FR.damageLabel = (v) => (FR.DAMAGE.slice().sort((a, b) => Math.abs(a.v - v) - Math.abs(b.v - v))[0] || FR.DAMAGE[0]).label;
+
+  const uid = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const num = (x, d = 0) => (isFinite(+x) ? Math.max(0, Math.round(+x)) : d);
+
+  /** Clean and validate a report; throws with a plain message when unusable. */
+  FR.normalise = (r) => {
+    if (!r || typeof r !== 'object') throw new Error('Empty report');
+    const lat = +r.lat, lon = +r.lon;
+    if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) throw new Error('Report has no valid location');
+    const damage = M.clamp(+r.damage, 0, 1);
+    if (!isFinite(damage)) throw new Error('Report has no damage level');
+    const needs = [...new Set((r.needs || []).filter((n) => FR.NEEDS.some(([k]) => k === n)))];
+    return {
+      id: String(r.id || uid()).slice(0, 40), at: r.at && !isNaN(Date.parse(r.at)) ? new Date(r.at).toISOString() : new Date().toISOString(),
+      lat: +lat.toFixed(6), lon: +lon.toFixed(6), acc: isFinite(+r.acc) ? Math.round(+r.acc) : null,
+      damage, needs, people: { affected: num(r.people?.affected), injured: num(r.people?.injured), trapped: num(r.people?.trapped) },
+      road: FR.ROAD[r.road] ? r.road : 'open', note: String(r.note || '').slice(0, 500), by: String(r.by || '').slice(0, 80), team: String(r.team || '').slice(0, 80),
+      trained: !!r.trained, place: String(r.place || '').slice(0, 120), photo: r.photo || null, photoUrl: r.photoUrl || null, plan: String(r.plan || '').slice(0, 80),
+    };
+  };
+
+  // ---------------- text code (no back end) ----------------
+  const b64 = {
+    enc: (s) => (typeof btoa === 'function' ? btoa(unescape(encodeURIComponent(s))) : Buffer.from(s, 'utf8').toString('base64')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+    dec: (s) => { const t = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4); return typeof atob === 'function' ? decodeURIComponent(escape(atob(t))) : Buffer.from(t, 'base64').toString('utf8'); },
+  };
+  const check = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36).slice(-4).padStart(4, '0'); };
+  /** Compact code for WhatsApp/SMS. The photo is not included (send it separately). */
+  FR.encode = (r) => {
+    const n = FR.normalise(r);
+    const o = { i: n.id, t: n.at, a: n.lat, o: n.lon, c: n.acc, d: n.damage, n: n.needs, p: [n.people.affected, n.people.injured, n.people.trapped], r: n.road, x: n.note, b: n.by, m: n.team, q: n.trained ? 1 : 0, l: n.place, g: n.plan };
+    Object.keys(o).forEach((k) => (o[k] === '' || o[k] == null || (Array.isArray(o[k]) && !o[k].length)) && delete o[k]);
+    const body = b64.enc(JSON.stringify(o));
+    return `AA1.${body}.${check(body)}`;
+  };
+  /** Every valid code in a pasted text (a WhatsApp message may hold several, with chat text around them). */
+  FR.decodeAll = (text) => {
+    const out = [], errors = [];
+    String(text || '').replace(/AA1\.([A-Za-z0-9_-]+)\.([0-9a-z]{4})/g, (m, body, sum) => {
+      if (check(body) !== sum) { errors.push('A code was damaged in sending (checksum does not match).'); return m; }
+      try {
+        const o = JSON.parse(b64.dec(body));
+        out.push(FR.normalise({ id: o.i, at: o.t, lat: o.a, lon: o.o, acc: o.c, damage: o.d, needs: o.n, people: { affected: o.p?.[0], injured: o.p?.[1], trapped: o.p?.[2] }, road: o.r, note: o.x, by: o.b, team: o.m, trained: o.q === 1, place: o.l, plan: o.g, via: 'code' }));
+      } catch (e) { errors.push(`A code could not be read: ${e.message}`); }
+      return m;
+    });
+    return { reports: out, errors };
+  };
+  FR.shareText = (r) => {
+    const n = FR.normalise(r);
+    const needs = n.needs.map((k) => FR.NEEDS.find(([x]) => x === k)[1].toLowerCase()).join(', ');
+    return `AidAtlas field report${n.place ? ` · ${n.place}` : ''}\n${FR.damageLabel(n.damage)} damage · ${FR.ROAD[n.road]}${needs ? ` · needs ${needs}` : ''}${n.people.trapped ? ` · ${n.people.trapped} trapped` : ''}\n${n.lat.toFixed(5)}, ${n.lon.toFixed(5)}\nPaste into AidAtlas → plan → Field reports:\n${FR.encode(n)}`;
+  };
+
+  // ---------------- matching to the plan ----------------
+  /** Nearest demand zone, if the report is close enough to describe it (its catchment, at least 3 km, at most 25 km). */
+  FR.match = (r, zones) => {
+    let best = null;
+    (zones || []).forEach((z) => { const d = M.haversine(r, z); if (!best || d < best.distKm) best = { zone: z, distKm: d }; });
+    if (!best) return null;
+    const lim = M.clamp((best.zone.catchKm || 6) * 1.2, 3, 25);
+    return best.distKm <= lim ? best : { ...best, outside: true };
+  };
+  /** Engine events a report turns into: a Bayesian severity update for its area, plus a road closure when blocked. */
+  FR.toEvents = (r, st) => {
+    const ev = [];
+    const m = FR.match(r, st?.zones);
+    if (m && !m.outside) ev.push({ type: 'report', p: { zoneId: m.zone.id, value: r.damage, sd: r.trained ? FR.SD.trained : FR.SD.crowd, fieldId: r.id } });
+    if (r.road === 'blocked') ev.push({ type: 'closure', p: { lat: r.lat, lon: r.lon, fieldId: r.id } });
+    return { events: ev, match: m };
+  };
+  /** Reports inside or near the plan's impact area (radius + 30 km). */
+  FR.inPlanArea = (reports, st) => { const c = st.sit.focus || st.sit; return (reports || []).filter((r) => M.haversine(c, r) <= st.sit.radiusKm + 30); };
+
+  // ---------------- shared back end ----------------
+  const cloud = () => AA.workspace?.cloud;
+  const ready = () => { const C = cloud(); if (!C?.ready || !C.team) throw new Error('Sign in to the shared workspace first (Workspace → Shared back end).'); return C; };
+  FR.cloudAvailable = () => { const C = cloud(); return !!(C && C.ready && C.team); };
+  /** Upload the photo (if any) and insert the report. photoBlob: a JPEG Blob. */
+  FR.cloudSend = async (r, photoBlob = null) => {
+    const C = ready(), n = FR.normalise(r);
+    let photo_path = null;
+    if (photoBlob) {
+      photo_path = `${C.team.id}/${n.id}.jpg`;
+      const up = await C.client.storage.from('field-photos').upload(photo_path, photoBlob, { contentType: 'image/jpeg', upsert: true });
+      if (up.error) throw new Error(`Photo upload failed: ${up.error.message}`);
+    }
+    const row = { id: n.id, team_id: C.team.id, at: n.at, lat: n.lat, lon: n.lon, acc_m: n.acc, damage: n.damage, needs: n.needs, people: n.people, road: n.road, note: n.note, by_name: n.by || C.user?.name || '', team_name: n.team, trained: n.trained, place: n.place, plan: n.plan, photo_path };
+    const ins = await C.client.from('field_reports').upsert(row);
+    if (ins.error) throw new Error(ins.error.message);
+    return n.id;
+  };
+  /** Reports of my team since a time (ISO), newest first, with signed photo links (1 hour). */
+  FR.cloudList = async (sinceIso = null, limit = 300) => {
+    const C = ready();
+    let q = C.client.from('field_reports').select('*').eq('team_id', C.team.id).order('at', { ascending: false }).limit(limit);
+    if (sinceIso) q = q.gte('at', sinceIso);
+    const { data, error } = await q; if (error) throw new Error(error.message);
+    const rows = data || [];
+    const paths = rows.map((x) => x.photo_path).filter(Boolean);
+    let urls = {};
+    if (paths.length) { const s = await C.client.storage.from('field-photos').createSignedUrls(paths, 3600); (s.data || []).forEach((u) => { if (u.signedUrl) urls[u.path] = u.signedUrl; }); }
+    return rows.map((x) => { try { return FR.normalise({ id: x.id, at: x.at, lat: x.lat, lon: x.lon, acc: x.acc_m, damage: x.damage, needs: x.needs, people: x.people, road: x.road, note: x.note, by: x.by_name, team: x.team_name, trained: x.trained, place: x.place, plan: x.plan, photoUrl: urls[x.photo_path] || null, via: 'cloud' }); } catch (e) { return null; } }).filter(Boolean);
+  };
+
+  AA.field = FR;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>/* js/field-page.js */
+/* Field app page (field.html): capture → save on the phone (IndexedDB outbox) → send.
+   Sending: automatically to the shared workspace when signed in and online; otherwise Share (WhatsApp/SMS text
+   with an AA1 code, plus the photo where the phone allows) or Copy. Skill: skills/field-app/SKILL.md */
+(function (root) {
+  const AA = root.AA, FR = AA.field, W = AA.workspace;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const qs = new URLSearchParams(location.search);
+  const plan = { name: qs.get('plan') || '', lat: +qs.get('lat'), lon: +qs.get('lon') };
+  const draft = { lat: null, lon: null, acc: null, damage: null, photo: null, photoUrl: null };
+
+  // ---------------- toast ----------------
+  let tt;
+  const toast = (m, ms = 3500) => { const t = $('#ftoast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), ms); };
+
+  // ---------------- outbox (IndexedDB, falls back to memory) ----------------
+  const DB = (() => {
+    let dbp = null; const mem = new Map();
+    const open = () => dbp || (dbp = new Promise((res) => {
+      try {
+        const r = indexedDB.open('aidatlas-field', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('reports', { keyPath: 'id' });
+        r.onsuccess = () => res(r.result); r.onerror = () => res(null);
+      } catch (e) { res(null); }
+    }));
+    const tx = async (mode, fn) => { const db = await open(); if (!db) return fn(null); return new Promise((res, rej) => { const t = db.transaction('reports', mode); const st = t.objectStore('reports'); const out = fn(st); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error); }); };
+    return {
+      put: (rec) => tx('readwrite', (st) => (st ? st.put(rec) : mem.set(rec.id, rec))),
+      all: async () => { const db = await open(); if (!db) return [...mem.values()]; return new Promise((res) => { const r = db.transaction('reports').objectStore('reports').getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); }); },
+      del: (id) => tx('readwrite', (st) => (st ? st.delete(id) : mem.delete(id))),
+    };
+  })();
+
+  // ---------------- profile ----------------
+  const PROFILE = 'aa.fieldProfile';
+  const profile = () => { try { return JSON.parse(localStorage.getItem(PROFILE) || '{}'); } catch (e) { return {}; } };
+  const saveProfile = () => { try { localStorage.setItem(PROFILE, JSON.stringify({ by: $('#by').value.trim(), team: $('#team').value.trim(), trained: $('#trained').checked })); } catch (e) { /* private mode */ } };
+
+  // ---------------- location ----------------
+  let watchId = null, watchStop = null;
+  const showLoc = () => {
+    const t = $('#locTxt');
+    if (draft.lat == null) { t.textContent = 'Location not set yet.'; t.className = 'loc'; return; }
+    const away = isFinite(plan.lat) && plan.lat ? ` · ${Math.round(AA.math.haversine(draft, plan))} km from the plan centre` : '';
+    t.textContent = `${draft.lat.toFixed(5)}, ${draft.lon.toFixed(5)}${draft.acc != null ? ` (± ${Math.round(draft.acc)} m)` : ''}${away}`;
+    t.className = 'loc ' + (draft.acc == null || draft.acc <= 100 ? 'ok' : 'bad');
+    $('#lat').value = draft.lat.toFixed(5); $('#lon').value = draft.lon.toFixed(5);
+  };
+  const startGps = () => {
+    if (!navigator.geolocation) { $('#locTxt').textContent = 'This phone cannot share its location here; type it below.'; return; }
+    $('#locTxt').textContent = 'Finding your location…';
+    if (watchId != null) navigator.geolocation.clearWatch(watchId);
+    watchId = navigator.geolocation.watchPosition((p) => {
+      draft.lat = p.coords.latitude; draft.lon = p.coords.longitude; draft.acc = p.coords.accuracy; showLoc();
+      if (p.coords.accuracy <= 25) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+    }, (e) => { $('#locTxt').textContent = e.code === 1 ? 'Location permission was refused. Allow it in the browser, or type the location below.' : 'No GPS fix yet. Step outside, or type the location below.'; $('#locTxt').className = 'loc bad'; }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
+    clearTimeout(watchStop); watchStop = setTimeout(() => { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } }, 90000);
+  };
+
+  // ---------------- photo (shrunk to ≤ 1280 px JPEG) ----------------
+  const shrink = (file, max = 1280, q = 0.72) => new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob((b) => (b ? res(b) : rej(new Error('Could not compress the photo'))), 'image/jpeg', q);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('This file is not a photo the browser can read')); };
+    img.src = url;
+  });
+
+  // ---------------- form ----------------
+  const build = () => {
+    $('#dmgs').innerHTML = FR.DAMAGE.map((d, k) => `<button type="button" data-d="${d.v}" aria-pressed="false"><i style="background:${['#16a34a', '#84cc16', '#f59e0b', '#ea580c', '#b91c1c'][k]}"></i><b>${esc(d.label)}</b><span>${esc(d.hint)}</span></button>`).join('');
+    $('#dmgs').querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => { draft.damage = +b.dataset.d; $('#dmgs').querySelectorAll('[data-d]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+    $('#needs').innerHTML = FR.NEEDS.map(([k, l]) => `<label><input type="checkbox" value="${k}"> ${esc(l)}</label>`).join('');
+    const p = profile(); $('#by').value = p.by || ''; $('#team').value = p.team || ''; $('#trained').checked = !!p.trained;
+    if (plan.name) { const b = $('#planBanner'); b.hidden = false; b.innerHTML = `Reporting for the plan <b>${esc(plan.name)}</b>. Reports are matched to its areas by location.`; }
+  };
+  const reset = () => {
+    draft.damage = null; draft.photo = null; if (draft.photoUrl) URL.revokeObjectURL(draft.photoUrl); draft.photoUrl = null;
+    $('#dmgs').querySelectorAll('[data-d]').forEach((x) => x.setAttribute('aria-pressed', 'false'));
+    $('#needs').querySelectorAll('input').forEach((i) => (i.checked = false));
+    ['#pAff', '#pInj', '#pTrap', '#note'].forEach((s) => ($(s).value = ''));
+    document.querySelector('input[name=road][value=open]').checked = true;
+    $('#photo').value = ''; $('#photoPrev').hidden = true; $('#photoTxt').textContent = 'Photos are shrunk to about 150 KB before sending.';
+  };
+
+  const save = async () => {
+    const lat = draft.lat ?? (+$('#lat').value || null), lon = draft.lon ?? (+$('#lon').value || null);
+    if ($('#lat').value && $('#lon').value && (+$('#lat').value !== draft.lat || +$('#lon').value !== draft.lon)) { draft.lat = +$('#lat').value; draft.lon = +$('#lon').value; draft.acc = null; }
+    if (draft.lat == null && (lat == null || lon == null)) { toast('Set the location first (step 1).'); $('#gps').focus(); return; }
+    if (draft.damage == null) { toast('Choose how bad the damage is (step 3).'); $('#dmgs').scrollIntoView({ block: 'center' }); return; }
+    saveProfile();
+    let report;
+    try {
+      report = FR.normalise({ lat: draft.lat ?? lat, lon: draft.lon ?? lon, acc: draft.acc, damage: draft.damage, needs: [...$('#needs').querySelectorAll('input:checked')].map((i) => i.value),
+        people: { affected: $('#pAff').value, injured: $('#pInj').value, trapped: $('#pTrap').value }, road: document.querySelector('input[name=road]:checked').value,
+        note: $('#note').value.trim(), by: $('#by').value.trim(), team: $('#team').value.trim(), trained: $('#trained').checked, place: $('#place').value.trim(), plan: plan.name });
+    } catch (e) { toast(e.message); return; }
+    await DB.put({ id: report.id, report, photo: draft.photo, status: 'queued', savedAt: new Date().toISOString() });
+    reset();
+    toast('Saved on this phone.');
+    await sendQueued();
+    await renderOutbox();
+    $('#outboxSec').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+
+  // ---------------- sending ----------------
+  const cloudOk = () => FR.cloudAvailable() && navigator.onLine !== false;
+  let sending = false;
+  const sendQueued = async () => {
+    if (sending || !cloudOk()) return 0; sending = true; let n = 0;
+    try {
+      for (const rec of await DB.all()) {
+        if (rec.status === 'sent') continue;
+        try { await FR.cloudSend(rec.report, rec.photo); rec.status = 'sent'; rec.sentAt = new Date().toISOString(); await DB.put(rec); n++; } catch (e) { rec.error = e.message; await DB.put(rec); break; }
+      }
+    } finally { sending = false; }
+    if (n) toast(`${n} report${n === 1 ? '' : 's'} sent to the control room.`);
+    return n;
+  };
+  const share = async (rec) => {
+    const text = FR.shareText(rec.report);
+    const file = rec.photo ? new File([rec.photo], `field-${rec.id}.jpg`, { type: 'image/jpeg' }) : null;
+    try {
+      if (navigator.share) {
+        const data = file && navigator.canShare && navigator.canShare({ files: [file] }) ? { text, files: [file] } : { text };
+        await navigator.share(data); rec.status = rec.status === 'sent' ? 'sent' : 'shared'; await DB.put(rec); renderOutbox(); return;
+      }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(text); rec.status = rec.status === 'sent' ? 'sent' : 'shared'; await DB.put(rec); toast('Copied. Paste it into WhatsApp or SMS to your control room.'); renderOutbox(); }
+    catch (e) { const ta = document.getElementById('code-' + rec.id); if (ta) { ta.hidden = false; ta.select(); } toast('Select the code below and copy it.'); }
+  };
+
+  const renderOutbox = async () => {
+    const list = (await DB.all()).sort((a, b) => (b.savedAt > a.savedAt ? 1 : -1));
+    $('#obEmpty').hidden = list.length > 0;
+    $('#outbox').innerHTML = list.slice(0, 30).map((rec) => {
+      const r = rec.report, lbl = { sent: 'sent', queued: cloudOk() ? 'sending…' : 'waiting', shared: 'shared' }[rec.status];
+      return `<li><b>${esc(FR.damageLabel(r.damage))}</b> · ${esc(FR.ROAD[r.road])}${r.place ? ` · ${esc(r.place)}` : ''} <span class="st ${rec.status}">${lbl}</span><br><span class="small muted">${new Date(r.at).toLocaleString()} · ${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}${rec.photo ? ' · photo' : ''}${rec.error ? ` · ${esc(rec.error)}` : ''}</span>
+        <div class="btns"><button class="btn" type="button" data-share="${esc(rec.id)}">Share (WhatsApp/SMS)</button><button class="btn" type="button" data-copy="${esc(rec.id)}">Copy code</button><button class="linkbtn danger" type="button" data-del="${esc(rec.id)}">delete</button></div>
+        <textarea class="codebox" id="code-${esc(rec.id)}" rows="2" readonly hidden>${esc(FR.encode(r))}</textarea></li>`;
+    }).join('');
+    const byId = (id) => list.find((x) => x.id === id);
+    $('#outbox').querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => share(byId(b.dataset.share))));
+    $('#outbox').querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => { const rec = byId(b.dataset.copy), ta = document.getElementById('code-' + rec.id); ta.hidden = false; try { await navigator.clipboard.writeText(ta.value); toast('Code copied.'); } catch (e) { ta.select(); toast('Select the code and copy it.'); } }));
+    $('#outbox').querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => { if (b.dataset.armed) { await DB.del(b.dataset.del); renderOutbox(); } else { b.dataset.armed = '1'; b.textContent = 'tap again to delete'; } }));
+    connText();
+  };
+
+  const net = () => { const on = navigator.onLine !== false; const n = $('#net'); n.textContent = on ? 'online' : 'offline'; n.className = 'net' + (on ? '' : ' off'); };
+  const connText = () => {
+    const C = W.cloud;
+    $('#connTxt').innerHTML = FR.cloudAvailable() ? `Signed in as <b>${esc(C.user?.email || '')}</b> · team <b>${esc(C.team?.name || '')}</b>. Reports are sent automatically when there is a signal.`
+      : C?.config() ? 'Connected to a shared workspace but not signed in: sign in below, or use Share.' : 'Not connected to a shared workspace: after saving, press <b>Share</b> and send the message to your control room by WhatsApp or SMS.';
+  };
+
+  // ---------------- shared workspace sign-in (same back end as the app) ----------------
+  const bindCloud = () => {
+    const C = W.cloud, msg = (t) => ($('#sbMsg').textContent = t);
+    const cfg = C.config(); if (cfg) { $('#sbUrl').value = cfg.url; $('#sbKey').value = cfg.key; }
+    $('#sbSave').addEventListener('click', async () => { msg('Connecting…'); try { const signed = await C.configure({ url: $('#sbUrl').value, key: $('#sbKey').value }); msg(signed ? 'Connected and signed in.' : 'Connected. Now sign in with your e-mail.'); connText(); sendQueued().then(renderOutbox); } catch (e) { msg(e.message); } });
+    $('#sbOff').addEventListener('click', async () => { await C.signOut(); await C.configure(null); msg('Disconnected.'); connText(); });
+    $('#sbSend').addEventListener('click', async () => { try { await C.sendCode($('#sbEmail').value.trim()); msg('Code sent. Check your e-mail.'); } catch (e) { msg(e.message); } });
+    $('#sbVerify').addEventListener('click', async () => { try { await C.verifyCode($('#sbEmail').value.trim(), $('#sbCode').value); msg('Signed in.'); connText(); await sendQueued(); renderOutbox(); } catch (e) { msg(e.message); } });
+    if (cfg) C.init().then(() => { connText(); sendQueued().then(renderOutbox); }).catch((e) => msg(e.message));
+  };
+
+  const boot = () => {
+    build(); net(); connText(); renderOutbox();
+    $('#gps').addEventListener('click', startGps);
+    ['#lat', '#lon'].forEach((s) => $(s).addEventListener('change', () => { const a = +$('#lat').value, o = +$('#lon').value; if ($('#lat').value && $('#lon').value && isFinite(a) && isFinite(o)) { draft.lat = a; draft.lon = o; draft.acc = null; showLoc(); } }));
+    $('#photo').addEventListener('change', async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      try { const b = await shrink(f); draft.photo = b; if (draft.photoUrl) URL.revokeObjectURL(draft.photoUrl); draft.photoUrl = URL.createObjectURL(b); $('#photoPrev').src = draft.photoUrl; $('#photoPrev').hidden = false; $('#photoTxt').textContent = `Photo ready (${Math.round(b.size / 1024)} KB).`; }
+      catch (er) { toast(er.message); }
+    });
+    $('#save').addEventListener('click', save);
+    addEventListener('online', () => { net(); sendQueued().then(renderOutbox); });
+    addEventListener('offline', net);
+    bindCloud();
+    if (navigator.geolocation && navigator.permissions?.query) navigator.permissions.query({ name: 'geolocation' }).then((p) => { if (p.state === 'granted') startGps(); }).catch(() => {});
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+  };
+  AA.fieldPage = { DB, sendQueued, renderOutbox, draft, share };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})(window);
+
+</script>
+</body>
+</html>

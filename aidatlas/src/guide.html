@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AidAtlas User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../css/aidatlas.css">
+<style>
+  .guide { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 32px; max-width: 1180px; margin: 0 auto; padding-inline: 16px; --sketch-opacity: 0.1; }
+  .guide::before { position: fixed; height: 45vh; top: auto; bottom: 0; }
+  .toc { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow: auto; padding-block: 24px; font-size: 13px; }
+  .toc .wordmark { font-size: 30px; text-decoration: none; color: var(--ink); display: block; margin-bottom: 4px; }
+  .toc ol { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 2px; }
+  .toc a { color: var(--graphite); text-decoration: none; display: block; padding: 3px 6px; border-radius: 6px; }
+  .toc a:hover { background: var(--paper-2); color: var(--ink); }
+  .toc .sub a { padding-left: 18px; font-size: 12px; }
+  main.doc { padding-block: 24px 80px; max-width: 760px; }
+  main.doc h1 { font-family: var(--display); font-size: 52px; line-height: 1; margin: 0 0 8px; }
+  main.doc h2 { font-family: var(--display); font-size: 36px; margin: 44px 0 8px; line-height: 1.05; scroll-margin-top: 16px; }
+  main.doc h3 { font-size: 15px; margin: 22px 0 6px; scroll-margin-top: 16px; }
+  main.doc p, main.doc li { font-size: 15px; line-height: 1.65; }
+  main.doc .lead { font-size: 17px; color: var(--graphite); }
+  .box { background: rgba(255,255,255,.95); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; margin: 12px 0; }
+  .box.tip { border-left: 4px solid var(--affected); }
+  .box.warn { border-left: 4px solid var(--warn); }
+  table.g { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; background: rgba(255,255,255,.95); }
+  table.g th, table.g td { border-bottom: 1px solid var(--rule); padding: 7px 8px; text-align: left; vertical-align: top; }
+  table.g th { font-size: 12px; color: var(--graphite); background: var(--paper-2); }
+  .sym { display: inline-flex; align-items: center; justify-content: center; width: 26px; }
+  .dotg { width: 13px; height: 13px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.4); display: inline-block; }
+  .lineg { width: 24px; border-top: 3px solid; display: inline-block; }
+  dl.glossary { margin: 0; display: grid; gap: 2px; }
+  dl.glossary dt { font-weight: 600; margin-top: 12px; scroll-margin-top: 16px; }
+  dl.glossary dd { margin: 2px 0 0; color: var(--ink); font-size: 14.5px; line-height: 1.6; }
+  dl.glossary dd .where { display: block; color: var(--graphite); font-size: 12.5px; }
+  .letters { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
+  kbd { font-family: var(--mono); font-size: 12px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--paper); }
+  code { font-family: var(--mono); font-size: 13px; background: var(--paper-2); padding: 1px 4px; border-radius: 4px; }
+  @media (max-width: 860px) { .guide { grid-template-columns: minmax(0, 1fr); } .toc { position: static; max-height: none; padding-block: 16px 0; } main.doc h1 { font-size: 40px; } }
+</style>
+</head>
+<body>
+<div class="guide sketch-bg">
+  <nav class="toc" aria-label="Contents">
+    <a class="wordmark" href="index.html">Aid<b>Atlas</b></a>
+    <span class="eyebrow">User guide</span>
+    <ol>
+      <li><a href="#start">1. Getting started</a></li>
+      <li><a href="#screen">2. The screen</a></li>
+      <li><a href="#mode-live">3. Live mode</a></li>
+      <li><a href="#mode-plan">4. Plan mode</a></li>
+      <li><a href="#mode-history">5. History mode</a></li>
+      <li><a href="#mode-risk">6. Risk mode</a></li>
+      <li class="sub"><a href="#readiness">Readiness score</a></li>
+      <li><a href="#plan-view">7. Reading a plan</a></li>
+      <li class="sub"><a href="#key-actions">Key actions</a></li>
+      <li class="sub"><a href="#forecast">Forecast</a></li>
+      <li class="sub"><a href="#allocation">Allocation</a></li>
+      <li class="sub"><a href="#zones-table">Zones and stores</a></li>
+      <li class="sub"><a href="#storage">Storage sites</a></li>
+      <li class="sub"><a href="#savings">Savings vs nearest store</a></li>
+      <li class="sub"><a href="#field-reports">Field reports</a></li>
+      <li><a href="#respond">8. Responding to change</a></li>
+      <li><a href="#reports">9. Action reports</a></li>
+      <li><a href="#map-symbols">10. Map symbols</a></li>
+      <li class="sub"><a href="#map-3d">3D map</a></li>
+      <li><a href="#models-panel">11. The Models panel</a></li>
+      <li><a href="#settings">12. Settings and your own data</a></li>
+      <li><a href="#workspace">12a. Workspace, roles, saved plans, alerts</a></li>
+      <li><a href="#field-app">12b. Field app (phones)</a></li>
+      <li><a href="#api">12c. API for developers</a></li>
+      <li><a href="#validation">12d. Accuracy and model cards</a></li>
+      <li><a href="#tasks">12e. Tasks and comments</a></li>
+      <li><a href="#offline">12f. Offline and low bandwidth</a></li>
+      <li><a href="#exports">12g. Exports</a></li>
+      <li><a href="#links">13. Shareable links</a></li>
+      <li><a href="#glossary">14. Glossary of every term</a></li>
+      <li><a href="#trouble">15. Troubleshooting</a></li>
+      <li><a href="#limits">16. Data sources and limits</a></li>
+    </ol>
+  </nav>
+
+  <main class="doc">
+    <h1>AidAtlas user guide</h1>
+    <p class="lead">AidAtlas helps disaster managers answer three questions before and during a disaster: <b>where will it hurt, what will people need, and how do we get it to them fastest and fairly?</b> This guide explains every screen, button and term in plain language.</p>
+
+    <h2 id="start">1. Getting started</h2>
+    <ol>
+      <li>Open <b>index.html</b> (the home page) or <b>app.html</b> (straight to the map) in Chrome, Edge, Safari or Firefox. Double-clicking the file is enough; nothing needs installing.</li>
+      <li>You must be <b>online</b>. AidAtlas pulls live disaster data, satellite images, roads and population from public sources each time you use it.</li>
+      <li>Pick a <b>mode</b>: Live, Plan, History or Risk (sections 3–6).</li>
+    </ol>
+    <div class="box warn"><b>Use the files from your project folder.</b> Each page is one self-contained file, so you can copy or email it, but keep <code>index.html</code>, <code>app.html</code> and <code>guide.html</code> together so the links between them work.</div>
+
+    <h2 id="screen">2. The screen</h2>
+    <table class="g">
+      <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><b>Top bar</b></td><td>The AidAtlas name (back to home), the four mode tabs, the <b>search box</b> (type a city, address or country and press <kbd>Enter</kbd>), <b>Guide</b> (this page), <b>Models</b> (the maths behind every number) and <b>Settings</b>.</td></tr>
+        <tr><td><b>Left panel</b></td><td>Lists, forms and the plan for the selected event: key actions, forecast, allocation, controls and tables. It scrolls.</td></tr>
+        <tr><td><b>Map</b></td><td>Satellite imagery with place names and roads. Drag to move, scroll or use <kbd>+</kbd>/<kbd>−</kbd> to zoom. Hover any dot or line for details; click a green or red dot for actions. The layers button (top right) switches between satellite and street maps and turns labels, roads and live traffic on or off.</td></tr>
+        <tr><td><b>2D | 3D switch</b></td><td>Top-right corner of the map: flat map or 3D map (see <a href="#map-3d">3D map</a>).</td></tr>
+        <tr><td><b>Key actions box</b></td><td>Top-left of the map when a plan is open: the most important steps right now. Click a line to fly to the place it refers to. <b>Full action report</b> opens the printable report.</td></tr>
+        <tr><td><b>Legend</b></td><td>Bottom-right: what each colour and line means. The underlined words open the exact calculation used. <b>Show vehicles in transit</b> turns on moving vehicle dots.</td></tr>
+        <tr><td><b>Status pill</b></td><td>Top-centre of the map: what AidAtlas is doing (for example “Building road travel-time matrix”). Red text means a problem, with a hint.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="mode-live">3. Live mode: disasters happening now</h2>
+    <p>AidAtlas reads three official feeds every time you open Live mode and again every 10 minutes:</p>
+    <ul>
+      <li><b>GDACS</b> (UN and European Commission): earthquakes, cyclones, floods, volcanoes, droughts and wildfires, with Green, Orange or Red alert levels.</li>
+      <li><b>USGS</b> (US Geological Survey): every earthquake of magnitude 4.5 or more in the last week, with its PAGER alert.</li>
+      <li><b>NASA EONET</b>: events seen by satellites, such as wildfires, storms and volcanoes.</li>
+    </ul>
+    <p>Events are ranked by the <a href="#g-usi">Unified Severity Index</a> and the <b>Top 5</b> are shown in the panel and as numbered green dots on the map. Smaller green dots are other current events.</p>
+    <h3>What to do</h3>
+    <ol>
+      <li>Read the list: each card shows the event name, type, alert colour, country, size, how long ago it was updated and the data source. The number on the right is the severity score (0 to 1).</li>
+      <li>Click a card or a numbered dot to open its <a href="#plan-view">plan</a>.</li>
+      <li>Press <b>Generate situation report</b> for a one-page briefing on all five events (section 9).</li>
+    </ol>
+    <div class="box tip">For cyclones, GDACS reports the strongest wind the storm ever had. If the storm has since weakened (its current alert is lower), AidAtlas plans with the current strength and says so in the plan heading and in Data notes.</div>
+
+    <h2 id="mode-plan">4. Plan mode: “what if a disaster hit here?”</h2>
+    <p>Use this to prepare before anything happens, or to run drills.</p>
+    <ol>
+      <li>Type a place in the search box and press <kbd>Enter</kbd>, then choose the right result. You can also just click on the map. The point turns green.</li>
+      <li>Choose the <b>Hazard</b> and its <b>strength</b>:
+        <ul>
+          <li>Earthquake: <a href="#g-magnitude">magnitude</a> (4.5–9.5) and <a href="#g-depth">depth</a> in km.</li>
+          <li>Tropical cyclone: maximum wind speed in km/h, and <b>Hours until peak</b> (time until landfall).</li>
+          <li>Flood, wildfire, volcano, drought: an intensity from 0.1 (mild) to 1 (extreme). Floods also take hours until peak; wildfires and droughts take an area in km².</li>
+        </ul></li>
+      <li>Set the <a href="#g-supply-level">Supply level</a> if you know your stocks are higher or lower than normal.</li>
+      <li>Press <b>Build relief plan</b>. In 20–60 seconds you get the full plan plus <a href="#storage">recommended storage sites</a>.</li>
+    </ol>
+
+    <h2 id="mode-history">5. History mode: what happened here before</h2>
+    <ol>
+      <li>Search a place (or click the map).</li>
+      <li>AidAtlas collects major disasters within 300 km: GDACS Orange and Red events since 2000, USGS earthquakes of magnitude 5.5+ since 1900, and NASA EONET events. Duplicates are merged.</li>
+      <li>The <b>5 most recent</b> are listed newest first, with date, size and distance. Click one to <b>replay</b> it: AidAtlas runs the full plan as if it were happening now, so you can see which routes and storage sites would have worked best.</li>
+      <li><b>Generate history report</b> summarises the record and what it means for preparedness.</li>
+    </ol>
+
+    <h2 id="mode-risk">6. Risk mode: where disaster is most likely to hurt</h2>
+    <ol>
+      <li>Search a city or region. AidAtlas draws a 6 × 6 grid of squares (about 20 km each, 120 km across).</li>
+      <li>It reads the earthquake record since 1973, 20 years of river flow, past storms, floods, fires and volcanoes, where people live, the nearest hospitals, and national data from the World Bank.</li>
+      <li>Each square gets a <a href="#g-risk">risk score</a>. Darker orange means higher risk. The <b>Top 5</b> are outlined in black and listed with their main danger and the four parts of the score (<a href="#g-hevlcc">H, E, V, LCC</a>).</li>
+      <li>Click an area to open a plan for its most likely disaster.</li>
+      <li><b>Plan storage for all five</b> finds the best places for relief warehouses that reach all five areas quickly (purple diamonds and dashed lines).</li>
+      <li><b>Generate preparedness report</b> gives a step-by-step preparation list.</li>
+      <li><b>Readiness score</b> checks whether the district is stocked for the season (below).</li>
+    </ol>
+    <h3 id="readiness">Pre-season readiness score</h3>
+    <p>Press <b>Readiness score</b> after a risk search. For each of the five highest-risk areas AidAtlas imagines its most likely big disaster (its main hazard; earthquakes at the size expected about once in 475 years) and works out the <b>worst likely</b> (P90) needs for the first 72 hours: water, food, tents, medical kits and staff. It then counts the stock and vehicles in stores that can reach the area within 3 hours by road and are not themselves badly damaged.</p>
+    <ul>
+      <li><b>Score out of 100</b> for the district (areas with more people count more) and for each area. 80 or more is <b>Ready</b>, 50–79 <b>Partly ready</b>, below 50 <b>Not ready</b>. Water and medical count most; having enough trucks also counts.</li>
+      <li><b>Add before the season</b> lists the extra stock and vehicles needed so that any one of the five areas could be served.</li>
+      <li>Without your inventory, stock is <b>assumed</b> by facility type and the card says so. Connect your real stock (<b>Workspace → Inventory source</b>, a Google Sheet or CSV) and press the button again for a score you can quote in a budget request.</li>
+      <li><b>Readiness report</b> gives a printable version; <b>Download data</b> gives the numbers as JSON.</li>
+    </ul>
+
+    <h2 id="plan-view">7. Reading a plan</h2>
+    <p>Every mode ends in the same plan view. From top to bottom:</p>
+    <h3>Heading</h3>
+    <p>The event name, type, alert colour, country, size and source. Below it: the <a href="#g-impact-radius">impact radius</a>, the number of <a href="#g-zone">demand zones</a>, how many <a href="#g-store">supply stores</a> are open and how many hospitals receive patients. “T+0 h · epoch 0” is the plan time (see <a href="#g-epoch">epoch</a>).</p>
+    <h3 id="key-actions">Key actions now</h3>
+    <p>The most important steps for the next 6 hours in plain words, also shown in the box on the map: warn people, open shelters, move the injured, dispatch the first supplies, arrange air drops, ask for outside help and stock storage sites. Click a line to fly to the place. <b>Generate action report</b> turns these and much more into a printable report.</p>
+    <h3 id="forecast">Forecast</h3>
+    <p>Four boxes: <a href="#g-affected">Affected</a>, <a href="#g-displaced">Displaced</a>, <a href="#g-injured">Injured</a>, <a href="#g-fatalities">Fatalities</a>. The big number is the most likely value (<a href="#g-p50">P50</a>); the small line is the range (<a href="#g-p50">P10–P90</a>). Plan for the higher end.</p>
+    <p id="addresses"><b>Names and addresses.</b> Affected areas are named after the real sectors, colonies, suburbs and villages that OpenStreetMap has at that spot (for example “Sector 29” or “DLF Phase 1”); an area also lists the nearby localities it covers. Supply stores, hospitals and recommended storage sites show a street address once it has been looked up (it fills in within a few seconds after the plan appears). Hover any dot to see its address, click it for coordinates and an <b>Open in Google Maps</b> link for directions, and zoom in (street level) to see name labels on the map. The action report repeats every address and ends with a <b>Where everything is</b> table.</p>
+    <p id="evidence">Under the boxes, the <b>evidence card</b> shows what agencies have already confirmed (<a href="#g-reported">reported impact</a>), the USGS <a href="#g-pager">PAGER</a> loss estimate or alert for earthquakes, the <a href="#g-flood-type">flood type</a>, and where the population and water figures come from (<a href="#g-worldpop">WorldPop</a>, the GDACS <a href="#g-flood-outline">flood outline</a>, <a href="#g-river-flow">river flow</a>). Reported counts are minimums, so the forecast never goes below them. If the evidence card says the model alone gave a much lower number, trust the reported number.</p>
+    <h3 id="allocation">This epoch's allocation</h3>
+    <ul>
+      <li><b>Bars by item</b> (water, food, shelter, medical, personnel): the share of this 6-hour period's need that can be delivered from local stock with local vehicles. Under each bar: the amount delivered and the amount needed.</li>
+      <li><b>Total cost</b>: fuel, crew time, dispatch, loading and congestion cost of the plan, compared with a simple “send everything from the nearest store” plan (<a href="#g-naive">naive cost</a>).</li>
+      <li><b>Vehicle trips</b>: how many trips are needed, and how many were saved by sharing trucks (<a href="#g-milk-run">milk runs</a>).</li>
+      <li><b>What would close the gap</b>: how many more trucks or buses would let you move stock that is already available, and how much extra stock to ask for from state or national reserves.</li>
+      <li>The grey line names the calculation method, how long it took, routing progress and any <a href="#g-air-drop">air drops</a>.</li>
+    </ul>
+    <h3 id="zones-table">Demand zones by need · Supply stores</h3>
+    <p><b>Zones</b> are sorted by <a href="#g-need">need score</a>, with people affected and <a href="#g-critical-cov">critical coverage</a>. Click a zone ID to zoom to it. <b>Stores</b> shows how much of each store's stock and truck time the plan uses. You can replace assumed stock with your own (<a href="#settings">section 12</a>).</p>
+    <h3 id="storage">Recommended storage</h3>
+    <p>In Plan, History and Risk modes AidAtlas suggests where to keep relief stock before a disaster (purple diamonds). Each site is outside the expected heavy-damage area and covers as much need as possible within the <a href="#g-coverage-time">coverage time</a>. The table shows how much to keep at each site: 3 days of supplies for the worst likely case.</p>
+    <h3 id="savings">Savings vs nearest-store plan</h3>
+    <p>Most control rooms send supplies from the store closest to each area. This section runs that rule on the same demand, stock, vehicles and roads and compares it with the AidAtlas plan for the current 6-hour period: transport cost, cost per tonne delivered, vehicle-hours, trips, how much of the critical need (water and medical) is delivered, how much water reaches the highest-need third of areas, how many areas are left with less than half their water, and how long supplies spend on the road. The short list above the table says what the difference means. Sometimes AidAtlas costs more in total because it delivers more or reaches harder places; the table shows that honestly. The same comparison is in the action report under <b>What this plan saves</b>, and the method is under <b>Models → Savings</b>.</p>
+    <h3 id="field-reports">Field reports</h3>
+    <p>Reports from field teams (see <a href="#field-app">Field app</a>) appear here and as small squares on the map, coloured by damage (green none … red destroyed; grey when applied).</p>
+    <ul>
+      <li><b>With the shared back end</b>, new reports arrive by themselves (checked every minute while the plan is open), with their photos.</li>
+      <li><b>Without it</b>, field teams send a WhatsApp or SMS message containing a code starting with <code>AA1.</code>. Open <b>Paste report codes</b>, paste the whole message (several codes at once are fine) and press <b>Add reports</b>.</li>
+      <li><b>Apply</b> (or <b>Apply all new reports</b>) feeds the report into the plan: its area's severity is updated by <a href="#g-bayes">Bayesian update</a> (a trained assessor counts more than a crowd report), and if the team marked the road <b>blocked</b>, the road is closed at that point so trucks are re-routed or an air drop is suggested. Each change is written to the decision log with the reporter's name.</li>
+      <li>A report more than its area's catchment away from every area is listed but not applied; check its location.</li>
+      <li><b>Copy field-app link</b> gives a link for this plan to send to field teams.</li>
+    </ul>
+    <h3>Change log, Data notes, Sources</h3>
+    <p>The <b>change log</b> lists every re-plan with its reason, cost change, which zones gained or lost trips, and how unmet water changed. <b>Data notes</b> flag anything estimated because a data source was unavailable. <b>Sources</b> lists where the data came from.</p>
+
+    <h2 id="respond">8. Responding to change</h2>
+    <p>Disasters change by the hour. Every action below re-plans immediately and is recorded in the change log.</p>
+    <table class="g">
+      <thead><tr><th>Button or action</th><th>Use it when</th><th>What AidAtlas does</th></tr></thead>
+      <tbody>
+        <tr><td><b>Advance 6 h</b></td><td>A 6-hour period has passed.</td><td>Records this period's deliveries as received, takes them out of store stock, adds routine resupply, lets damaged roads recover a little, moves the forecast forward and plans the next period. See <a href="#g-rolling">rolling horizon</a>.</td></tr>
+        <tr><td><b>Close a road</b></td><td>A road is blocked.</td><td>Click the road on the map. A ✕ marks it, and every route within 250 m of it is replaced by a detour or, if none exists, an air drop.</td></tr>
+        <tr><td><b>Disaster spreads</b></td><td>A new area is hit.</td><td>Click the new area. It becomes a new demand zone with its own forecast, and supplies are shared with it.</td></tr>
+        <tr><td><b>New supplies arrive</b></td><td>A convoy, airlift or donation lands.</td><td>Click where it arrived. It becomes a new store and the plan decides where its stock is needed most.</td></tr>
+        <tr><td><b>Aftershock / New damage</b></td><td>Conditions get worse.</td><td>Roads near the centre are damaged further and nearby demand rises 15 %.</td></tr>
+        <tr><td><b>Congestion on/off</b></td><td>Roads are jammed.</td><td>All travel times rise 40 %, and convoys are spread out to avoid jams.</td></tr>
+        <tr><td><b>Clear closures</b></td><td>Roads have reopened.</td><td>Removes all ✕ marks and re-plans.</td></tr>
+        <tr><td><b>Supply level</b> slider</td><td>Your stock is larger or smaller than normal.</td><td>Scales every store's assumed stock (0.25× to 4×).</td></tr>
+        <tr><td><b>Policy</b> slider</td><td>You want to change the balance between cost and fairness.</td><td>Left = cheapest plan; right = shares supplies more evenly by need even if it costs more. See <a href="#g-policy">policy weights</a>.</td></tr>
+        <tr><td>Click a <b>green zone</b> → <b>Demand surge</b></td><td>An area needs more than forecast.</td><td>Raises that zone's demand by 50 % and sends more there.</td></tr>
+        <tr><td>Green zone → <b>Mark served</b> / <b>Needs aid again</b></td><td>An area has enough, or needs help again.</td><td>A served zone gets nothing new, so its share goes elsewhere. This prevents duplicate deliveries.</td></tr>
+        <tr><td>Green zone → <b>Field report</b></td><td>A team on the ground reports how bad it is.</td><td>Move the slider to the observed severity (0 none to 1 total destruction), choose who reported it, press <b>Apply</b>. The forecast is corrected; trained assessors count more than crowd reports. See <a href="#g-bayes">Bayesian update</a>.</td></tr>
+        <tr><td>Click a <b>red store</b> → <b>Take offline</b> / <b>Bring online</b></td><td>A warehouse, hospital or depot is lost or restored.</td><td>Its stock and vehicles are removed from, or returned to, the plan.</td></tr>
+        <tr><td>Red store → <b>Truck breakdown</b></td><td>A vehicle is lost.</td><td>That store has one truck fewer.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="reports">9. Action reports</h2>
+    <p>Every mode has a report button. Reports are written in plain language for the Met department, district administration, disaster management authority or hospital managers. They use only the numbers on screen; nothing is made up.</p>
+    <table class="g">
+      <thead><tr><th>Where</th><th>Button</th><th>What it contains</th></tr></thead>
+      <tbody>
+        <tr><td>Any plan</td><td><b>Generate action report</b> (also <b>Full action report</b> in the map box)</td><td>One-paragraph summary · areas that need help first · <b>Do now: next 6 hours</b> (numbered steps: warnings, control room, rescue, shelters, moving the injured, exactly which supplies to send from where, air drops, closed roads, what to ask for) · next 1–3 days · supplies table · what could change the plan · how the numbers were made.</td></tr>
+        <tr><td>Live list</td><td><b>Generate situation report</b></td><td>The top 5 events with where, what, alert level and three first actions each.</td></tr>
+        <tr><td>History list</td><td><b>Generate history report</b></td><td>The record of past events, the most common disaster type and what to prepare for.</td></tr>
+        <tr><td>Risk list</td><td><b>Generate preparedness report</b></td><td>The five highest-risk areas, why they are risky, and a preparation checklist including storage sites if you planned them.</td></tr>
+      </tbody>
+    </table>
+    <p>In the report window: <b>Print / save as PDF</b> opens a clean page and your browser's print dialog (choose “Save as PDF” to keep a file). <b>Copy text</b> copies plain text for email or WhatsApp. <b>Download</b> saves the report as a web page you can attach or open later.</p>
+
+    <h2 id="map-symbols">10. Map symbols</h2>
+    <table class="g">
+      <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sym"><span class="dotg" style="background:#16a34a;width:18px;height:18px"></span></span></td><td><b>Pulsing green dot</b>: the centre of the disaster. The dashed green circle is the <a href="#g-impact-radius">impact radius</a>.</td></tr>
+        <tr><td><span class="sym"><span class="dotg" style="background:#16a34a"></span></span></td><td><b>Green numbered dot</b>: a <a href="#g-zone">demand zone</a>. Bigger means higher need. Pale green means marked as served. Before a plan opens, green dots are disaster events (numbered = Top 5).</td></tr>
+        <tr><td><span class="sym"><span class="dotg" style="background:#dc2626"></span></span></td><td><b>Red dot</b>: a <a href="#g-store">supply store</a> (warehouse, fire station, police station, staging site). <b>H</b> = hospital. Grey = offline or damaged.</td></tr>
+        <tr><td><span class="sym"><span class="site-diamond" style="width:12px;height:12px;display:inline-block"></span></span></td><td><b>Purple diamond</b>: recommended storage site. Faint purple circles are sites that were rejected as too dangerous.</td></tr>
+        <tr><td><span class="sym"><span class="lineg" style="border-color:#f59e0b"></span></span></td><td><b>Orange line</b>: truck route for supplies. Thicker means more trucks. Dashed means a shared truck visiting several zones (<a href="#g-milk-run">milk run</a>). Hover for cargo, distance, time and road damage.</td></tr>
+        <tr><td><span class="sym"><span class="lineg" style="border-color:#0ea5e9"></span></span></td><td><b>Blue line</b>: responder bus carrying relief workers.</td></tr>
+        <tr><td><span class="sym"><span class="lineg" style="border-color:#db2777;border-top-style:dashed"></span></span></td><td><b>Pink dashed line</b>: ambulances carrying the seriously injured to a hospital.</td></tr>
+        <tr><td><span class="sym"><span class="lineg" style="border-color:#dc2626;border-top-style:dotted"></span></span></td><td><b>Red dotted line with “Air drop”</b>: no safe road; send by helicopter or air.</td></tr>
+        <tr><td><span class="sym">✕</span></td><td><b>Black cross</b>: a road you closed.</td></tr>
+        <tr><td><span class="sym"><span class="dotg" style="background:#fb923c;border-radius:2px"></span></span></td><td><b>Orange squares</b> (Risk mode): risk grid. Darker means higher risk; black outline means Top 5.</td></tr>
+        <tr><td><span class="sym"><span class="dotg" style="background:#f59e0b"></span></span></td><td><b>Moving dots</b> (only when <b>Show vehicles in transit</b> is ticked in the legend): one dot per dispatched vehicle, orange = truck, blue = bus, drawn along its planned route. Positions are <b>simulated</b> to show the flow of the plan, not real GPS. Hover a dot to see where it is going and what it carries. They are off by default.</td></tr>
+      </tbody>
+    </table>
+    <div class="box tip"><b>Real traffic.</b> Traffic shown by the moving dots is simulated. To see real road traffic colours (green, orange, red), get a free key from TomTom (developer.tomtom.com), paste it in Settings, and turn on “Live traffic (TomTom)” in the map layers.</div>
+
+    <h3 id="map-3d">3D map</h3>
+    <p>The map opens in <b>2D</b>, which loads fastest. Press <b>3D</b> on the <b>2D | 3D</b> switch in the top-right corner of the map to change to the 3D map; the 3D engine is downloaded the first time you do this (a few seconds), then switching is instant. Your choice is remembered on this device, so if you leave it on 3D the map opens in 3D next time. Both views always show the same plan, events and risk grid. 3D works in all current desktop and phone browsers.</p>
+    <table class="g">
+      <thead><tr><th>You see</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td>A <b>globe</b> (Live mode, zoomed out)</td><td>Every current disaster as a coloured dot (red, orange, green alert). Drag to spin the globe; click a dot to open its plan. Zoom in past country level and the globe turns into a tilted 3D landscape.</td></tr>
+        <tr><td><b>Real terrain</b></td><td>Satellite imagery draped over real elevation (hills and valleys are exaggerated 1.4× so they are easy to see). Useful to see which villages sit in valleys, on slopes or behind ridges.</td></tr>
+        <tr><td><b>3D buildings</b></td><td>Building blocks appear when you zoom into a town (street level).</td></tr>
+        <tr><td><b>Green columns</b></td><td>Affected areas. The taller the column, the more people affected; the darker the green, the higher the need score. Light green = marked served.</td></tr>
+        <tr><td><b>Purple columns</b></td><td>Recommended storage sites.</td></tr>
+        <tr><td><b>Rising squares</b> (Risk mode)</td><td>The risk grid. Taller and redder squares are higher risk.</td></tr>
+        <tr><td>Lines and dots</td><td>Truck routes, milk runs, air drops, ambulance flows, stores and hospitals, exactly as in the 2D legend.</td></tr>
+      </tbody>
+    </table>
+    <p><b>Moving around.</b> Drag to move. Scroll or pinch to zoom. <b>Right-drag</b> (or <kbd>Ctrl</kbd>+drag) to tilt and rotate; on a phone, drag with two fingers. The compass button (top right) resets north; the arrow button resets the tilt. Hover any column, dot or line for a summary, and click it for the same actions as in 2D (zone controls, store on/offline, address and <b>Open in Google Maps</b>). Clicking empty ground picks a place, just like the 2D map.</p>
+    <p class="small">Links can force a view: add <code>&amp;view=3d</code> or <code>&amp;view=2d</code>. If a computer has no WebGL, or the 3D library cannot be downloaded, AidAtlas shows the 2D map and says why.</p>
+
+    <h2 id="models-panel">11. The Models panel</h2>
+    <p>Press <b>Models</b> in the top bar, any underlined model name in the legend, or a link next to a section heading. A drawer opens with each model's formula and a table of the <b>actual numbers used in this plan</b>: severity score, forecast, need scores, demand, every shipment, congestion, shared trucks, every route, casualties, storage sites and risk. This is the proof behind each recommendation.</p>
+
+    <h2 id="settings">12. Settings and your own data</h2>
+    <ul>
+      <li><b>TomTom traffic key</b>: optional, for real traffic colours.</li>
+      <li><b>Need-score weights</b>: how much severity, population at risk, vulnerability, access difficulty and supplies already received count. They are rescaled to add up to 1.</li>
+      <li><b>Storage sites to recommend (P)</b> and <b>Coverage time</b>: how many storage sites to suggest and how quickly each must reach its areas.</li>
+    </ul>
+    <h3 id="inventory">Using your real stock</h3>
+    <p>Store locations come from OpenStreetMap, but their stock is <b>assumed</b> by store type. For real planning, load your inventory: in a plan, under Supply stores, choose <b>Import your inventory</b> and pick a CSV file with these columns:</p>
+    <p><code>name, lat, lon, type, water_l, food_kg, tents, medkits, staff, trucks, buses, ambulances, beds</code></p>
+    <p><code>type</code> is one of warehouse, hospital, fire_station, police. A template is in <code>examples/inventory-template.csv</code>. Common spellings are recognised too (latitude, lng, water, ambulance, personnel…).</p>
+    <p><b>Live inventory from a Google Sheet.</b> Keep your stock in a Google Sheet with the same columns, share it as “Anyone with the link can view” (or File → Share → Publish to web → CSV), then open <b>Workspace → Inventory source</b>, paste the link, press <b>Test link</b> and <b>Save source</b>. Any CSV or JSON link works too. From then on every plan you open uses your real stock and vehicles instead of assumed ones, and re-reads the sheet every 5–60 minutes while the plan is open (you choose). A plan also has a <b>Sync stock and fleet now</b> button. Each sync is written to the decision log.</p>
+
+    <h2 id="workspace">12a. Workspace: people, roles, saved plans and alerts</h2>
+    <p>The <b>Workspace</b> button (top right) shows who you are and your role. The small badge next to it says Viewer, Planner or Admin.</p>
+    <table class="gt"><thead><tr><th>Role</th><th>Can</th></tr></thead><tbody>
+      <tr><td><b>Viewer</b></td><td>See plans, maps and reports, download plan files and reports. Cannot change or save a plan.</td></tr>
+      <tr><td><b>Planner</b></td><td>Everything a viewer can, plus change plans (advance time, close roads, field reports…), save plans, add watch areas and connect inventory.</td></tr>
+      <tr><td><b>Admin</b></td><td>Everything a planner can, plus manage the team and the shared back-end connection.</td></tr>
+      <tr><td><b>Field team</b></td><td>Sends field reports and photos from the field app; can read the team's plans and reports but not change them.</td></tr>
+    </tbody></table>
+    <p>Without a back end, the role is a setting on this browser: useful on a shared control-room computer, but anyone at the computer can change it. For real access control use the shared back end below.</p>
+
+    <h3 id="saved-plans">Saving plans and the decision log</h3>
+    <ul>
+      <li>In any plan, type a name and press <b>Save plan</b>. Saved plans appear in <b>Plan mode → Saved plans</b>; click one to reopen it. Saving again overwrites it and keeps the previous version; <b>Save as new</b> makes a copy.</li>
+      <li>A saved plan keeps everything it was built from (towns, stores, population counts, agency reports, travel times) and every decision made since. Reopening rebuilds it exactly, without downloading anything again, and replays the decisions in order. Deliveries already made are reproduced exactly; the current 6-hour period is re-optimised.</li>
+      <li><b>Download plan file</b> saves the same thing as a <code>.json</code> file you can e-mail. Anyone can open it with <b>Plan mode → Open a plan file</b>.</li>
+      <li>The <b>decision log</b> lists every change: time, plan hour, who, role, what changed. Type a reason in <b>Note for the log</b> before you act and it is stored with that action. <b>Download decision log (CSV)</b> gives an audit trail for after-action reviews.</li>
+    </ul>
+
+    <h3 id="watch-areas">Watch areas and alerts</h3>
+    <ul>
+      <li>In <b>Live mode</b>, move the map to the place you are responsible for, open <b>Add a watch area</b>, give it a name, a radius, the alert level that matters (Orange or Red, Red only, or any) and the hazards, then press <b>Add</b>.</li>
+      <li>Each watch area lists the live events inside it at or above its level. Click one to open its plan.</li>
+      <li><b>Turn on browser alerts</b> gives a pop-up notification while AidAtlas is open (checked every 10 minutes). Each event alerts once per level.</li>
+      <li><b>Alerts when AidAtlas is closed:</b> press <b>Export for scheduled alerts</b> to download <code>watch-areas.json</code>, commit it to the repository, and add a repository secret <code>ALERT_WEBHOOK_URL</code> (an incoming-webhook link from Slack, Microsoft Teams, Google Chat or Discord; Teams and Google Chat can forward to e-mail). The included GitHub Action checks every hour and posts each new match once. You can also run <code>node tools/watch-alerts.js watch-areas.json</code> yourself.</li>
+    </ul>
+
+    <h3 id="shared-workspace">Shared back end (optional, for teams)</h3>
+    <ol>
+      <li>Create a free project at supabase.com. In its SQL editor, run the file <code>supabase/schema.sql</code> once.</li>
+      <li>In AidAtlas: <b>Workspace → Shared back end</b>, paste the project URL and the public “anon” key, press <b>Connect</b>.</li>
+      <li>Type your e-mail, press <b>Send code</b>, type the 6-digit code from the e-mail, press <b>Sign in</b>. (In Supabase → Authentication → Email templates, make sure the template shows <code>{{ .Token }}</code> so the e-mail contains the code.)</li>
+      <li>Create a team: you become its admin. Invite colleagues by e-mail with a role; they join when they sign in with that e-mail.</li>
+    </ol>
+    <p>Saved plans and watch areas then live in the team's database and are shared by everyone in the team. Roles are enforced by the database (row-level security), so a viewer cannot change plans even with technical tricks. People outside the team see nothing.</p>
+
+    <h2 id="field-app">12b. Field app for field teams (phones)</h2>
+    <p>Open <code>field.html</code> on any phone (on the website: <i>…/field.html</i>; from a plan, <b>Copy field-app link</b>). Add it to the home screen: once opened with a signal it also opens with no signal.</p>
+    <ol>
+      <li><b>Where are you?</b> Press <b>Use my location</b> (GPS, with accuracy in metres) or type the coordinates. Add a place name that people know.</li>
+      <li><b>Photo</b> (optional). It is shrunk to about 150 KB so it sends on a weak signal.</li>
+      <li><b>How bad is the damage?</b> Five levels from <i>No damage</i> to <i>Destroyed</i>, each with a short description.</li>
+      <li><b>What do people need most?</b> Water, food, shelter, medical, search and rescue; rough counts of people affected, injured and trapped.</li>
+      <li><b>Can trucks reach this place?</b> Open, partly blocked or blocked; and any note.</li>
+      <li>Press <b>Save report</b>. It is stored on the phone first (it survives closing the browser and having no signal).</li>
+    </ol>
+    <p><b>Sending.</b> If the phone is signed in to the team's shared workspace (role <b>Field team</b>), reports and photos are sent automatically whenever there is a signal. Otherwise press <b>Share</b>: the phone's share menu opens with a short message and the photo for WhatsApp or SMS (or <b>Copy code</b> to paste it anywhere). The control room pastes the message into the plan.</p>
+    <p class="small">Privacy: reports contain the reporter's name and location. In the shared workspace they are visible only to the team, and photos are stored in a private bucket. Do not photograph faces of injured people without consent.</p>
+
+    <h2 id="api">12c. API for developers and partners</h2>
+    <p>Insurers, NGOs, dashboards and other apps can use AidAtlas through a JSON API that runs the same models as this website. It is a small Node.js server in <code>server/api.js</code> that your organisation hosts (any Node 18+ host, or the included <code>Dockerfile</code>); GitHub Pages cannot run it.</p>
+    <table class="g"><thead><tr><th>Endpoint</th><th>What it returns</th></tr></thead><tbody>
+      <tr><td><code>GET /v1/events</code></td><td>Disasters happening now, ranked.</td></tr>
+      <tr><td><code>POST /v1/forecast</code></td><td>People affected, displaced, injured and killed (P10/P50/P90) per area and 72-hour needs for a scenario. A few seconds.</td></tr>
+      <tr><td><code>POST /v1/plan</code></td><td>The full relief plan: allocation, dispatches, casualty transport, gaps, storage sites, key actions and savings. 20–90 seconds.</td></tr>
+      <tr><td><code>GET /v1/risk</code></td><td>The 6 × 6 risk grid and top 5 areas.</td></tr>
+      <tr><td><code>POST /v1/readiness</code></td><td>The pre-season readiness score, with your inventory if you send it.</td></tr>
+      <tr><td><code>POST /v1/webhooks</code></td><td>Alerts pushed to your server when a live event enters your area (signed with HMAC-SHA256).</td></tr>
+    </tbody></table>
+    <p>Start it with <code>npm install</code> then <code>npm run api</code>; the first start prints a developer key. Make keys for partners with <code>npm run api:key -- "Organisation" team</code> (tiers: dev 1,000 calls a month, team 50,000, agency 500,000, enterprise unlimited). Send the key as <code>Authorization: Bearer &lt;key&gt;</code>. Full reference: <code>/v1/openapi.json</code> on your server.</p>
+    <pre class="small" style="white-space:pre-wrap;background:var(--paper-2);padding:8px;border-radius:6px">curl -X POST http://localhost:8787/v1/forecast -H "Authorization: Bearer aa_…" -H "Content-Type: application/json" \
+  -d '{"q":"Gurugram","hazard":"EQ","magnitude":7.2}'</pre>
+
+    <h2 id="validation">12d. Accuracy: back-test and model cards</h2>
+    <p>Open <b>Accuracy</b> (top bar) or <code>validation.html</code>. Press <b>Run the back-test</b>: AidAtlas replays 44 past earthquakes from the NOAA NCEI Significant Earthquake Database (2001–2025, every quake with 250 or more deaths) through the same forecast it uses for a live event, and compares its death forecast with the reported death toll. It takes a few minutes because it uses the live map and population services; results are kept on this device and can be downloaded as CSV or JSON.</p>
+    <ul>
+      <li><b>Chart:</b> one row per event. The blue bar is the forecast range (P10–P90) with the most likely value (P50) as a dot; the orange diamond is the reported toll. Hover for details. The scale is logarithmic, because tolls range from a handful to hundreds of thousands.</li>
+      <li><b>Inside range:</b> how many reported tolls fall inside the blue bar. A well-calibrated P10–P90 range should hold about 8 in 10.</li>
+      <li><b>Typical error factor:</b> how many times too high or too low the P50 usually is (×2 means half or double).</li>
+      <li><b>Bias:</b> whether the model leans high or low across all events.</li>
+      <li><b>Not scored:</b> events whose deaths were mostly caused by a tsunami (the model forecasts shaking only) and Haiti 2010, whose official toll is disputed. They are shown in grey.</li>
+    </ul>
+    <p><b>Model cards</b> below the chart describe each hazard model: what it does, the method, inputs, evidence and known limits, with a status: <b>Back-tested</b> (earthquake), <b>Calibrated</b> (flood, against river-flow records), <b>Checked by automated tests</b> (the planning optimiser) or <b>Indicative</b> (cyclone, wildfire, volcano, drought: use for preparedness, not for exact numbers). Developers can read the same data from the API at <code>/v1/model-cards</code> and <code>/v1/backtest</code>, or run <code>npm run backtest</code>.</p>
+
+    <h2 id="tasks">12e. Tasks and comments (one plan, many agencies)</h2>
+    <p>Every plan has a <b>Tasks and comments</b> section. Planners and admins add a task (what, who, due date, which area); the person a task is assigned to (matched by e-mail or name) can change its status from <i>To do</i> to <i>In progress</i> to <i>Done</i>. Everyone, including viewers and field teams, can post comments about the plan or one area. Overdue tasks are flagged. Each change is written to the decision log.</p>
+    <p><b>Without the shared back end</b> tasks and comments are kept inside the plan: saved plans and plan files carry them. <b>With the shared back end</b>, save the plan once; from then on its tasks and comments are shared live with the team (they appear for everyone within seconds, with a 30-second check as a fallback), and AidAtlas tells you when someone saves a newer version of the plan. Run the updated <code>supabase/schema.sql</code> once to add the two tables.</p>
+
+    <h2 id="offline">12f. Offline and low-bandwidth use</h2>
+    <p>Open AidAtlas once with a signal. After that the app, the field app, the guide and the accuracy page open without one, and the map shows the areas you have already looked at (the newest 4,000 map tiles). Map areas are never bulk-downloaded in advance, because the map providers' terms forbid it. Live disaster feeds use the last copy when the network is down and say so. Plans saved while offline are kept on the device and sent to the shared back end automatically when the connection returns; a banner shows when you are offline.</p>
+    <p><b>Low-bandwidth mode</b> (Settings) is for slow or expensive connections: it uses the street map instead of satellite images, skips the WorldPop population download and street-address lookups, and turns off the 3D map. Forecasts then use the country population index, which is less detailed.</p>
+
+    <h2 id="exports">12g. Exports to partner tools</h2>
+    <p>At the bottom of a plan, <b>Export for other tools</b>:</p>
+    <table class="g"><thead><tr><th>Button</th><th>Use it in</th></tr></thead><tbody>
+      <tr><td>Map layers (GeoJSON)</td><td>ArcGIS Online / Pro, QGIS, any GIS. One file with impact area, affected areas, supply stores, hospitals, storage sites, routes, ambulance flows, road closures, field reports and tasks; each feature has a <code>layer</code> property.</td></tr>
+      <tr><td>HDX (HXL CSV)</td><td>The Humanitarian Data Exchange and HXL tools. One row per affected area with standard HXL hashtags (<code>#affected</code>, <code>#affected +displaced</code>, <code>#geo +lat</code>…).</td></tr>
+      <tr><td>Needs / Dispatches / Tasks (CSV)</td><td>Any spreadsheet; map the columns in Sahana Eden's importer.</td></tr>
+    </tbody></table>
+    <p><b>KoboToolbox and ODK.</b> Teams already using KoboToolbox can deploy the AidAtlas field form (<code>examples/aidatlas-field-xlsform.xlsx</code>). Export the submissions as CSV (XML values and headers) and open the file under <b>Field app → Import from KoboToolbox or ODK</b>; the reports then appear in the plan like any other field report. The API also returns a plan as GeoJSON with <code>/v1/plan?format=geojson</code>. All exported figures are model forecasts and are labelled as such.</p>
+
+    <h2 id="links">13. Shareable links</h2>
+    <p>Add these to <code>app.html</code> to open a view directly, for example in a briefing email:</p>
+    <ul>
+      <li><code>?mode=live&amp;event=top</code>: today's most severe event.</li>
+      <li><code>?mode=plan&amp;q=Gurugram&amp;hazard=EQ&amp;mag=7.2</code>: a planning scenario. Hazards: EQ earthquake, TC cyclone, FL flood, WF wildfire, VO volcano, DR drought.</li>
+      <li><code>?mode=history&amp;q=Kathmandu</code> and <code>?mode=risk&amp;q=Manila</code>.</li>
+      <li>Add <code>&amp;view=3d</code> or <code>&amp;view=2d</code> to any link to open the 3D or flat map.</li>
+      <li><code>validation.html</code>: the accuracy page (back-test and model cards).</li>
+      <li><code>field.html?plan=Gurugram%20drill&amp;lat=28.46&amp;lon=77.03</code>: the field app, labelled for a plan.</li>
+    </ul>
+
+    <h2 id="glossary">14. Glossary of every term</h2>
+    <p class="letters"><a href="#gl-a">A–C</a><a href="#gl-d">D–F</a><a href="#gl-g">G–L</a><a href="#gl-m">M–O</a><a href="#gl-p">P–R</a><a href="#gl-s">S–Z</a></p>
+    <dl class="glossary">
+      <dt id="gl-a"></dt>
+      <dt id="g-accessibility">Access difficulty (acc)</dt><dd>How hard a zone is to reach: travel time from the nearest open store, made longer by road damage, then scaled 0 (easiest) to 1 (hardest). Hard-to-reach zones get a higher need score so they are not forgotten.<span class="where">Need score, Models → Need score</span></dd>
+      <dt id="g-affected">Affected</dt><dd>People who feel strong effects and need some help: strong shaking, damaging wind, flood water or smoke. Not everyone affected needs shelter.<span class="where">Forecast boxes, reports</span></dd>
+      <dt id="g-aftershock">Aftershock / New damage</dt><dd>A button that simulates things getting worse: more road damage near the centre and 15 % more demand nearby.<span class="where">Respond to change</span></dd>
+      <dt id="g-air-drop">Air drop</dt><dd>A zone that no truck can reach because every road route passes a closed road or a very badly damaged stretch. Supplies must go by helicopter or air.<span class="where">Map (red dotted line), allocation line, reports</span></dd>
+      <dt id="g-alert">Alert level (Green / Orange / Red)</dt><dd>The official GDACS alert: Green = low humanitarian impact expected, Orange = medium, Red = high, international help likely needed. USGS earthquakes have their own PAGER alert (green, yellow, orange, red).<span class="where">Coloured dot next to events</span></dd>
+      <dt id="g-ambulance">Ambulances / casualty transport</dt><dd>About a quarter of the injured need a hospital. AidAtlas sends them to hospitals outside the damage zone, as many as free beds and ambulance time allow, closest first because survival falls the longer the trip takes.<span class="where">Pink lines, Models → Casualties</span></dd>
+      <dt id="g-bayes">Bayesian update (field report)</dt><dd>A standard way to combine the forecast with what people on the ground report. The new estimate lies between the two, closer to whichever is more reliable. A trained assessor (±0.10) moves it more than a crowd report (±0.20).<span class="where">Green zone popup → Field report</span></dd>
+      <dt id="g-readiness">Readiness score</dt><dd>0–100: how much of the worst likely (P90) first-72-hour need of each high-risk area the stock and vehicles within 3 hours by road could cover. 80+ ready, 50–79 partly ready, below 50 not ready.<span class="where">Risk mode → Readiness score</span></dd>
+      <dt id="g-nearest">Nearest-store rule</dt><dd>The usual manual way of planning relief: supply each area from its closest store, the next-closest when it runs out. AidAtlas compares its plan with this rule.<span class="where">Plan → Savings vs nearest-store plan</span></dd>
+      <dt id="g-fieldcode">Field report code (AA1…)</dt><dd>A short text code a field team sends by WhatsApp or SMS when there is no shared workspace; it holds the report (not the photo) and a check that it arrived intact.<span class="where">Field app → Share · Plan → Field reports → Paste report codes</span></dd>
+      <dt id="g-bpr">BPR congestion</dt><dd>A road-traffic formula from the US Bureau of Public Roads: travel time rises sharply as more vehicles use the same road. AidAtlas uses it to spread convoys instead of jamming one access road.<span class="where">Models → Congestion</span></dd>
+      <dt id="g-branch">Branch and bound</dt><dd>An exact method for optimisation problems with whole numbers (you cannot send 2.4 trucks). Used when the problem is small enough; otherwise see <a href="#g-lp">LP relaxation + round-up repair</a>.</dd>
+      <dt id="g-clarke">Clarke–Wright savings</dt><dd>A classic method for combining part-loads into one truck that visits several areas, when that saves distance and fits the truck and the time window.<span class="where">Models → Consolidation</span></dd>
+      <dt id="g-closure">Closure</dt><dd>A road you marked as blocked (✕). Any route passing within 250 m is rejected.</dd>
+      <dt id="g-congestion">Congestion toggle</dt><dd>Makes all travel 40 % slower, as in heavy traffic or evacuation jams.</dd>
+      <dt id="g-consolidation">Consolidation / trips saved</dt><dd>Vehicles removed from the road by sharing trucks between nearby zones.</dd>
+      <dt id="g-cost">Cost (total)</dt><dd>Estimated money cost of this 6-hour plan in US dollars: $1.20/km and $40/hour per truck, $150 per dispatch, $0.02 per kg loaded, plus the extra delay cost of congestion. These are editable assumptions, used to compare plans rather than as a budget.</dd>
+      <dt id="g-coverage-time">Coverage time</dt><dd>The maximum drive time from a storage site to an area for that area to count as covered. Default 90 minutes.</dd>
+      <dt id="g-critical-cov">Critical coverage</dt><dd>The share of a zone's water and medical need (the life-saving items) delivered this period.</dd>
+      <dt id="gl-d"></dt>
+      <dt id="g-damage">Damage curve (fragility curve)</dt><dd>A curve, built from past disasters, that turns shaking or wind strength into the share of buildings damaged and the share of people affected, displaced, injured or killed.</dd>
+      <dt id="g-data-notes">Data notes</dt><dd>Warnings when a data source did not answer and AidAtlas used an estimate instead, for example modelled staging sites when no facilities were found.</dd>
+      <dt id="g-demand">Demand</dt><dd>How much of each item a zone needs this period. It is based on <a href="#g-sphere">Sphere standards</a>, weighted across the three <a href="#g-scenario">scenarios</a>, raised by surges and lowered by what has already been received.</dd>
+      <dt id="g-depth">Depth</dt><dd>How far below ground an earthquake starts. Shallow earthquakes (under 20 km) do more damage.</dd>
+      <dt id="g-displaced">Displaced</dt><dd>People who cannot stay in their homes and need shelter.</dd>
+      <dt id="g-epoch">Epoch / T+ hours</dt><dd>AidAtlas plans in 6-hour periods called epochs. “T+12 h · epoch 2” means 12 hours after the plan started.</dd>
+      <dt id="g-equity">Equity terms</dt><dd>The parts of the allocation model that protect fairness: <a href="#g-minimax">minimax</a>, <a href="#g-gini">Gini</a> and <a href="#g-floor">service floor</a>.</dd>
+      <dt id="g-fatalities">Fatalities</dt><dd>Expected deaths. Earthquake deaths use a curve like the USGS PAGER model and depend on the country's vulnerability, and are kept inside the PAGER alert band when USGS has issued one. Flood deaths depend on the <a href="#g-flood-type">flood type</a>. When agencies have reported deaths, the number shown is never lower than the reported count.</dd>
+      <dt id="g-worldpop">WorldPop population</dt><dd>A map of where people live, in 100 m squares, from the University of Southampton (2020 edition). AidAtlas counts the people within a few kilometres of each area (half the distance to the next area, between 1.5 and 15 km) instead of guessing from town names. If WorldPop does not answer, OpenStreetMap populations or a default per town type are used and the data notes say so.</dd>
+      <dt id="g-flood-outline">Flood outline</dt><dd>The area GDACS marks as affected by a flood. AidAtlas looks for towns inside it rather than in a circle around a single point.</dd>
+      <dt id="g-river-flow">River flow (GloFAS)</dt><dd>How much water the nearest river carries now compared with its usual level over the past year, from the Global Flood Awareness System. Twice the usual level means water is leaving the river bed; five times is a major flood. Used for live floods only.</dd>
+      <dt id="g-decision-log">Decision log</dt><dd>The list of every change made to a plan, with time, who made it, their role and an optional note. Downloadable as CSV.</dd>
+      <dt id="g-watch-area">Watch area</dt><dd>A circle you care about (for example your district). AidAtlas tells you when a live event inside it reaches the alert level you chose.</dd>
+      <dt id="g-role">Role (viewer, planner, admin)</dt><dd>What a person can do. Viewers read; planners also change and save plans; admins also manage the team.</dd>
+      <dt id="g-flood-type">Flood type (flash / river)</dt><dd>Flash floods (in steep valleys, from a glacial lake bursting, a cloudburst or a dam failure) arrive in minutes and kill about 1 in 100 people in their path. River floods rise over days and kill about 1 in 10,000, but displace many more people. AidAtlas decides the type from the event name or the height difference of the land within 20 km (800 m or more = flash).</dd>
+      <dt id="g-reported">Reported impact</dt><dd>Deaths, missing, injured and displaced people counted by governments and agencies, read from GDACS (Sendai-framework impact reports). These are confirmed minimums that grow over time. Missing people are added to the worst-case (P90) death toll.</dd>
+      <dt id="g-fleet">Fleet / truck hours</dt><dd>The vehicles at each store (assumed by store type unless you import your own) and the hours they can drive in 6 hours. “Truck hours used” shows how busy they are.</dd>
+      <dt id="g-floor">Service floor</dt><dd>A rule that every zone should get at least half (φ = 0.5) of its water and medical need before any zone gets more, wherever possible.</dd>
+      <dt id="gl-g"></dt>
+      <dt id="g-gdacs">GDACS</dt><dd>Global Disaster Alert and Coordination System, run by the UN and the European Commission. AidAtlas's main live and historical source.</dd>
+      <dt id="g-gc">Generalised cost</dt><dd>How AidAtlas chooses between road routes: fuel cost per km plus crew cost for the drive time, with the time made longer on damaged roads.</dd>
+      <dt id="g-gini">Gini (shortage inequality)</dt><dd>A measure of how unequal shortages are between zones: 0 = everyone short by the same share, higher = some zones much worse off. AidAtlas keeps it low.</dd>
+      <dt id="g-glofas">GloFAS / river discharge</dt><dd>The Global Flood Awareness System's daily estimate of river flow (cubic metres per second), used in Risk mode to judge flood danger.</dd>
+      <dt id="g-gr">Gutenberg–Richter / b-value</dt><dd>A law of earthquakes: small ones are much more common than big ones. Fitting it to the local record gives how often a magnitude-6 or bigger quake happens (λ(M≥6), per year). The b-value is the slope, usually near 1.</dd>
+      <dt id="g-gumbel">Gumbel / Q100</dt><dd>A statistical method for extremes. From 20 years of yearly peak river flows it estimates the <b>100-year flood</b> (Q100), the flow with a 1 % chance of being exceeded in any year.</dd>
+      <dt id="g-hevlcc">H, E, V, LCC</dt><dd>The four parts of the risk score, each from 0 to 1: <b>H</b>azard (how likely disasters are), <b>E</b>xposure (how many people live there), <b>V</b>ulnerability (rural share and national poverty, so how badly people are hurt), <b>L</b>ack of <b>C</b>oping <b>C</b>apacity (distance to hospital and hospital beds per person).</dd>
+      <dt id="g-hospital">Hospitals (H)</dt><dd>Hospitals from OpenStreetMap outside the heavy-damage zone. Free beds are assumed to be 30 % of capacity (150 beds if unknown).</dd>
+      <dt id="g-impact-radius">Impact radius</dt><dd>The distance from the centre within which at least 10 % of people are expected to be affected.</dd>
+      <dt id="g-inform">INFORM</dt><dd>The risk index used by the UN and the European Commission. Risk = (hazard and exposure) × vulnerability × lack of coping capacity, combined so a low value in one part cannot hide a high value in another.</dd>
+      <dt id="g-injured">Injured</dt><dd>People expected to need medical care. For earthquakes, about 3.5 injured for each death (WHO ratio).</dd>
+      <dt id="g-kl">kL (kilolitre)</dt><dd>1,000 litres of water, about one tonne. An 8-tonne truck carries 8 kL.</dd>
+      <dt id="g-lethality">Lethality prior</dt><dd>How deadly each disaster type usually is, from historical loss records: earthquake 1.0, cyclone 0.9, flood 0.8, volcano 0.7, drought 0.6, wildfire 0.5. Part of the <a href="#g-usi">severity score</a>.</dd>
+      <dt id="g-lp">LP relaxation + round-up repair</dt><dd>The fast method used for big problems: solve as if half trucks were allowed, round each up to whole trucks, remove extra trucks where a store does not have enough driving time (biggest first, so small zones keep theirs), then recalculate the loads.</dd>
+      <dt id="gl-m"></dt>
+      <dt id="g-magnitude">Magnitude (Mw)</dt><dd>The size of an earthquake. Each step up releases about 32 times more energy. 5 = moderate, 6 = strong, 7 = major, 8+ = great.</dd>
+      <dt id="g-mark-served">Mark served</dt><dd>Tells AidAtlas a zone has enough. Its share goes to others, avoiding duplicate deliveries.</dd>
+      <dt id="g-mclp">MCLP (Maximal Covering Location Problem)</dt><dd>The method that chooses storage sites: from many candidate places, pick the few that bring the most people in need within the coverage time. Ties go to the sites with the shortest total drive time (the <b>p-median</b> rule).</dd>
+      <dt id="g-medical">Medical kits / modules</dt><dd>A planning unit of about 50 kg: one per 50 injured plus one per 1,000 affected people for basic care.</dd>
+      <dt id="g-milk-run">Milk run</dt><dd>One truck delivering to several zones on one trip, shown as a dashed line.</dd>
+      <dt id="g-milp">MILP (allocation model)</dt><dd>Mixed-Integer Linear Programme: the optimisation model that decides how much of each item goes from each store to each zone and how many vehicles to send, at the lowest cost, while protecting the neediest zones.</dd>
+      <dt id="g-minimax">Minimax (worst-off zone)</dt><dd>The model makes the worst-off zone as well off as possible, with higher-need zones held to smaller shortages. This stops a big or cheap-to-reach town taking everything.</dd>
+      <dt id="g-mmi">MMI (shaking intensity)</dt><dd>Modified Mercalli Intensity: how strongly the ground shakes at a place, from I (not felt) to XII (total destruction). VI = strong, some damage; VIII = severe; IX+ = violent.</dd>
+      <dt id="g-monte-carlo">Monte Carlo</dt><dd>Running the forecast 400 times with slightly different inputs (size, population, building strength) to see the range of possible outcomes.</dd>
+      <dt id="g-naive">Naive cost (C₀)</dt><dd>The cost of simply sending everything from each zone's nearest store. Used as a yardstick; the optimised plan is usually cheaper and fairer.</dd>
+      <dt id="g-need">Need score</dt><dd>A number from 0 to 1 saying how urgently a zone needs help: 35 % severity, 20 % people at risk, 20 % vulnerability, 15 % access difficulty, minus 10 % for supplies already received. Population counts less than severity on purpose, so a big town with light damage does not outrank a small town with heavy damage.</dd>
+      <dt id="g-osm">OpenStreetMap (OSM)</dt><dd>The free world map that supplies towns, populations, hospitals, fire and police stations and warehouses.</dd>
+      <dt id="g-osrm">OSRM (routing)</dt><dd>Open Source Routing Machine: finds the fastest road routes and drive times on real roads, using a fast exact shortest-path method (Contraction Hierarchies).</dd>
+      <dt id="gl-p"></dt>
+      <dt id="g-p50">P10 / P50 / P90</dt><dd>The forecast range. P50 is the middle (most likely) value. There is a 10 % chance the real number is below P10 and a 10 % chance it is above P90. Plan stock for P90.</dd>
+      <dt id="g-pager">PAGER</dt><dd>USGS's Prompt Assessment of Global Earthquakes for Response, which issues green, yellow, orange or red alerts for expected deaths and losses. When USGS has published its full loss estimate, AidAtlas uses PAGER's death range instead of its own curve (PAGER is calibrated country by country on past earthquakes) and uses PAGER's count of people exposed to each shaking level to work out how many are affected.</dd>
+      <dt id="g-personnel">Personnel</dt><dd>Relief workers: one per 20 injured plus one per 500 displaced. They travel by responder bus.</dd>
+      <dt id="g-policy">Policy weights / Policy slider</dt><dd>How much the plan values fairness compared with cost. Moving the slider right raises the weights on the worst-off zone (δ), inequality (β) and the service floor (μ).</dd>
+      <dt id="g-provenance">Provenance labels (osm, modelled, assumed, live, historical)</dt><dd>Where a number came from: <b>osm</b> = OpenStreetMap, <b>modelled</b> = estimated by AidAtlas, <b>assumed</b> = a planning assumption you should replace with real data, <b>live</b> / <b>historical</b> = official feeds.</dd>
+      <dt id="g-received">Received</dt><dd>Supplies a zone has already been given. They are subtracted from its demand so nothing is sent twice.</dd>
+      <dt id="g-risk">Risk score (R)</dt><dd>A number from 0 to 1 for each grid square in Risk mode, combining <a href="#g-hevlcc">H, E, V and LCC</a> with the <a href="#g-inform">INFORM</a> method.</dd>
+      <dt id="g-road-damage">Road damage (θ) and recovery</dt><dd>A number from 0 to 1 for how damaged roads are at each point, from the same shaking, wind or flood forecast. Damaged roads are slower; roads at 0.95 or above are treated as blocked. Each 6 hours about 8 % of the damage is cleared.</dd>
+      <dt id="g-rolling">Rolling horizon</dt><dd>Plan the next 6 hours, carry them out, see what actually happened, then plan again. Only the next period's decisions are acted on, so the plan follows reality instead of a guess made on day one.</dd>
+      <dt id="gl-s"></dt>
+      <dt id="g-scenario">Scenarios (low / base / high)</dt><dd>The P10, P50 and P90 forecasts, weighted 30 % / 40 % / 30 % when working out expected demand.</dd>
+      <dt id="g-severity">Severity</dt><dd>The share of buildings expected to be heavily damaged in a zone, from 0 to 1. Field reports can correct it.</dd>
+      <dt id="g-shortage">Shortage ratio</dt><dd>The share of a zone's need that is not delivered (0 = fully supplied, 1 = nothing delivered).</dd>
+      <dt id="g-sphere">Sphere standards</dt><dd>International minimum standards for humanitarian response: at least 15 litres of water per person per day, 2,100 kcal of food (about 0.6 kg), and 3.5 m² of covered space per person (one family tent per 5 people).</dd>
+      <dt id="g-staging">Staging site (modelled)</dt><dd>A temporary supply point AidAtlas adds outside the damage zone when not enough real facilities are found. In reality this would be a stadium, depot or open ground where supplies are gathered.</dd>
+      <dt id="g-store">Supply store</dt><dd>Any place relief can come from: warehouse, hospital, fire station, police station, staging site or a new supply arrival.</dd>
+      <dt id="g-supply-level">Supply level</dt><dd>A multiplier on all assumed stock (0.25× to 4×).</dd>
+      <dt id="g-surge">Demand surge</dt><dd>Raises one zone's demand by 50 % when it turns out worse than forecast.</dd>
+      <dt id="g-survival">Survival weight</dt><dd>How the casualty plan values a trip: e<sup>−time/1 hour</sup>, so a 30-minute trip scores 0.61 and a 2-hour trip 0.14. This sends patients to the nearest hospital with free beds first.</dd>
+      <dt id="g-tents">Tents</dt><dd>Family tents for 5 people each, needed for displaced people.</dd>
+      <dt id="g-usi">USI (Unified Severity Index)</dt><dd>AidAtlas's single score for ranking different kinds of disasters: 50 % agency alert level (giving the current alert more weight than the original one), 35 % size of the event, 15 % how deadly that type usually is. From 0 to 1.</dd>
+      <dt id="g-vehicles">Vehicles in transit</dt><dd>Optional moving dots showing where each dispatched vehicle would be along its planned route. Simulated, not GPS. Off by default; turn on in the legend.</dd>
+      <dt id="g-vulnerability">Vulnerability (vul / V)</dt><dd>How badly people are likely to be hurt by the same event: higher in rural areas and in countries with lower income and fewer hospital beds (World Bank data).</dd>
+      <dt id="g-wind">Wind speed / Holland wind model</dt><dd>For cyclones: maximum sustained wind in km/h. The wind is strongest within about 30 km of the centre and falls off with distance. Above 120 km/h damage is widespread.</dd>
+      <dt id="g-zone">Demand zone</dt><dd>A town, village or district sector that needs aid, built from OpenStreetMap places within the impact radius. Big cities are split into four parts. Up to 10 zones, chosen by how many people are affected.</dd>
+      <dt id="g-backtest">Back-test</dt><dd>Replaying past disasters through the model and comparing its forecast with what was reported. AidAtlas back-tests its earthquake model on 44 events.<span class="where">Accuracy page</span></dd>
+      <dt id="g-errfactor">Error factor</dt><dd>How many times the P50 forecast differs from the reported number, in either direction: 10 deaths forecast vs 40 reported is ×4.<span class="where">Accuracy page</span></dd>
+      <dt id="g-modelcard">Model card</dt><dd>A short, standard description of a model: purpose, method, inputs, evidence and limits, with a status (back-tested, calibrated, tested or indicative).<span class="where">Accuracy page, API /v1/model-cards</span></dd>
+      <dt id="g-hxl">HXL</dt><dd>Humanitarian Exchange Language: hashtags such as #affected placed under the column headers so humanitarian tools understand the data.<span class="where">Export for other tools</span></dd>
+      <dt id="g-geojson">GeoJSON</dt><dd>The standard open file format for map data (RFC 7946), read by ArcGIS, QGIS and most mapping tools.<span class="where">Export for other tools</span></dd>
+      <dt id="g-xlsform">XLSForm</dt><dd>A spreadsheet that defines a mobile form for KoboToolbox or ODK.<span class="where">Field app → Import</span></dd>
+      <dt id="g-lowbw">Low-bandwidth mode</dt><dd>A setting that avoids heavy downloads (satellite images, WorldPop, addresses, 3D) on slow connections.<span class="where">Settings</span></dd>
+      <dt id="g-task">Task</dt><dd>A piece of work in a plan with an owner, due date, area and status (to do, in progress, done).<span class="where">Plan → Tasks and comments</span></dd>
+    </dl>
+
+    <h2 id="trouble">15. Troubleshooting</h2>
+    <table class="g">
+      <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td>Page has no colours or layout; buttons do nothing</td><td>You opened a copy without its code (for example from a chat download folder). Open <code>index.html</code> or <code>app.html</code> from your project folder.</td></tr>
+        <tr><td>“Live feeds could not be reached”</td><td>Check your internet connection and reload. Office networks sometimes block gdacs.org or usgs.gov.</td></tr>
+        <tr><td>Status pill stays on “Finding towns, hospitals…” for a long time</td><td>The free OpenStreetMap servers are busy. AidAtlas waits up to 20 seconds, then tries a second source, then uses staging sites. This is noted under Data notes.</td></tr>
+        <tr><td>Routes are straight lines marked “estimated”</td><td>The routing server did not answer. Drive times are estimated at 40 km/h. Try again later.</td></tr>
+        <tr><td>Allocation bars are very low</td><td>That is the result, not an error: local stock or vehicles are much smaller than the need. Read “What would close the gap” and ask for outside help, raise the Supply level, or import your real inventory.</td></tr>
+        <tr><td>The map stays flat or says “3D map unavailable”</td><td>The browser has WebGL turned off (some remote desktops and locked-down office PCs), or jsdelivr.net is blocked. The 2D map works fully. In Chrome, check <code>chrome://gpu</code> and turn on “Use graphics acceleration when available”.</td></tr>
+        <tr><td>Field app: “Location permission was refused”</td><td>Allow location for this site in the phone's browser settings, or type the coordinates (from any map app) under <b>Type the location instead</b>.</td></tr>
+        <tr><td>Field report not applied (“km from the nearest area”)</td><td>The report is outside every area of this plan. Check the location in the report; if the disaster has spread there, use <b>Disaster spreads</b> first, then apply it.</td></tr>
+        <tr><td>Readiness score seems low</td><td>Without your inventory, stock is assumed by facility type, which is usually less than real warehouses hold. Connect your inventory and run it again.</td></tr>
+        <tr><td>3D map feels slow</td><td>Press <b>2D</b> on the switch at the top right of the map, or zoom out a little: terrain and buildings are the heaviest parts.</td></tr>
+        <tr><td>Print button does nothing</td><td>Your browser blocked the pop-up. Allow pop-ups for this page, or use Download and print the saved file.</td></tr>
+        <tr><td>Back-test stops or shows “not run”</td><td>It needs the live map and population services for a few minutes. Keep the tab open and run it again; finished events are kept, so it continues where it stopped.</td></tr>
+        <tr><td>Tasks are not shared with my team</td><td>Save the plan to the shared back end first (Workspace → Save plan). If you set up the back end before Phase 3, run the updated <code>supabase/schema.sql</code> once.</td></tr>
+        <tr><td>Map is grey when offline</td><td>Only map areas you have already looked at are saved. Next time, zoom around the area while you still have a signal.</td></tr>
+        <tr><td>Kobo import: “No usable rows”</td><td>Export from KoboToolbox as CSV with <b>XML values and headers</b>, and include the location question.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="limits">16. Data sources and limits</h2>
+    <ul>
+      <li><b>Hazards:</b> GDACS, USGS, NASA EONET. <b>Places, hospitals, stores:</b> OpenStreetMap (Overpass, Nominatim). <b>Roads and drive times:</b> OSRM. <b>Weather, river flow, elevation:</b> Open-Meteo and GloFAS. <b>Country data:</b> World Bank. <b>Satellite images:</b> Esri World Imagery. <b>3D terrain:</b> Mapzen Terrain Tiles on AWS Open Data. <b>3D buildings:</b> OpenFreeMap (OpenStreetMap). <b>3D engine:</b> MapLibre GL. <b>Field reports:</b> your field teams. <b>Traffic (optional):</b> TomTom.</li>
+      <li>Forecasts are <b>estimates</b>. The earthquake model was checked against Nepal 2015 and Türkiye 2023 (the real death tolls fall inside its forecast range), but local building quality can change results a lot.</li>
+      <li>Stock and vehicles at real facilities are <b>assumptions</b> until you import your own inventory.</li>
+      <li>The free public map and routing servers have rate limits. For an operations centre, run your own copies.</li>
+      <li>Always confirm with the national meteorological department and disaster management authority before acting.</li>
+    </ul>
+    <p class="small muted" id="credits">AidAtlas is built by <a href="https://github.com/darshchawla-code" target="_blank" rel="noopener">@Darshchawla</a>.</p>
+  </main>
+</div>
+</body>
+</html>
