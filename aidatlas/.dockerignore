@@ -1,9 +1,0 @@
-node_modules
-server/data
-*.html
-assets
-css
-src
-tests
-_test
-.git
