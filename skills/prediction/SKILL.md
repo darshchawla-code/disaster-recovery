@@ -32,7 +32,7 @@ Earthquake (MMI, normal fragility on the intensity scale, Φ = standard normal C
 - a zone is an area: `P.zoneDistances(z)` evaluates five points across the zone (`z.rz` km) and averages the fractions.
 - exposure: modelled sectors use the national population density (World Bank EN.POP.DNST, clamped 5–1000 /km²), not a flat 400; WorldPop is better and should be used for any judgement of accuracy.
 - deep earthquakes (> 70 km) are flagged and not scored.
-- Honest status (back-test 3.0, 39 events): reported toll inside P10–P90 for only 26 %, typical error ×48. 3.1 is unproven until the back-test is re-run (Validation page, tick WorldPop).
+- Honest status (back-test 3.0, 39 events): reported toll inside P10–P90 for only 26 %, typical error ×48. Model 3.1 first live run (OSM populations, 38 events): 23 inside (61 %), typical error ×12.7, bias ×0.26 (under-forecast), worst in Indonesia/Afghanistan/Japan. Tried and REJECTED: replacing P.intensity with Allen et al. (2012) — offline comparison showed it lowers deaths a further ×0.5 (M<6.5), ×0.3 (M6.5–7.2), ×0.1 (M≥7.2), worsening the under-forecast. Next ideas: WorldPop run, ShakeMap-based back-test (Option B), site amplification.
 - injuries `= 3.5 × fatalities` (WHO ratio 3:1–4:1)
 
 Cyclone (wind, lognormal fragility): `f_aff = Φ(ln(V/120)/0.25)`, `f_dis = Φ(ln(V/160)/0.25)`,
