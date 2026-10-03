@@ -17,7 +17,7 @@
       tile(`×${s.typicalFactor.toFixed(1)}`, 'typical gap between the most likely forecast and the reported toll'),
       tile(pct(s.within3), 'most-likely forecast within a factor of 3'),
       tile(s.bias >= 1 ? `×${s.bias.toFixed(1)} high` : `×${(1 / s.bias).toFixed(1)} low`, `median bias (${s.above} tolls above the range, ${s.below} below)`),
-    ].join('') : [tile('–', 'events scored'), tile('–', 'typical gap'), tile('–', 'within ×3'), tile('–', 'bias')].join('');
+    ].concat(s.byQuality ? Object.entries(s.byQuality).map(([k, g]) => tile(`${g.inside}/${g.n}`, `inside the range when people were counted by ${{ worldpop: 'WorldPop', osm: 'OpenStreetMap towns', modelled: 'a modelled average (least reliable)' }[k]}; typical gap ×${g.typicalFactor.toFixed(1)}`)) : []).join('') : [tile('–', 'events scored'), tile('–', 'typical gap'), tile('–', 'within ×3'), tile('–', 'bias')].join('');
   };
 
   // log axis 1 … 1,000,000 deaths
@@ -46,7 +46,7 @@
     svg.querySelectorAll('.row').forEach((el) => {
       el.addEventListener('mousemove', (e) => {
         const r = rows[+el.dataset.k];
-        tip.innerHTML = `<b>${esc(r.name)}</b> · ${esc(r.date)} · M ${r.mag}<br>Reported: <b>${f.n(r.deaths)}</b> deaths${r.note ? `<br><i>${esc(r.note)}</i>` : ''}${r.fat ? `<br>Forecast: ${f.n(r.fat.p10)} – <b>${f.n(r.fat.p50)}</b> – ${f.n(r.fat.p90)}` : ''}${r.score ? `<br>${r.mode !== 'shaking' ? 'Not scored' : r.score.inside ? 'Inside the range' : r.score.above ? 'Above the range (under-forecast)' : 'Below the range (over-forecast)'} · gap ×${r.score.factor.toFixed(1)}` : r.mode !== 'shaking' ? `<br>Not scored (${r.mode === 'tsunami' ? 'tsunami or liquefaction deaths' : 'disputed toll'})` : ''}`;
+        tip.innerHTML = `<b>${esc(r.name)}</b> · ${esc(r.date)} · M ${r.mag}<br>Reported: <b>${f.n(r.deaths)}</b> deaths${r.note ? `<br><i>${esc(r.note)}</i>` : ''}${r.fat ? `<br>Forecast: ${f.n(r.fat.p10)} – <b>${f.n(r.fat.p50)}</b> – ${f.n(r.fat.p90)}` : ''}${r.score ? `<br>${r.mode !== 'shaking' ? 'Not scored' : r.score.inside ? 'Inside the range' : r.score.above ? 'Above the range (under-forecast)' : 'Below the range (over-forecast)'} · gap ×${r.score.factor.toFixed(1)}` : r.mode !== 'shaking' ? `<br>Not scored (${r.mode === 'tsunami' ? 'tsunami or liquefaction deaths' : r.mode === 'deep' ? 'deep earthquake' : 'disputed toll'})` : ''}`;
         tip.hidden = false; tip.style.left = `${Math.min(innerWidth - 310, e.clientX + 14)}px`; tip.style.top = `${e.clientY + 14}px`;
       });
       el.addEventListener('mouseleave', () => (tip.hidden = true));
@@ -56,7 +56,7 @@
   const table = () => {
     const rows = run ? run.results : BT.CATALOG;
     $('#btTable tbody').innerHTML = rows.map((r) => {
-      const res = !r.fat ? (r.error ? `<span class="tag">not run</span>` : '<span class="tag">–</span>') : r.mode !== 'shaking' ? `<span class="tag">not scored: ${r.mode === 'tsunami' ? 'tsunami' : 'disputed'}</span>` : r.score.inside ? '<span class="tag in">inside</span>' : `<span class="tag out">${r.score.above ? 'under' : 'over'} ×${r.score.factor.toFixed(1)}</span>`;
+      const res = !r.fat ? (r.error ? `<span class="tag">not run</span>` : '<span class="tag">–</span>') : r.mode !== 'shaking' ? `<span class="tag">not scored: ${r.mode === 'tsunami' ? 'tsunami' : r.mode === 'deep' ? 'deep' : 'disputed'}</span>` : r.score.inside ? '<span class="tag in">inside</span>' : `<span class="tag out">${r.score.above ? 'under' : 'over'} ×${r.score.factor.toFixed(1)}</span>`;
       return `<tr><td class="mono">${r.date}</td><td>${esc(r.name)}${r.note ? `<br><span class="small muted">${esc(r.note)}</span>` : ''}</td><td class="num">${r.mag}</td><td class="num">${f.n(r.deaths)}</td><td class="num">${r.fat ? f.n(r.fat.p10) : ''}</td><td class="num">${r.fat ? f.n(r.fat.p50) : ''}</td><td class="num">${r.fat ? f.n(r.fat.p90) : ''}</td><td>${res}</td></tr>`;
     }).join('');
     $('#btSrc').innerHTML = `Reported deaths: <a href="${BT.SOURCE.url}" target="_blank" rel="noopener">${esc(BT.SOURCE.name)}</a> (${esc(BT.SOURCE.query)}, snapshot ${BT.SOURCE.snapshot}). Forecast: AidAtlas model ${esc(run?.model || AA.MODEL_VERSION)}, model alone (no USGS PAGER, no reported counts), ${run?.worldpop ? 'WorldPop 2020' : 'OpenStreetMap'} populations of today${run ? `, run ${esc(new Date(run.at).toLocaleString())}` : ''}.`;

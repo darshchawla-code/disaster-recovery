@@ -447,7 +447,7 @@ details.card[open] { display: grid; gap: 8px; }
   AA.math = M;
 
   /** Version of the forecast and planning models; back-test results and model cards refer to it. */
-  AA.MODEL_VERSION = '3.0.0';
+  AA.MODEL_VERSION = '3.1.0';
 
   // ---------- configuration (all editable in Settings) ----------
   AA.config = {
@@ -786,10 +786,19 @@ details.card[open] { display: grid; gap: 8px; }
 
   // ---------------- OSM Overpass (raced mirrors) ----------------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  /** Retry a lookup with back-off (public map servers are rate-limited; a busy mirror often answers a few seconds later). */
+  D.retryDelays = [1500, 4000];
+  D.retry = async (fn) => {
+    let err;
+    for (let k = 0; k <= D.retryDelays.length; k++) {
+      try { return await fn(); } catch (e) { err = e; if (k < D.retryDelays.length) await new Promise((r) => setTimeout(r, D.retryDelays[k])); }
+    }
+    throw err;
+  };
   D.overpass = async (ql, timeout = 30000) => {
     const key = 'ovp:' + ql; const hit = cache.get(key); if (hit) return hit.v;
     const body = 'data=' + encodeURIComponent(ql);
-    const v = await Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; })));
+    const v = await D.retry(() => Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; }))));
     cache.set(key, { t: Date.now(), v }); return v;
   };
   const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
@@ -887,9 +896,9 @@ details.card[open] { display: grid; gap: 8px; }
     const out = { beds: null, gdppc: null, vul: 0.5, lcc: 0.5, prov: 'assumed' };
     if (!iso2) return out;
     try {
-      const get = async (ind) => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); return j?.[1]?.[0]?.value ?? null; };
-      const [beds, gdppc] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD')]);
-      out.beds = beds; out.gdppc = gdppc;
+      const get = (ind) => D.retry(async () => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); if (!Array.isArray(j)) throw new Error('World Bank gave no data'); return j?.[1]?.[0]?.value ?? null; });
+      const [beds, gdppc, dens] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD'), get('EN.POP.DNST').catch(() => null)]);
+      out.beds = beds; out.gdppc = gdppc; out.density = dens; // density = people per km² of land (national average)
       const gN = gdppc ? M.clamp((Math.log10(gdppc) - 2.6) / 2.4, 0, 1) : 0.5;
       const bN = beds != null ? M.clamp(beds / 8, 0, 1) : 0.5;
       out.vul = M.clamp(0.5 * (1 - gN) + 0.5 * (1 - bN), 0.05, 0.95);
@@ -1154,6 +1163,281 @@ details.card[open] { display: grid; gap: 8px; }
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
+<script>/* js/models/fatality-params.js */
+/* USGS PAGER empirical earthquake fatality parameters, one pair per country.
+   Source: USGS PAGER fatality model (fatality.xml, "esi-utils-pager" 1.1.19, USGS, public domain U.S. Government work).
+   Method: Jaiswal & Wald (2010), "An empirical model for global earthquake fatality estimation", Earthquake Spectra 26(4);
+   Jaiswal, Wald & D'Ayala (2011). Fatality rate = Phi( ln(MMI / theta) / beta ), the share of people exposed at that shaking.
+   Status: "I" = country has its own fitted pair; "G" = pair taken from a group of similar countries (less certain).
+   Caution: theta and beta were fitted against PAGER's own ShakeMap intensities, not against AidAtlas' simpler shaking estimate. */
+(function (root) {
+  const AA = root.AA;
+  const T = {
+    AD: [14.115, 0.204, "I"],
+    AE: [11.057, 0.105, "I"],
+    AF: [11.613, 0.181, "I"],
+    AG: [27.733, 0.34, "I"],
+    AI: [27.733, 0.34, "I"],
+    AL: [16.216, 0.217, "I"],
+    AM: [24.8, 0.311, "I"],
+    AO: [10.036, 0.1, "I"],
+    AQ: [12.898, 0.141, "I"],
+    AR: [32.792, 0.384, "I"],
+    AS: [12.898, 0.141, "I"],
+    AT: [20.062, 0.257, "I"],
+    AU: [46.155, 0.434, "I"],
+    AW: [27.733, 0.34, "I"],
+    AX: [20.062, 0.257, "I"],
+    AZ: [24.8, 0.311, "I"],
+    BA: [16.216, 0.217, "I"],
+    BB: [27.733, 0.34, "I"],
+    BD: [14.571, 0.205, "I"],
+    BE: [20.062, 0.257, "I"],
+    BF: [10.036, 0.1, "I"],
+    BG: [16.216, 0.217, "I"],
+    BH: [11.057, 0.105, "I"],
+    BI: [25.81, 0.31, "I"],
+    BJ: [10.036, 0.1, "I"],
+    BL: [27.733, 0.34, "I"],
+    BM: [12.898, 0.141, "I"],
+    BN: [10.336, 0.1, "I"],
+    BO: [22.744, 0.312, "I"],
+    BQ: [27.733, 0.34, "I"],
+    BR: [22.744, 0.312, "I"],
+    BS: [27.733, 0.34, "I"],
+    BT: [14.571, 0.205, "I"],
+    BV: [20.062, 0.257, "I"],
+    BW: [14.572, 0.182, "I"],
+    BY: [24.8, 0.311, "I"],
+    BZ: [27.733, 0.34, "I"],
+    CA: [46.155, 0.434, "I"],
+    CC: [12.898, 0.141, "I"],
+    CD: [25.81, 0.31, "I"],
+    CF: [10.036, 0.1, "I"],
+    CG: [10.036, 0.1, "I"],
+    CH: [20.062, 0.257, "I"],
+    CI: [10.036, 0.1, "I"],
+    CK: [12.898, 0.141, "I"],
+    CL: [19.787, 0.26, "I"],
+    CM: [10.036, 0.1, "I"],
+    CN: [10.329, 0.1, "I"],
+    CO: [22.141, 0.304, "I"],
+    CR: [14.599, 0.181, "I"],
+    CU: [10.042, 0.1, "I"],
+    CV: [14.572, 0.182, "I"],
+    CW: [27.733, 0.34, "I"],
+    CX: [12.898, 0.141, "I"],
+    CY: [11.057, 0.105, "I"],
+    CZ: [16.216, 0.217, "I"],
+    DE: [20.062, 0.257, "I"],
+    DJ: [10.036, 0.1, "I"],
+    DK: [20.062, 0.257, "I"],
+    DM: [27.733, 0.34, "I"],
+    DO: [10.042, 0.1, "I"],
+    DZ: [15.663, 0.218, "I"],
+    EC: [11.663, 0.144, "I"],
+    EE: [24.8, 0.311, "I"],
+    EG: [16.049, 0.226, "I"],
+    EH: [10.036, 0.1, "I"],
+    ER: [25.81, 0.31, "I"],
+    ES: [20.062, 0.257, "I"],
+    ET: [25.81, 0.31, "I"],
+    EU: [46.155, 0.434, "I"],
+    FI: [20.062, 0.257, "I"],
+    FJ: [12.898, 0.141, "I"],
+    FK: [20.062, 0.257, "I"],
+    FM: [12.898, 0.141, "I"],
+    FO: [20.062, 0.257, "I"],
+    FR: [20.062, 0.257, "I"],
+    GA: [14.572, 0.182, "I"],
+    GB: [20.062, 0.257, "I"],
+    GD: [27.733, 0.34, "I"],
+    GE: [21.474, 0.278, "I"],
+    GF: [22.744, 0.312, "I"],
+    GG: [20.062, 0.257, "I"],
+    GH: [10.036, 0.1, "I"],
+    GI: [20.062, 0.257, "I"],
+    GL: [20.062, 0.257, "I"],
+    GM: [10.036, 0.1, "I"],
+    GN: [14.572, 0.182, "I"],
+    GP: [27.733, 0.34, "I"],
+    GQ: [14.572, 0.182, "I"],
+    GR: [21.787, 0.279, "I"],
+    GS: [20.062, 0.257, "I"],
+    GT: [10.045, 0.1, "I"],
+    GU: [12.898, 0.141, "I"],
+    GW: [25.81, 0.31, "I"],
+    GY: [22.744, 0.312, "I"],
+    HK: [13.149, 0.13, "I"],
+    HM: [12.898, 0.141, "I"],
+    HN: [10.042, 0.1, "I"],
+    HR: [16.216, 0.217, "I"],
+    HT: [10.501, 0.169, "I"],
+    HU: [16.216, 0.217, "I"],
+    ID: [13.249, 0.151, "I"],
+    IE: [20.062, 0.257, "I"],
+    IL: [11.057, 0.105, "I"],
+    IM: [20.062, 0.257, "I"],
+    IN: [10.987, 0.129, "I"],
+    IO: [12.898, 0.141, "I"],
+    IQ: [9.691, 0.1, "I"],
+    IR: [9.318, 0.1, "I"],
+    IS: [20.062, 0.257, "I"],
+    IT: [14.115, 0.204, "I"],
+    JE: [20.062, 0.257, "I"],
+    JM: [27.733, 0.34, "I"],
+    JO: [11.057, 0.105, "I"],
+    JP: [11.863, 0.101, "I"],
+    KE: [10.036, 0.1, "I"],
+    KG: [20.477, 0.281, "I"],
+    KH: [12.898, 0.141, "I"],
+    KI: [12.898, 0.141, "I"],
+    KM: [12.898, 0.141, "I"],
+    KN: [27.733, 0.34, "I"],
+    KP: [10.336, 0.1, "I"],
+    KR: [10.336, 0.1, "I"],
+    KW: [11.057, 0.105, "I"],
+    KY: [27.733, 0.34, "I"],
+    KZ: [20.477, 0.281, "I"],
+    LA: [12.898, 0.141, "I"],
+    LB: [11.057, 0.105, "I"],
+    LC: [27.733, 0.34, "I"],
+    LI: [20.062, 0.257, "I"],
+    LK: [10.987, 0.129, "I"],
+    LR: [25.81, 0.31, "I"],
+    LS: [14.572, 0.182, "I"],
+    LT: [24.8, 0.311, "I"],
+    LU: [20.062, 0.257, "I"],
+    LV: [24.8, 0.311, "I"],
+    LY: [11.057, 0.105, "I"],
+    MA: [10.041, 0.1, "I"],
+    MC: [20.062, 0.257, "I"],
+    MD: [16.216, 0.217, "I"],
+    ME: [16.216, 0.217, "I"],
+    MF: [27.733, 0.34, "I"],
+    MG: [25.81, 0.31, "I"],
+    MH: [12.898, 0.141, "I"],
+    MK: [16.216, 0.217, "I"],
+    ML: [10.036, 0.1, "I"],
+    MM: [14.571, 0.205, "I"],
+    MN: [10.336, 0.1, "I"],
+    MO: [10.336, 0.1, "I"],
+    MP: [12.898, 0.141, "I"],
+    MQ: [27.733, 0.34, "I"],
+    MR: [10.036, 0.1, "I"],
+    MS: [27.733, 0.34, "I"],
+    MT: [14.115, 0.204, "I"],
+    MU: [12.898, 0.141, "I"],
+    MV: [12.898, 0.141, "I"],
+    MW: [25.81, 0.31, "I"],
+    MX: [15.569, 0.231, "I"],
+    MY: [13.149, 0.13, "I"],
+    MZ: [14.572, 0.182, "I"],
+    NA: [14.572, 0.182, "I"],
+    NC: [12.898, 0.141, "I"],
+    NE: [25.81, 0.31, "I"],
+    NF: [12.898, 0.141, "I"],
+    NG: [10.036, 0.1, "I"],
+    NI: [10.042, 0.1, "I"],
+    NL: [20.062, 0.257, "I"],
+    NO: [20.062, 0.257, "I"],
+    NP: [14.571, 0.205, "I"],
+    NR: [12.898, 0.141, "I"],
+    NU: [12.898, 0.141, "I"],
+    NZ: [37.772, 0.361, "I"],
+    OM: [11.057, 0.105, "I"],
+    PA: [21.27, 0.286, "I"],
+    PE: [23.454, 0.314, "I"],
+    PF: [12.898, 0.141, "I"],
+    PG: [12.898, 0.141, "I"],
+    PH: [13.149, 0.13, "I"],
+    PK: [9.705, 0.1, "I"],
+    PL: [20.062, 0.257, "I"],
+    PM: [46.155, 0.434, "I"],
+    PN: [12.898, 0.141, "I"],
+    PR: [46.155, 0.434, "I"],
+    PS: [11.057, 0.105, "I"],
+    PT: [18.801, 0.296, "I"],
+    PW: [12.898, 0.141, "I"],
+    PY: [22.744, 0.312, "I"],
+    QA: [11.057, 0.105, "I"],
+    RE: [12.898, 0.141, "I"],
+    RO: [17.475, 0.239, "I"],
+    RS: [16.216, 0.217, "I"],
+    RU: [24.8, 0.311, "I"],
+    RW: [10.036, 0.1, "I"],
+    SA: [11.057, 0.105, "I"],
+    SB: [12.898, 0.141, "I"],
+    SC: [12.898, 0.141, "I"],
+    SD: [8.32, 0.1, "I"],
+    SE: [20.062, 0.257, "I"],
+    SG: [13.149, 0.13, "I"],
+    SH: [20.062, 0.257, "I"],
+    SI: [16.216, 0.217, "I"],
+    SJ: [20.062, 0.257, "I"],
+    SK: [16.216, 0.217, "I"],
+    SL: [25.81, 0.31, "I"],
+    SM: [14.115, 0.204, "I"],
+    SN: [10.036, 0.1, "I"],
+    SO: [25.81, 0.31, "I"],
+    SR: [22.744, 0.312, "I"],
+    SS: [8.32, 0.1, "I"],
+    ST: [10.036, 0.1, "I"],
+    SV: [28.692, 0.351, "I"],
+    SX: [27.733, 0.34, "I"],
+    SY: [11.057, 0.105, "I"],
+    SZ: [14.572, 0.182, "I"],
+    TC: [27.733, 0.34, "I"],
+    TD: [10.036, 0.1, "I"],
+    TF: [12.898, 0.141, "I"],
+    TG: [10.036, 0.1, "I"],
+    TH: [13.149, 0.13, "I"],
+    TJ: [20.477, 0.281, "I"],
+    TK: [12.898, 0.141, "I"],
+    TL: [12.898, 0.141, "I"],
+    TM: [20.477, 0.281, "I"],
+    TN: [16.049, 0.226, "I"],
+    TO: [12.898, 0.141, "I"],
+    TR: [11.067, 0.106, "I"],
+    TT: [27.733, 0.34, "I"],
+    TV: [12.898, 0.141, "I"],
+    TW: [14.126, 0.148, "I"],
+    TZ: [25.81, 0.31, "I"],
+    UA: [24.8, 0.311, "I"],
+    UG: [10.036, 0.1, "I"],
+    UM: [46.155, 0.434, "I"],
+    US: [46.155, 0.434, "I"],
+    UY: [22.744, 0.312, "I"],
+    UZ: [20.477, 0.281, "I"],
+    VA: [14.115, 0.204, "I"],
+    VC: [27.733, 0.34, "I"],
+    VE: [9.785, 0.1, "I"],
+    VG: [27.733, 0.34, "I"],
+    VI: [27.733, 0.34, "I"],
+    VN: [12.898, 0.141, "I"],
+    VU: [12.898, 0.141, "I"],
+    WF: [12.898, 0.141, "I"],
+    WS: [12.898, 0.141, "I"],
+    WU: [37.729, 0.36, "I"],
+    XF: [37.729, 0.36, "I"],
+    YE: [8.32, 0.1, "I"],
+    YT: [12.898, 0.141, "I"],
+    ZA: [14.572, 0.182, "I"],
+    ZM: [25.81, 0.31, "I"],
+    ZW: [10.036, 0.1, "I"]
+  };
+  const vals = (i) => Object.values(T).map((v) => v[i]).sort((a, b) => a - b);
+  const med = (a) => a[Math.floor(a.length / 2)];
+  const GLOBAL = { theta: med(vals(0)), beta: med(vals(1)), status: 'global', code: '' };
+  /** Curve for an ISO-3166 alpha-2 code; falls back to the median country with status "global". */
+  AA.fatCurve = (iso2) => {
+    const v = T[String(iso2 || '').toUpperCase()];
+    return v ? { theta: v[0], beta: v[1], status: v[2] === 'I' ? 'country' : 'group', code: String(iso2).toUpperCase() } : { ...GLOBAL };
+  };
+  AA.fatalityTable = T;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
 <script>/* js/models/prediction.js */
 /* Prediction model. Skill: skills/prediction/SKILL.md */
 (function (root) {
@@ -1187,13 +1471,14 @@ details.card[open] { display: grid; gap: 8px; }
   };
 
   /** Damage fractions from intensity. shift = fragility perturbation (MC). V = country vulnerability 0..1 */
-  P.impact = (hazard, I, V = 0.5, shift = 0, sub) => {
+  P.impact = (hazard, I, V = 0.5, shift = 0, sub, fp) => {
     if (hazard === 'EQ') {
       const fAff = M.Phi((I - 6.5 - shift) / 0.8);
       const fDis = 0.4 * M.Phi((I - 8.2 + 1.2 * (V - 0.5) - shift) / 0.8); // weaker housing → displaced at lower shaking
       const sev = M.Phi((I - 8.5 - shift) / 0.8);
       const theta = 13.5 + 2.5 * (1 - V) + shift;
-      const fFat = M.Phi(Math.log(I / theta) / 0.17);
+      // fatalities: USGS PAGER country curve Phi(ln(MMI/theta)/beta) when given (fp), else the old single curve
+      const fFat = fp ? M.Phi(Math.log(Math.max(1, I - shift) / fp.theta) / fp.beta) : M.Phi(Math.log(I / theta) / 0.17);
       return { fAff, fDis, sev, fFat, injPerFat: 3.5 };
     }
     if (hazard === 'TC') {
@@ -1346,13 +1631,14 @@ details.card[open] { display: grid; gap: 8px; }
       const dens = sit.popDensity || 400; // persons/km² assumption, labelled
       const ringR = 0.45 * R, areaCore = Math.PI * (0.3 * R) ** 2, areaSector = (Math.PI * R * R - areaCore) / 6;
       // modelled areas: named from the map (reverse geocoding) by the engine; these labels are only a fallback
-      zones.push({ name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
+      zones.push({ rz: 0.3 * R, name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
       for (let k = 0; k < 6; k++) {
         const p = M.destination(c, k * 60 + 30, ringR);
-        zones.push({ name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
+        zones.push({ rz: Math.sqrt(areaSector / Math.PI), name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
       }
     }
     zones.forEach((z) => {
+      if (z.rz == null) z.rz = z.type === 'village' || z.type === 'hamlet' ? 1 : M.clamp(Math.sqrt(z.pop / (z.type === 'town' ? 2500 : 4000) / Math.PI), 1, 15); // people live over an area, not at one point
       z.distKm = M.haversine(src, z);
       z.I = P.intensity(sit, z.distKm);
       const im = P.impact(sit.hazard, z.I, sit.countryVul, 0, sit.floodKind);
@@ -1370,10 +1656,23 @@ details.card[open] { display: grid; gap: 8px; }
     return zones;
   };
 
+  /** Distances (km from the source) of five points that stand for the whole zone: its centre, the near and far
+   *  edges and the two side points. A zone is an area; evaluating shaking only at its centre overstates deaths
+   *  next to the epicentre, where shaking falls fast with distance. */
+  P.zoneDistances = (z) => {
+    const d = z.distKm, e = 0.6 * (z.rz || 0);
+    return e < 0.3 ? [d] : [d, Math.max(0, d - e), d + e, Math.hypot(d, e), Math.hypot(d, e)];
+  };
+
   /** Monte-Carlo forecast per zone → P10/P50/P90 and three weighted scenarios. */
   P.forecast = (sit, zones, draws = AA.config.mcDraws, seed = AA.config.seed) => {
     const rng = M.mulberry32(seed);
     const V = sit.countryVul ?? 0.5;
+    // earthquakes: country fatality curve (USGS PAGER) and honest, a-priori uncertainty (not tuned on the back-test):
+    // shaking estimate ±0.8 MMI (simple attenuation law) and a log-normal spread on the death rate (country-fit scatter)
+    const fp = sit.hazard === 'EQ' ? (sit.fatParams || (AA.fatCurve ? AA.fatCurve(sit.iso2) : null)) : null;
+    const rateSd = fp ? { country: 0.7, group: 1.0, global: 1.2 }[fp.status] ?? 1.0 : 0;
+    const shiftSd = sit.hazard === 'EQ' ? 0.8 : 0.3;
     const samples = zones.map(() => ({ aff: [], dis: [], inj: [], fat: [], sev: [] }));
     const totals = { aff: [], dis: [], inj: [], fat: [] };
     for (let n = 0; n < draws; n++) {
@@ -1381,13 +1680,21 @@ details.card[open] { display: grid; gap: 8px; }
       if (sit.hazard === 'EQ') mag += 0.2 * M.gauss(rng);
       else if (sit.hazard === 'TC') mag *= Math.exp(0.12 * M.gauss(rng));
       else mag = M.clamp(mag * Math.exp(0.15 * M.gauss(rng)), 0, 1);
-      const shift = 0.3 * M.gauss(rng);
+      const shift = shiftSd * M.gauss(rng);
+      const rateNoise = rateSd ? Math.exp(rateSd * M.gauss(rng)) : 1;
       const tot = { aff: 0, dis: 0, inj: 0, fat: 0 };
       zones.forEach((z, i) => {
         const pop = z.pop * Math.exp(0.2 * M.gauss(rng));
-        const I = z.sObs != null ? M.clamp(z.sObs * (mag / (sit.magnitude || 1)), 0, 1) : P.intensity(sit, z.distKm, mag); // observed river flow overrides distance decay
-        const im = P.impact(sit.hazard, I, V, shift, sit.floodKind);
-        const aff = pop * im.fAff, dis = pop * im.fDis, fat = pop * im.fFat, inj = fat * im.injPerFat;
+        let im;
+        if (sit.hazard === 'EQ' && z.sObs == null) { // average over the zone's area (five points)
+          const ds = P.zoneDistances(z), acc = { fAff: 0, fDis: 0, sev: 0, fFat: 0 };
+          ds.forEach((d) => { const m1 = P.impact('EQ', P.intensity(sit, d, mag), V, shift, sit.floodKind, fp); acc.fAff += m1.fAff; acc.fDis += m1.fDis; acc.sev += m1.sev; acc.fFat += m1.fFat; });
+          im = { fAff: acc.fAff / ds.length, fDis: acc.fDis / ds.length, sev: acc.sev / ds.length, fFat: acc.fFat / ds.length, injPerFat: 3.5 };
+        } else {
+          const I = z.sObs != null ? M.clamp(z.sObs * (mag / (sit.magnitude || 1)), 0, 1) : P.intensity(sit, z.distKm, mag); // observed river flow overrides distance decay
+          im = P.impact(sit.hazard, I, V, shift, sit.floodKind, fp);
+        }
+        const aff = pop * im.fAff, dis = pop * im.fDis, fat = pop * Math.min(1, im.fFat * rateNoise), inj = fat * im.injPerFat;
         const s = samples[i];
         s.aff.push(aff); s.dis.push(dis); s.inj.push(inj); s.fat.push(fat); s.sev.push(im.sev);
         tot.aff += aff; tot.dis += dis; tot.inj += inj; tot.fat += fat;
@@ -1401,7 +1708,7 @@ details.card[open] { display: grid; gap: 8px; }
       if (z.sevPost == null) z.sevMean = z.fc.sev.p50; // Bayesian posterior overrides when present
     });
     const summary = {}; Object.keys(totals).forEach((k) => (summary[k] = q(totals[k])));
-    return { draws, seed, summary };
+    return { draws, seed, summary, fatCurve: fp ? { ...fp, rateSd, shiftSd } : null };
   };
 
   /** Scenario value: s ∈ {low, base, high} → P10/P50/P90 */
@@ -2804,6 +3111,14 @@ details.card[open] { display: grid; gap: 8px; }
     if (!sit.iso2 && opts.reverse !== false) { try { const r = await D.reverse(sit.lat, sit.lon); sit.iso2 = r.iso2; sit.country = sit.country || r.country; } catch (e) { notes.push('Country lookup unavailable.'); } }
     try { sit.countryIdx = await D.countryIndex(sit.iso2); } catch (e) { sit.countryIdx = { vul: 0.5, lcc: 0.5, prov: 'assumed' }; notes.push('Country indicators unavailable; vulnerability assumed 0.5.'); }
     sit.countryVul = sit.countryIdx.vul;
+    if (sit.countryIdx.prov === 'assumed' && sit.iso2) notes.push('Country indicators unavailable; vulnerability assumed 0.5.');
+    if (sit.hazard === 'EQ') {
+      sit.fatParams = AA.fatCurve ? AA.fatCurve(sit.iso2) : null;
+      if (sit.fatParams && sit.fatParams.status === 'global') notes.push('No country fatality curve found; a median curve is used (wider range).');
+      if ((sit.depth || 0) > 70) notes.push('Deep earthquake (over 70 km): shaking at the surface is weaker and patchier than this model assumes; treat the deaths range as unreliable.');
+    }
+    // modelled sectors (used only when OpenStreetMap gives too few places): national average density, not a flat guess
+    if (!sit.popDensity && sit.countryIdx.density > 0) sit.popDensity = M.clamp(sit.countryIdx.density, 5, 1000);
     sit.radiusKm = sit.hazard === 'FL' ? (sit.radiusKm || 40) : P.impactRadius(sit);
     step('Finding towns (OpenStreetMap)…');
     let places = []; try { places = await D.places(sit, Math.min(sit.radiusKm, 120)); } catch (e) { notes.push('OpenStreetMap places unavailable; modelled population sectors used.'); }
@@ -2813,7 +3128,9 @@ details.card[open] { display: grid; gap: 8px; }
       try { const pops = await AA.engine.worldpopZones(zones); zones.forEach((z, i) => { const v = pops.counts[i]; if (v > 0) { z.pop = v; z.popProv = 'WorldPop 2020'; } }); } catch (e) { notes.push('WorldPop unavailable; OpenStreetMap populations used.'); }
     }
     const fc = P.forecast(sit, zones);
-    return { sit, zones, fc, places: places.length, notes };
+    // how were people counted? worldpop > osm places > modelled sectors (lowest confidence)
+    const quality = zones.some((z) => z.popProv === 'WorldPop 2020') ? 'worldpop' : places.length >= 4 ? 'osm' : 'modelled';
+    return { sit, zones, fc, places: places.length, notes, quality };
   };
 
   /** Default design intensity per hazard (same as the Plan-mode defaults). */

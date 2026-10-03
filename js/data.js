@@ -280,10 +280,19 @@
 
   // ---------------- OSM Overpass (raced mirrors) ----------------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  /** Retry a lookup with back-off (public map servers are rate-limited; a busy mirror often answers a few seconds later). */
+  D.retryDelays = [1500, 4000];
+  D.retry = async (fn) => {
+    let err;
+    for (let k = 0; k <= D.retryDelays.length; k++) {
+      try { return await fn(); } catch (e) { err = e; if (k < D.retryDelays.length) await new Promise((r) => setTimeout(r, D.retryDelays[k])); }
+    }
+    throw err;
+  };
   D.overpass = async (ql, timeout = 30000) => {
     const key = 'ovp:' + ql; const hit = cache.get(key); if (hit) return hit.v;
     const body = 'data=' + encodeURIComponent(ql);
-    const v = await Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; })));
+    const v = await D.retry(() => Promise.any(OVERPASS.map((u) => D.fetchJSON(u, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout, cacheTtl: 0 }).then((j) => { if (!j.elements) throw new Error('bad'); return j; }))));
     cache.set(key, { t: Date.now(), v }); return v;
   };
   const bboxOf = (c, km) => { const dLat = km / 110.57, dLon = km / (111.32 * Math.cos(M.toRad(c.lat))); return [c.lat - dLat, c.lon - dLon, c.lat + dLat, c.lon + dLon]; };
@@ -381,9 +390,9 @@
     const out = { beds: null, gdppc: null, vul: 0.5, lcc: 0.5, prov: 'assumed' };
     if (!iso2) return out;
     try {
-      const get = async (ind) => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); return j?.[1]?.[0]?.value ?? null; };
-      const [beds, gdppc] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD')]);
-      out.beds = beds; out.gdppc = gdppc;
+      const get = (ind) => D.retry(async () => { const j = await D.fetchJSON(`https://api.worldbank.org/v2/country/${iso2}/indicator/${ind}?format=json&mrnev=1`, { cacheTtl: 864e5 }); if (!Array.isArray(j)) throw new Error('World Bank gave no data'); return j?.[1]?.[0]?.value ?? null; });
+      const [beds, gdppc, dens] = await Promise.all([get('SH.MED.BEDS.ZS'), get('NY.GDP.PCAP.CD'), get('EN.POP.DNST').catch(() => null)]);
+      out.beds = beds; out.gdppc = gdppc; out.density = dens; // density = people per km² of land (national average)
       const gN = gdppc ? M.clamp((Math.log10(gdppc) - 2.6) / 2.4, 0, 1) : 0.5;
       const bN = beds != null ? M.clamp(beds / 8, 0, 1) : 0.5;
       out.vul = M.clamp(0.5 * (1 - gN) + 0.5 * (1 - bN), 0.05, 0.95);

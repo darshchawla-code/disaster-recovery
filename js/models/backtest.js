@@ -38,7 +38,7 @@
     E('2013-09-24', 'Awaran, Pakistan', 'PK', 26.951, 65.501, 7.7, 15, 825),
     E('2014-08-03', 'Ludian, Yunnan, China', 'CN', 27.189, 103.409, 6.2, 12, 615),
     E('2015-04-25', 'Gorkha, Nepal', 'NP', 28.231, 84.731, 7.8, 8, 8957),
-    E('2015-10-26', 'Hindu Kush, Afghanistan', 'AF', 36.524, 70.368, 7.5, 231, 399),
+    E('2015-10-26', 'Hindu Kush, Afghanistan', 'AF', 36.524, 70.368, 7.5, 231, 399, 'deep', 'Deep (231 km) earthquake; outside this model\'s range'),
     E('2016-04-15', 'Kumamoto, Japan', 'JP', 32.791, 130.754, 7.0, 10, 273),
     E('2016-04-16', 'Manabí, Ecuador', 'EC', 0.382, -79.922, 7.8, 21, 663),
     E('2016-08-24', 'Amatrice, Italy', 'IT', 42.723, 13.188, 6.2, 4, 299),
@@ -77,6 +77,7 @@
       below: s.filter((r) => r.score.below).length, above: s.filter((r) => r.score.above).length,
       typicalFactor: Math.pow(10, absMed), bias: Math.pow(10, M.quantile(le, 0.5)),
       within3: s.filter((r) => r.score.within3).length / s.length, within10: s.filter((r) => r.score.within10).length / s.length,
+      byQuality: ['worldpop', 'osm', 'modelled'].reduce((o, qn) => { const g = s.filter((r) => r.quality === qn); if (g.length) o[qn] = { n: g.length, inside: g.filter((r) => r.score.inside).length, typicalFactor: Math.pow(10, M.quantile(g.map((r) => Math.abs(r.score.logErr)), 0.5)) }; return o; }, {}),
     };
   };
 
@@ -90,13 +91,20 @@
       if (!hit) {
         step(`Replaying ${ev.name} (${ev.date.slice(0, 4)})…`, k, events.length);
         try {
-          const r = await AA.pipelines.forecast(BT.situation(ev), { worldpop: !!opts.worldpop, reverse: false });
+          // a lookup that failed is retried (up to 3 runs) so data gaps do not masquerade as model error
+          let r;
+          for (let tryN = 0; tryN < 3; tryN++) {
+            r = await AA.pipelines.forecast(BT.situation(ev), { worldpop: !!opts.worldpop, reverse: false });
+            if (!r.notes.some((n) => /unavailable/i.test(n))) break;
+            await new Promise((res) => setTimeout(res, opts.pauseMs ?? 3000));
+          }
           const f = r.fc.summary.fat;
-          hit = { fat: { p10: f.p10, p50: f.p50, p90: f.p90 }, aff: { p50: r.fc.summary.aff.p50 }, zones: r.zones.length, places: r.places, radiusKm: r.sit.radiusKm, vul: r.sit.countryVul, notes: r.notes };
+          hit = { quality: r.quality, curve: r.fc.fatCurve ? `${r.fc.fatCurve.status} θ${r.fc.fatCurve.theta} β${r.fc.fatCurve.beta}` : '', fat: { p10: f.p10, p50: f.p50, p90: f.p90 }, aff: { p50: r.fc.summary.aff.p50 }, zones: r.zones.length, places: r.places, radiusKm: r.sit.radiusKm, vul: r.sit.countryVul, notes: r.notes };
           if (!r.notes.length) opts.cache?.set(key, hit); // cache only clean runs
         } catch (e) { hit = { error: e.message }; }
       }
       const scored = ev.mode === 'shaking' && !hit.error;
+      if (opts.pauseMs !== 0 && !opts.cache?.get(key)) await new Promise((res) => setTimeout(res, opts.pauseMs ?? 1200)); // be polite to public servers
       out.push({ ...ev, ...hit, scored, score: hit.fat ? BT.scoreOne(ev, hit.fat) : null });
     }
     step('Done', events.length, events.length);

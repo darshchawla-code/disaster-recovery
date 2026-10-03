@@ -7,7 +7,7 @@ const ROOT = path.join(__dirname, '..');
 const UA = 'AidAtlas-backtest (+https://github.com/darshchawla-code/disaster-recovery)';
 const raw = globalThis.fetch; globalThis.fetch = (u, init = {}) => raw(u, { ...init, headers: { 'User-Agent': UA, ...(init.headers || {}) } });
 globalThis.solver = require('javascript-lp-solver');
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js', 'js/pipelines.js', 'js/models/backtest.js'].forEach((f) => require(path.join(ROOT, f)));
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js', 'js/pipelines.js', 'js/models/backtest.js'].forEach((f) => require(path.join(ROOT, f)));
 const AA = globalThis.AA;
 const args = process.argv.slice(2);
 const out = args.includes('--out') ? args[args.indexOf('--out') + 1] : path.join(ROOT, 'backtest-results.json');

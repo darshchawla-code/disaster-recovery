@@ -3,7 +3,7 @@
 const path = require('path');
 globalThis.solver = require('javascript-lp-solver');
 const R = (f) => require(path.join(__dirname, '..', f));
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js', 'js/collab.js', 'js/exports.js', 'js/models/backtest.js', 'js/models/cards.js', 'js/ui/report.js'].forEach(R);
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js', 'js/collab.js', 'js/exports.js', 'js/models/backtest.js', 'js/models/cards.js', 'js/ui/report.js'].forEach(R);
 const AA = globalThis.AA, M = AA.math, D = AA.data, BT = AA.backtest, COL = AA.collab, X = AA.exports, W = AA.workspace, ENG = AA.engine;
 
 const C0 = { lat: 28.46, lon: 77.03 };
@@ -192,3 +192,41 @@ t('the XLSForm definition matches the field app: same damage levels, needs and r
   console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();
+
+// ---------------- model 3.1: country fatality curves, honest ranges, data reliability ----------------
+t('3.1: USGS PAGER table has 252 countries; known pairs (Iran 9.318/0.100, Italy 14.115/0.204); unknown code → median curve flagged "global"', () => {
+  const ir = AA.fatCurve('IR'), it = AA.fatCurve('it'), zz = AA.fatCurve('ZZ');
+  return Object.keys(AA.fatalityTable).length === 252 && ir.theta === 9.318 && ir.beta === 0.1 && it.theta === 14.115 && zz.status === 'global' && ir.status === 'country';
+});
+t('3.1: same quake, same people — a weaker-building country (Iran) gets far more deaths than a strict-code one (USA)', () => {
+  const run = (iso2) => { const sit = { hazard: 'EQ', lat: 30, lon: 50, magnitude: 6.8, depth: 10, iso2, countryVul: 0.5 }; sit.radiusKm = AA.prediction.impactRadius(sit); const z = AA.prediction.buildZones(sit, [{ name: 'A', lat: 30.05, lon: 50, population: 300000, type: 'city' }, { name: 'B', lat: 30.2, lon: 50.1, population: 80000, type: 'town' }]); return AA.prediction.forecast(sit, z).summary.fat.p50; };
+  return run('IR') > 5 * run('US');
+});
+t('3.1: earthquake ranges are wide on purpose (P90/P10 over 10), and the curve used is reported', () => {
+  const sit = { hazard: 'EQ', lat: 30, lon: 50, magnitude: 6.8, depth: 10, iso2: 'TR', countryVul: 0.5 }; sit.radiusKm = AA.prediction.impactRadius(sit);
+  const z = AA.prediction.buildZones(sit, [{ name: 'A', lat: 30.05, lon: 50, population: 300000, type: 'city' }]); const fc = AA.prediction.forecast(sit, z);
+  return fc.summary.fat.p90 / Math.max(1, fc.summary.fat.p10) > 10 && fc.fatCurve.status === 'country' && fc.fatCurve.rateSd === 0.7 && fc.fatCurve.shiftSd === 0.8;
+});
+t('3.1: a zone is an area — averaging shaking over its extent never raises deaths in a zone that sits on the epicentre', () => {
+  const sit = { hazard: 'EQ', lat: 30, lon: 50, magnitude: 7, depth: 8, iso2: 'IR', countryVul: 0.5 }; sit.radiusKm = AA.prediction.impactRadius(sit);
+  const z1 = { name: 'x', lat: 30, lon: 50, type: 'city' };
+  const a = AA.prediction.buildZones(sit, [{ ...z1, population: 100000 }]); AA.prediction.forecast(sit, a); const f1 = a.reduce((b, z) => (z.distKm < b.distKm ? z : b)).fc.fat.p50;
+  a.forEach((z) => (z.rz = 0)); AA.prediction.forecast(sit, a); const f0 = a.reduce((b, z) => (z.distKm < b.distKm ? z : b)).fc.fat.p50;
+  return f1 <= f0 * 1.001;
+});
+t('3.1: pipeline notes a deep earthquake and the back-test marks Hindu Kush 2015 (231 km) as not scored', async () => {
+  const sit = { hazard: 'EQ', lat: 36.5, lon: 70.4, magnitude: 7.5, depth: 231, iso2: 'AF' };
+  const r = await AA.pipelines.forecast(sit, { reverse: false });
+  return r.notes.some((n) => /Deep earthquake/.test(n)) && BT.CATALOG.find((e) => e.id === 'EQ-2015-10-26').mode === 'deep' && ['worldpop', 'osm', 'modelled'].includes(r.quality);
+});
+t('3.1: lookups are retried with back-off before giving up', async () => {
+  const keep = D.retryDelays; D.retryDelays = [0, 0]; let n = 0;
+  const v = await D.retry(async () => { if (++n < 3) throw new Error('busy'); return 'ok'; });
+  let n2 = 0; let failed = false; try { await D.retry(async () => { n2++; throw new Error('down'); }); } catch (e) { failed = true; }
+  D.retryDelays = keep; return v === 'ok' && n === 3 && failed && n2 === 3;
+});
+t('3.1: back-test summary reports accuracy separately by how people were counted (WorldPop / OSM / modelled)', () => {
+  const mk = (q, le) => ({ scored: true, fat: {}, quality: q, score: { inside: Math.abs(le) < 0.5, logErr: le, below: false, above: false, within3: true, within10: true } });
+  const sm = BT.summarise([mk('osm', 0.1), mk('osm', 1), mk('modelled', 2)]);
+  return sm.byQuality.osm.n === 2 && sm.byQuality.osm.inside === 1 && sm.byQuality.modelled.n === 1 && !sm.byQuality.worldpop;
+});

@@ -4,7 +4,7 @@
 const path = require('path');
 globalThis.solver = require('javascript-lp-solver');
 const R = (f) => require(path.join(__dirname, '..', f));
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js'].forEach(R);
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js'].forEach(R);
 const AA = globalThis.AA, M = AA.math, P = AA.prediction, W = AA.workspace, D = AA.data, ENG = AA.engine;
 
 let pass = 0, fail = 0;

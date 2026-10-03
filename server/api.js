@@ -17,7 +17,7 @@ const UA = process.env.AIDATLAS_USER_AGENT || `AidAtlas-API/${VERSION} (+https:/
 const rawFetch = globalThis.fetch;
 globalThis.fetch = (u, init = {}) => rawFetch(u, { ...init, headers: { 'User-Agent': UA, ...(init.headers || {}) } });
 globalThis.solver = require('javascript-lp-solver');
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/models/backtest.js', 'js/models/cards.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js', 'js/exports.js', 'js/ui/report.js'].forEach((f) => require(path.join(ROOT, f)));
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/models/backtest.js', 'js/models/cards.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js', 'js/exports.js', 'js/ui/report.js'].forEach((f) => require(path.join(ROOT, f)));
 const AA = globalThis.AA, M = AA.math, P = AA.prediction, D = AA.data, ENG = AA.engine, RD = AA.readiness, PL = AA.pipelines, W = AA.workspace;
 
 // ---------------- tiers (Freemium plan: Team 50,000 calls/month, Agency 500,000) ----------------

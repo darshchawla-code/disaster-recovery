@@ -83,7 +83,7 @@ the explainer with the **applied calculation for that run**.
 ## The models (see `skills/`)
 
 - **Prediction** — intensity attenuation (MMI) / Holland-type wind decay, fragility curves,
-  PAGER-style fatality model, 400-draw Monte Carlo → P10/P50/P90, Swanson–Megill scenario
+  USGS PAGER country fatality curves (model 3.1; indicative until re-validated), 400-draw Monte Carlo → P10/P50/P90, Swanson–Megill scenario
   weights, Gaussian Bayesian update from field reports.
 - **Fairness** — normalised need score (severity, people at risk, vulnerability, access,
   received), Sphere-standard demand netted against deliveries, need-weighted minimax per

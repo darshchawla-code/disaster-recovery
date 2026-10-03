@@ -2,7 +2,7 @@
    Run: node tests/addresses.test.js */
 const path = require('path');
 globalThis.solver = require('javascript-lp-solver');
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js'].forEach((f) => require(path.join(__dirname, '..', f)));
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/engine.js'].forEach((f) => require(path.join(__dirname, '..', f)));
 const AA = globalThis.AA, P = AA.prediction, D = AA.data, ENG = AA.engine, M = AA.math;
 let pass = 0, fail = 0; const q = [];
 const t = (n, fn) => q.push([n, fn]);

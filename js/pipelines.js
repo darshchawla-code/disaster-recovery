@@ -13,6 +13,14 @@
     if (!sit.iso2 && opts.reverse !== false) { try { const r = await D.reverse(sit.lat, sit.lon); sit.iso2 = r.iso2; sit.country = sit.country || r.country; } catch (e) { notes.push('Country lookup unavailable.'); } }
     try { sit.countryIdx = await D.countryIndex(sit.iso2); } catch (e) { sit.countryIdx = { vul: 0.5, lcc: 0.5, prov: 'assumed' }; notes.push('Country indicators unavailable; vulnerability assumed 0.5.'); }
     sit.countryVul = sit.countryIdx.vul;
+    if (sit.countryIdx.prov === 'assumed' && sit.iso2) notes.push('Country indicators unavailable; vulnerability assumed 0.5.');
+    if (sit.hazard === 'EQ') {
+      sit.fatParams = AA.fatCurve ? AA.fatCurve(sit.iso2) : null;
+      if (sit.fatParams && sit.fatParams.status === 'global') notes.push('No country fatality curve found; a median curve is used (wider range).');
+      if ((sit.depth || 0) > 70) notes.push('Deep earthquake (over 70 km): shaking at the surface is weaker and patchier than this model assumes; treat the deaths range as unreliable.');
+    }
+    // modelled sectors (used only when OpenStreetMap gives too few places): national average density, not a flat guess
+    if (!sit.popDensity && sit.countryIdx.density > 0) sit.popDensity = M.clamp(sit.countryIdx.density, 5, 1000);
     sit.radiusKm = sit.hazard === 'FL' ? (sit.radiusKm || 40) : P.impactRadius(sit);
     step('Finding towns (OpenStreetMap)…');
     let places = []; try { places = await D.places(sit, Math.min(sit.radiusKm, 120)); } catch (e) { notes.push('OpenStreetMap places unavailable; modelled population sectors used.'); }
@@ -22,7 +30,9 @@
       try { const pops = await AA.engine.worldpopZones(zones); zones.forEach((z, i) => { const v = pops.counts[i]; if (v > 0) { z.pop = v; z.popProv = 'WorldPop 2020'; } }); } catch (e) { notes.push('WorldPop unavailable; OpenStreetMap populations used.'); }
     }
     const fc = P.forecast(sit, zones);
-    return { sit, zones, fc, places: places.length, notes };
+    // how were people counted? worldpop > osm places > modelled sectors (lowest confidence)
+    const quality = zones.some((z) => z.popProv === 'WorldPop 2020') ? 'worldpop' : places.length >= 4 ? 'osm' : 'modelled';
+    return { sit, zones, fc, places: places.length, notes, quality };
   };
 
   /** Default design intensity per hazard (same as the Plan-mode defaults). */

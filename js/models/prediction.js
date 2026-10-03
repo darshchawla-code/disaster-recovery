@@ -30,13 +30,14 @@
   };
 
   /** Damage fractions from intensity. shift = fragility perturbation (MC). V = country vulnerability 0..1 */
-  P.impact = (hazard, I, V = 0.5, shift = 0, sub) => {
+  P.impact = (hazard, I, V = 0.5, shift = 0, sub, fp) => {
     if (hazard === 'EQ') {
       const fAff = M.Phi((I - 6.5 - shift) / 0.8);
       const fDis = 0.4 * M.Phi((I - 8.2 + 1.2 * (V - 0.5) - shift) / 0.8); // weaker housing → displaced at lower shaking
       const sev = M.Phi((I - 8.5 - shift) / 0.8);
       const theta = 13.5 + 2.5 * (1 - V) + shift;
-      const fFat = M.Phi(Math.log(I / theta) / 0.17);
+      // fatalities: USGS PAGER country curve Phi(ln(MMI/theta)/beta) when given (fp), else the old single curve
+      const fFat = fp ? M.Phi(Math.log(Math.max(1, I - shift) / fp.theta) / fp.beta) : M.Phi(Math.log(I / theta) / 0.17);
       return { fAff, fDis, sev, fFat, injPerFat: 3.5 };
     }
     if (hazard === 'TC') {
@@ -189,13 +190,14 @@
       const dens = sit.popDensity || 400; // persons/km² assumption, labelled
       const ringR = 0.45 * R, areaCore = Math.PI * (0.3 * R) ** 2, areaSector = (Math.PI * R * R - areaCore) / 6;
       // modelled areas: named from the map (reverse geocoding) by the engine; these labels are only a fallback
-      zones.push({ name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
+      zones.push({ rz: 0.3 * R, name: 'Area at the centre', lat: c.lat, lon: c.lon, pop: dens * areaCore * 1.5, type: 'sector', popProv: 'modelled', needsName: true });
       for (let k = 0; k < 6; k++) {
         const p = M.destination(c, k * 60 + 30, ringR);
-        zones.push({ name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
+        zones.push({ rz: Math.sqrt(areaSector / Math.PI), name: `Area ${Math.round(ringR)} km ${['north-east', 'east', 'south-east', 'south-west', 'west', 'north-west'][k]}`, lat: p.lat, lon: p.lon, pop: dens * areaSector, type: 'sector', popProv: 'modelled', needsName: true });
       }
     }
     zones.forEach((z) => {
+      if (z.rz == null) z.rz = z.type === 'village' || z.type === 'hamlet' ? 1 : M.clamp(Math.sqrt(z.pop / (z.type === 'town' ? 2500 : 4000) / Math.PI), 1, 15); // people live over an area, not at one point
       z.distKm = M.haversine(src, z);
       z.I = P.intensity(sit, z.distKm);
       const im = P.impact(sit.hazard, z.I, sit.countryVul, 0, sit.floodKind);
@@ -213,10 +215,23 @@
     return zones;
   };
 
+  /** Distances (km from the source) of five points that stand for the whole zone: its centre, the near and far
+   *  edges and the two side points. A zone is an area; evaluating shaking only at its centre overstates deaths
+   *  next to the epicentre, where shaking falls fast with distance. */
+  P.zoneDistances = (z) => {
+    const d = z.distKm, e = 0.6 * (z.rz || 0);
+    return e < 0.3 ? [d] : [d, Math.max(0, d - e), d + e, Math.hypot(d, e), Math.hypot(d, e)];
+  };
+
   /** Monte-Carlo forecast per zone → P10/P50/P90 and three weighted scenarios. */
   P.forecast = (sit, zones, draws = AA.config.mcDraws, seed = AA.config.seed) => {
     const rng = M.mulberry32(seed);
     const V = sit.countryVul ?? 0.5;
+    // earthquakes: country fatality curve (USGS PAGER) and honest, a-priori uncertainty (not tuned on the back-test):
+    // shaking estimate ±0.8 MMI (simple attenuation law) and a log-normal spread on the death rate (country-fit scatter)
+    const fp = sit.hazard === 'EQ' ? (sit.fatParams || (AA.fatCurve ? AA.fatCurve(sit.iso2) : null)) : null;
+    const rateSd = fp ? { country: 0.7, group: 1.0, global: 1.2 }[fp.status] ?? 1.0 : 0;
+    const shiftSd = sit.hazard === 'EQ' ? 0.8 : 0.3;
     const samples = zones.map(() => ({ aff: [], dis: [], inj: [], fat: [], sev: [] }));
     const totals = { aff: [], dis: [], inj: [], fat: [] };
     for (let n = 0; n < draws; n++) {
@@ -224,13 +239,21 @@
       if (sit.hazard === 'EQ') mag += 0.2 * M.gauss(rng);
       else if (sit.hazard === 'TC') mag *= Math.exp(0.12 * M.gauss(rng));
       else mag = M.clamp(mag * Math.exp(0.15 * M.gauss(rng)), 0, 1);
-      const shift = 0.3 * M.gauss(rng);
+      const shift = shiftSd * M.gauss(rng);
+      const rateNoise = rateSd ? Math.exp(rateSd * M.gauss(rng)) : 1;
       const tot = { aff: 0, dis: 0, inj: 0, fat: 0 };
       zones.forEach((z, i) => {
         const pop = z.pop * Math.exp(0.2 * M.gauss(rng));
-        const I = z.sObs != null ? M.clamp(z.sObs * (mag / (sit.magnitude || 1)), 0, 1) : P.intensity(sit, z.distKm, mag); // observed river flow overrides distance decay
-        const im = P.impact(sit.hazard, I, V, shift, sit.floodKind);
-        const aff = pop * im.fAff, dis = pop * im.fDis, fat = pop * im.fFat, inj = fat * im.injPerFat;
+        let im;
+        if (sit.hazard === 'EQ' && z.sObs == null) { // average over the zone's area (five points)
+          const ds = P.zoneDistances(z), acc = { fAff: 0, fDis: 0, sev: 0, fFat: 0 };
+          ds.forEach((d) => { const m1 = P.impact('EQ', P.intensity(sit, d, mag), V, shift, sit.floodKind, fp); acc.fAff += m1.fAff; acc.fDis += m1.fDis; acc.sev += m1.sev; acc.fFat += m1.fFat; });
+          im = { fAff: acc.fAff / ds.length, fDis: acc.fDis / ds.length, sev: acc.sev / ds.length, fFat: acc.fFat / ds.length, injPerFat: 3.5 };
+        } else {
+          const I = z.sObs != null ? M.clamp(z.sObs * (mag / (sit.magnitude || 1)), 0, 1) : P.intensity(sit, z.distKm, mag); // observed river flow overrides distance decay
+          im = P.impact(sit.hazard, I, V, shift, sit.floodKind, fp);
+        }
+        const aff = pop * im.fAff, dis = pop * im.fDis, fat = pop * Math.min(1, im.fFat * rateNoise), inj = fat * im.injPerFat;
         const s = samples[i];
         s.aff.push(aff); s.dis.push(dis); s.inj.push(inj); s.fat.push(fat); s.sev.push(im.sev);
         tot.aff += aff; tot.dis += dis; tot.inj += inj; tot.fat += fat;
@@ -244,7 +267,7 @@
       if (z.sevPost == null) z.sevMean = z.fc.sev.p50; // Bayesian posterior overrides when present
     });
     const summary = {}; Object.keys(totals).forEach((k) => (summary[k] = q(totals[k])));
-    return { draws, seed, summary };
+    return { draws, seed, summary, fatCurve: fp ? { ...fp, rateSd, shiftSd } : null };
   };
 
   /** Scenario value: s ∈ {low, base, high} → P10/P50/P90 */

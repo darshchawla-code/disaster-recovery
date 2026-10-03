@@ -6,17 +6,18 @@
   // status: 'validated' (systematic back-test) · 'tested' (automated checks) · 'calibrated' (fitted to a few documented events) · 'indicative' (order of magnitude only)
   C.CARDS = [
     {
-      id: 'EQ', title: 'Earthquake impact', status: 'validated',
+      id: 'EQ', title: 'Earthquake impact', status: 'indicative',
       purpose: 'People affected, displaced, injured and killed around an earthquake, by area, with a 10–90 % range.',
       method: [
         'Shaking (Modified Mercalli intensity) = a + 1.5·M − 4·log10(distance), with distance measured from the rupture (length from Wells & Coppersmith 1994) and the depth; a = 2.5, or fitted to the USGS observed intensity for live events.',
-        'Damage curves (lognormal, of the kind used by USGS PAGER): affected from intensity 6.5, displaced from about 8, deaths rise steeply above about 9; weaker housing (country vulnerability from World Bank indicators) shifts the curves down.',
-        '400 simulations vary magnitude (±0.2), population (±20 %) and building fragility; P10, P50 and P90 are read from them.',
+        'Affected and displaced: lognormal damage curves (affected from intensity 6.5, displaced from about 8); weaker housing (country vulnerability from World Bank indicators) shifts them down.',
+        'Deaths: the USGS PAGER empirical model, share killed = Φ(ln(intensity/θ)/β), with a separate θ and β for each of 252 countries and territories (Jaiswal & Wald 2010).',
+        '400 simulations vary magnitude (±0.2), shaking (±0.8 intensity units), population (±20 %) and the country death rate (a log-normal spread of 0.7, or 1.0 where the country uses a group curve). These spreads are stated assumptions, not fitted to the back-test; P10, P50 and P90 are read from them.',
         'Live events: the USGS PAGER loss estimate replaces the model’s deaths when published; GDACS-reported counts are a floor.',
       ],
       inputs: 'Magnitude, depth and location (USGS / GDACS or user); towns and populations (OpenStreetMap, WorldPop 2020 in plans); World Bank country indicators.',
-      evidence: 'Systematic back-test against the NOAA NCEI catalogue (every earthquake since 2001 with 250+ deaths, run on this page). Automated checks: Nepal 2015 and Türkiye 2023 inside the forecast range.',
-      limits: ['No tsunami, landslide or liquefaction: those deaths are not modelled (such events are shown but not scored).', 'Uses today’s population for past events.', 'Building quality only through a national vulnerability index, so places with strict building codes may be over-forecast and very weak housing under-forecast (see the back-test table).', 'Aftershocks only when a planner adds one.'],
+      evidence: 'Back-test against the NOAA NCEI catalogue (every earthquake since 2001 with 250+ deaths, run on this page). Model 3.0 missed badly (the reported toll fell inside the range for only 26 % of events, typical error about ×48), so 3.1 uses the PAGER country curves and wider ranges; its own result is shown on this page once run. Treat death figures as order-of-magnitude. Live events use the USGS PAGER estimate where published.',
+      limits: ['No tsunami, landslide or liquefaction: those deaths are not modelled (such events are shown but not scored).', 'Deep earthquakes (over 70 km) are not scored and not reliable.', 'Uses today’s population for past events.', 'Building quality only through a national vulnerability index, so places with strict building codes may be over-forecast and very weak housing under-forecast (see the back-test table).', 'Aftershocks only when a planner adds one.'],
     },
     {
       id: 'TC', title: 'Tropical cyclone impact', status: 'indicative',

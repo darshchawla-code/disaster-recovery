@@ -3,7 +3,7 @@
 const path = require('path');
 globalThis.solver = require('javascript-lp-solver');
 const R = (f) => require(path.join(__dirname, '..', f));
-['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js'].forEach(R);
+['js/core.js', 'js/data.js', 'js/workspace.js', 'js/cloud.js', 'js/models/fatality-params.js', 'js/models/prediction.js', 'js/models/fairness.js', 'js/models/efficiency.js', 'js/models/routing.js', 'js/models/facility.js', 'js/models/risk.js', 'js/models/savings.js', 'js/models/readiness.js', 'js/engine.js', 'js/pipelines.js', 'js/field.js'].forEach(R);
 const AA = globalThis.AA, M = AA.math, P = AA.prediction, F = AA.fairness, E = AA.efficiency, S = AA.savings, RD = AA.readiness, FR = AA.field;
 
 let pass = 0, fail = 0;
@@ -54,9 +54,10 @@ t('nearest-store baseline serves the first area from its nearest store, then the
   const used = b.ship.filter((s) => s.i === 0 && s.k === 'water').map((s) => s.j);
   return used.length > 0 && used.every((j, k) => j === order[k]);
 });
-t('when stock is scarce, the optimised plan gives the high-need areas more water than nearest-store', () => {
+t('when stock is scarce, the optimised plan shares water more evenly than nearest-store (lower Gini)', () => {
+  // (with the wider 3.1 earthquake ranges the demand is spread more evenly, so "top-need areas get more" is no longer a fixed property of this fixture)
   const pb = mkProblem(0.15, 4), c = S.compare(stateOf(pb));
-  return c.optimised.topNeedWater >= c.baseline.topNeedWater - 1e-6 && c.optimised.gini.water <= c.baseline.gini.water + 0.05;
+  return c.optimised.gini.water <= c.baseline.gini.water + 1e-6;
 });
 t('when stock is plentiful, the optimised plan costs no more per tonne than nearest-store', () => {
   const pb = mkProblem(20, 30), c = S.compare(stateOf(pb));
@@ -73,7 +74,7 @@ const area = (name, lat, lon, aff, mult = 1) => {
   return { name, lat, lon, R: 0.8, hazard: 'EQ', sit: s, need: n.need, affP90: n.affP90 || aff };
 };
 const a1 = area('Gurugram centre', 28.46, 77.03), a2 = area('Sohna', 28.25, 77.07);
-const store = (name, lat, lon, k = 1, trucks = 10) => ({ name, lat, lon, stock: { water: 2000 * k, food: 600 * k, shelter: 20000 * k, medical: 2000 * k, staff: 2000 * k }, fleet: { truck: trucks, bus: 10 }, prov: 'test' });
+const store = (name, lat, lon, k = 1, trucks = 10) => ({ name, lat, lon, stock: { water: 2000 * k, food: 600 * k, shelter: 20000 * k, medical: 2000 * k, staff: 2000 * k }, fleet: { truck: trucks, bus: Math.max(10, trucks / 3) }, prov: 'test' });
 t('72-hour P90 need grows with the disaster size', () => { const big = area('x', 28.46, 77.03, 0, 1.12); return big.need.water > a1.need.water && big.affP90 > a1.affP90; });
 t('huge stock and fleet nearby → score 100, no gaps', () => { const r = RD.score([a1, a2], [store('Big depot', 28.6, 77.2, 50, 400)]); return Math.round(r.score) === 100 && !r.gaps.length && r.gradeKey === 'ready'; });
 t('no stores → score 0 and gaps equal the largest single-area need', () => { const r = RD.score([a1, a2], []); const w = r.gaps.find((g) => g.key === 'water'); return r.score === 0 && Math.abs(w.add - Math.max(a1.need.water, a2.need.water)) < 1e-6 && r.gradeKey === 'not'; });

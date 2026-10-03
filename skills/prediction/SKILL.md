@@ -27,7 +27,12 @@ Earthquake (MMI, normal fragility on the intensity scale, Φ = standard normal C
 - affected fraction `f_aff = Φ((I − 6.5)/0.8)` (strong shaking and above)
 - displaced fraction `f_dis = 0.4·Φ((I − 8.2 + 1.2(V − 0.5))/0.8)` (weaker housing, higher V, means people lose homes at lower shaking;  calibrated against Türkiye 2023 and Nepal 2015 displacement)
 - heavy-damage fraction (severity used for need) `sev = Φ((I − 8.5)/0.8)`
-- fatality rate (PAGER-style lognormal) `ν = Φ(ln(I/θ)/β)`, `θ = 13.5 + 2.5(1 − V)`, `β = 0.17`
+- fatality rate (USGS PAGER, model 3.1) `ν = Φ(ln((I − shift)/θ)/β)` with a per-country θ, β from `js/models/fatality-params.js` (`AA.fatCurve(iso2)`; 252 countries, Jaiswal & Wald 2010; unknown country → median curve, status `global`). Pass the curve to `P.impact(..., fp)`; `P.forecast` does this from `sit.fatParams` or `sit.iso2`. The old single curve (θ = 13.5 + 2.5(1 − V), β = 0.17) is kept only for callers that give no curve.
+- uncertainty (model 3.1, stated assumptions, NOT tuned on the back-test): shaking ±0.8 intensity units; log-normal spread on the death rate 0.7 (country curve), 1.0 (group curve), 1.2 (global); population ±20 %; magnitude ±0.2.
+- a zone is an area: `P.zoneDistances(z)` evaluates five points across the zone (`z.rz` km) and averages the fractions.
+- exposure: modelled sectors use the national population density (World Bank EN.POP.DNST, clamped 5–1000 /km²), not a flat 400; WorldPop is better and should be used for any judgement of accuracy.
+- deep earthquakes (> 70 km) are flagged and not scored.
+- Honest status (back-test 3.0, 39 events): reported toll inside P10–P90 for only 26 %, typical error ×48. 3.1 is unproven until the back-test is re-run (Validation page, tick WorldPop).
 - injuries `= 3.5 × fatalities` (WHO ratio 3:1–4:1)
 
 Cyclone (wind, lognormal fragility): `f_aff = Φ(ln(V/120)/0.25)`, `f_dis = Φ(ln(V/160)/0.25)`,
