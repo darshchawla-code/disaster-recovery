@@ -336,8 +336,9 @@ details.card[open] { display: grid; gap: 8px; }
       </div>
     </div>
     <aside class="livebox" aria-live="polite">
-      <h2><span><span class="eyebrow">Live now</span> · top 5 by unified severity</span><a href="app.html?mode=live" class="small">Open map →</a></h2>
+      <h2><span><span class="eyebrow">Live now</span> · <span id="liveTitle">top 5 by unified severity</span></span><a href="app.html?mode=live" class="small">Open map →</a></h2>
       <ol id="live"><li class="empty"><span class="spin"></span> Reading GDACS, USGS and NASA EONET…</li></ol>
+      <p class="small" id="liveNav" style="margin:8px 0 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between"></p>
     </aside>
   </section>
 
@@ -345,7 +346,7 @@ details.card[open] { display: grid; gap: 8px; }
     <a class="mode" href="app.html?mode=live">
       <svg viewBox="0 0 48 48" fill="none" stroke="#23262b" stroke-width="1.6" stroke-linecap="round"><circle cx="24" cy="24" r="4" fill="#16a34a" stroke="none"/><circle cx="24" cy="24" r="11"/><path d="M8 24a16 16 0 0 1 32 0M4 24a20 20 0 0 1 40 0" opacity=".6"/></svg>
       <span class="n">Mode 1</span><h3>Live</h3>
-      <p>Current disasters worldwide from satellites and agencies, ranked by severity. Open one to see the affected area, supply stores and routed aid.</p>
+      <p>Current disasters in your country (or worldwide) from satellites and agencies, ranked by severity. Open one to see the affected area, supply stores and routed aid.</p>
       <span class="go">See live events →</span>
     </a>
     <a class="mode" href="app.html?mode=plan">
@@ -464,7 +465,7 @@ details.card[open] { display: grid; gap: 8px; }
   AA.math = M;
 
   /** Version of the forecast and planning models; back-test results and model cards refer to it. */
-  AA.MODEL_VERSION = '3.1.2';
+  AA.MODEL_VERSION = '3.1.3';
 
   // ---------- configuration (all editable in Settings) ----------
   AA.config = {
@@ -975,16 +976,46 @@ details.card[open] { display: grid; gap: 8px; }
 </script>
 <script>
 (async () => {
-  const ol = document.getElementById('live');
+  const ol = document.getElementById('live'), nav = document.getElementById('liveNav'), ttl = document.getElementById('liveTitle');
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  try {
-    const { events } = await AA.data.liveEvents();
-    const top = events.slice(0, 5);
-    if (!top.length) { ol.innerHTML = '<li class="empty">No current events reported.</li>'; return; }
+  const lsGet = (k) => { try { return JSON.parse(localStorage.getItem('aa.' + k) || 'null'); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem('aa.' + k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
+  const PAGE = 5, MAX = 20;
+  const sc = { world: false, page: 0, country: lsGet('liveCountry') || AA.data.localeCountry() };
+  let events = [];
+  const draw = async () => {
+    const c = sc.country;
+    if (c && !c.bbox && !sc.world && events.some((e) => !e.country)) { c.bbox = lsGet('liveBox:' + c.iso2) || await AA.data.countryBox(c); if (c.bbox) lsSet('liveBox:' + c.iso2, c.bbox); }
+    let world = sc.world || !c, note = '';
+    let pool = world ? events : events.filter((e) => AA.data.inCountry(e, c));
+    if (!world && !pool.length) { pool = events; world = true; note = 'No current events in ' + esc(c.country) + ', showing the world'; }
+    const total = Math.min(pool.length, MAX), pages = Math.max(1, Math.ceil(total / PAGE));
+    sc.page = Math.min(sc.page, pages - 1);
+    const start = sc.page * PAGE, top = pool.slice(start, start + PAGE);
+    ttl.textContent = (sc.page === 0 ? 'top 5 ' : 'ranks ' + (start + 1) + '–' + (start + top.length) + ' ') + (world ? 'worldwide' : 'in ' + c.country);
+    if (!top.length) { ol.innerHTML = '<li class="empty">No current events reported.</li>'; nav.innerHTML = ''; return; }
     ol.innerHTML = top.map((e, k) => `<li><a href="app.html?mode=live&event=${encodeURIComponent(e.id)}">
-      <span class="rk">${k + 1}</span><span class="chip ${e.hazard}">${e.hazard}</span>
+      <span class="rk">${start + k + 1}</span><span class="chip ${e.hazard}">${e.hazard}</span>
       <span class="ttl">${esc(e.name)}<br><small>${esc(e.country || '')}</small></span>
       <span class="num small">${e.usi.toFixed(2)}</span></a></li>`).join('');
+    const sw = world ? (c && !note ? '<a href="#" id="lnCountry">Show top 5 in ' + esc(c.country) + '</a>' : '') : '<a href="#" id="lnWorld">Show top 5 of the world</a>';
+    nav.innerHTML = '<span>' + [sw, '<a href="app.html?mode=live">' + (c ? 'Change country' : 'Choose your country') + '</a>'].filter(Boolean).join(' · ') + '</span>' +
+      (pool.length > PAGE ? '<span>' + (sc.page > 0 ? '<a href="#" id="lnPrev">Previous 5</a> · ' : '') + (sc.page < pages - 1 ? '<a href="#" id="lnNext">Next 5</a>' : '<span class="muted">Ranks ' + (start + 1) + '–' + (start + top.length) + ' of ' + total + '</span>') + '</span>' : '') +
+      (note ? '<span class="muted" style="flex-basis:100%">' + note + '</span>' : '');
+    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', (ev) => { ev.preventDefault(); fn(); }); };
+    on('lnWorld', () => { sc.world = true; sc.page = 0; draw(); });
+    on('lnCountry', () => { sc.world = false; sc.page = 0; draw(); });
+    on('lnPrev', () => { sc.page--; draw(); });
+    on('lnNext', () => { sc.page++; draw(); });
+  };
+  try {
+    events = (await AA.data.liveEvents()).events;
+    await draw();
+    // once per device: ask for the location so "your country" is exact (shared with the app, which asks only once too)
+    if (!lsGet('liveCountry') && !lsGet('liveGeoAsked')) {
+      lsSet('liveGeoAsked', 1);
+      AA.data.geoCountry().then((g) => { if (g) { sc.country = g; sc.world = false; sc.page = 0; lsSet('liveCountry', g); draw(); } });
+    }
   } catch (err) {
     ol.innerHTML = `<li class="empty">Live feeds could not be reached (${esc(err.message)}). Open the map to retry.</li>`;
   }

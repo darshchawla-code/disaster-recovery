@@ -87,7 +87,7 @@
   AA.math = M;
 
   /** Version of the forecast and planning models; back-test results and model cards refer to it. */
-  AA.MODEL_VERSION = '3.1.2';
+  AA.MODEL_VERSION = '3.1.3';
 
   // ---------- configuration (all editable in Settings) ----------
   AA.config = {
