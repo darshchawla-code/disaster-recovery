@@ -20,7 +20,7 @@ names link to the applied calculation, and the dynamic-response control panel.
    Current events only (GDACS `iscurrent` within 14 days, or updated within 7 days); prescribed burns excluded;
    EONET acres converted to hectares; ties broken by recency. Cyclone planning wind is capped to the current
    episode's alert band (Green 118, Orange 177 km/h) because GDACS reports the lifetime maximum.
-3. Show the Top 5 (country, hazard, magnitude, alert, time). Click → planning view.
+3. Show the Top 5 of the viewer's country (country, hazard, magnitude, alert, time). Click → planning view. Country = device location (asked once, `D.geoCountry`) else browser language (`D.localeCountry`), remembered in `aa.liveCountry`; change via the picker. Matching: `D.inCountry` (GDACS iso2/names, USGS last place token or US state, EONET by country bounding box `D.countryBox`). Links: "Show top 5 of the world" / back; Next 5 / Previous 5 through ranks 1–20 (`app.liveScope`); an empty country falls back to the world with a note. Map rank numbers follow the page (`rankOffset`). E2E: /tmp/t/e2e_livescope.js pattern (stub GDACS/USGS, grant geolocation).
 4. Auto-refresh every 10 min; magnitude changes feed the Bayesian update.
 
 ## Mode 2 — Plan (data on demand)

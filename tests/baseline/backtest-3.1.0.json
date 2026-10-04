@@ -1,0 +1,422 @@
+{
+ "model": "3.1.0",
+ "worldpop": false,
+ "run_at": "2026-10-03T14:01:20.434Z",
+ "note": "Best live result so far (first run of model 3.1.0, OpenStreetMap populations). New model versions must not score worse: tools/backtest-compare.js",
+ "summary": {
+  "n": 38,
+  "inside": 23,
+  "coverage": 0.6052631578947368,
+  "below": 3,
+  "above": 12,
+  "typicalFactor": 12.749078706536881,
+  "bias": 0.2623052029805354,
+  "within3": 0.23684210526315788,
+  "within10": 0.47368421052631576,
+  "byQuality": {
+   "osm": {
+    "n": 38,
+    "inside": 23,
+    "typicalFactor": 12.749078706536881
+   }
+  }
+ },
+ "events": [
+  {
+   "id": "EQ-2001-01-13",
+   "mode": "shaking",
+   "deaths": 844,
+   "p10": 1.381,
+   "p50": 25.368,
+   "p90": 236.256,
+   "scored": true
+  },
+  {
+   "id": "EQ-2001-01-26",
+   "mode": "shaking",
+   "deaths": 20005,
+   "p10": 104.804,
+   "p50": 5967.31,
+   "p90": 76598.155,
+   "scored": true
+  },
+  {
+   "id": "EQ-2001-02-13",
+   "mode": "shaking",
+   "deaths": 315,
+   "p10": 9.549,
+   "p50": 79.333,
+   "p90": 422.207,
+   "scored": true
+  },
+  {
+   "id": "EQ-2002-03-25",
+   "mode": "shaking",
+   "deaths": 1000,
+   "p10": 32.829,
+   "p50": 364.659,
+   "p90": 2526.505,
+   "scored": true
+  },
+  {
+   "id": "EQ-2002-06-22",
+   "mode": "shaking",
+   "deaths": 261,
+   "p10": 15.518,
+   "p50": 907.811,
+   "p90": 8758.511,
+   "scored": true
+  },
+  {
+   "id": "EQ-2003-02-24",
+   "mode": "shaking",
+   "deaths": 261,
+   "p10": 0.026,
+   "p50": 19.799,
+   "p90": 1146.596,
+   "scored": true
+  },
+  {
+   "id": "EQ-2003-05-21",
+   "mode": "shaking",
+   "deaths": 2287,
+   "p10": 1.868,
+   "p50": 69.953,
+   "p90": 1107.134,
+   "scored": true
+  },
+  {
+   "id": "EQ-2003-12-26",
+   "mode": "shaking",
+   "deaths": 31000,
+   "p10": 145.365,
+   "p50": 7453.75,
+   "p90": 59618.686,
+   "scored": true
+  },
+  {
+   "id": "EQ-2004-02-24",
+   "mode": "shaking",
+   "deaths": 628,
+   "p10": 1841.968,
+   "p50": 10142.607,
+   "p90": 67099.607,
+   "scored": true
+  },
+  {
+   "id": "EQ-2004-12-26",
+   "mode": "tsunami",
+   "deaths": 227899,
+   "p10": 774.202,
+   "p50": 6174.793,
+   "p90": 29474.112,
+   "scored": false
+  },
+  {
+   "id": "EQ-2005-02-22",
+   "mode": "shaking",
+   "deaths": 612,
+   "p10": 0.373,
+   "p50": 204.001,
+   "p90": 8889.689,
+   "scored": true
+  },
+  {
+   "id": "EQ-2005-03-28",
+   "mode": "shaking",
+   "deaths": 1319,
+   "p10": 151.317,
+   "p50": 3554.913,
+   "p90": 29951.752,
+   "scored": true
+  },
+  {
+   "id": "EQ-2005-10-08",
+   "mode": "shaking",
+   "deaths": 76213,
+   "p10": 19.392,
+   "p50": 8294.577,
+   "p90": 218443.23,
+   "scored": true
+  },
+  {
+   "id": "EQ-2006-05-26",
+   "mode": "shaking",
+   "deaths": 6234,
+   "p10": 0.004,
+   "p50": 1.121,
+   "p90": 35.63,
+   "scored": true
+  },
+  {
+   "id": "EQ-2007-08-15",
+   "mode": "shaking",
+   "deaths": 596,
+   "p10": 17.353,
+   "p50": 162.823,
+   "p90": 992.614,
+   "scored": true
+  },
+  {
+   "id": "EQ-2008-05-12",
+   "mode": "shaking",
+   "deaths": 87652,
+   "p10": 1382.532,
+   "p50": 87622.458,
+   "p90": 927208.682,
+   "scored": true
+  },
+  {
+   "id": "EQ-2009-04-06",
+   "mode": "shaking",
+   "deaths": 309,
+   "p10": 9.422,
+   "p50": 190.354,
+   "p90": 1598.431,
+   "scored": true
+  },
+  {
+   "id": "EQ-2009-09-30",
+   "mode": "shaking",
+   "deaths": 1117,
+   "p10": 0.0,
+   "p50": 0.089,
+   "p90": 32.589,
+   "scored": true
+  },
+  {
+   "id": "EQ-2010-01-12",
+   "mode": "disputed",
+   "deaths": 316000,
+   "p10": 1750.58,
+   "p50": 19589.466,
+   "p90": 121111.711,
+   "scored": false
+  },
+  {
+   "id": "EQ-2010-02-27",
+   "mode": "tsunami",
+   "deaths": 558,
+   "p10": 1419.844,
+   "p50": 8432.288,
+   "p90": 34318.596,
+   "scored": false
+  },
+  {
+   "id": "EQ-2010-04-13",
+   "mode": "shaking",
+   "deaths": 2968,
+   "p10": 0.083,
+   "p50": 59.152,
+   "p90": 3127.766,
+   "scored": true
+  },
+  {
+   "id": "EQ-2011-03-11",
+   "mode": "tsunami",
+   "deaths": 18423,
+   "p10": 3135.69,
+   "p50": 64838.676,
+   "p90": 379387.178,
+   "scored": false
+  },
+  {
+   "id": "EQ-2011-10-23",
+   "mode": "shaking",
+   "deaths": 604,
+   "p10": 0.494,
+   "p50": 430.289,
+   "p90": 23433.295,
+   "scored": true
+  },
+  {
+   "id": "EQ-2012-08-11",
+   "mode": "shaking",
+   "deaths": 306,
+   "p10": 0.165,
+   "p50": 230.644,
+   "p90": 14069.488,
+   "scored": true
+  },
+  {
+   "id": "EQ-2013-09-24",
+   "mode": "shaking",
+   "deaths": 825,
+   "p10": 962.857,
+   "p50": 11078.27,
+   "p90": 41150.122,
+   "scored": true
+  },
+  {
+   "id": "EQ-2014-08-03",
+   "mode": "shaking",
+   "deaths": 615,
+   "p10": 0.012,
+   "p50": 28.81,
+   "p90": 2724.844,
+   "scored": true
+  },
+  {
+   "id": "EQ-2015-04-25",
+   "mode": "shaking",
+   "deaths": 8957,
+   "p10": 2541.597,
+   "p50": 17248.87,
+   "p90": 82772.716,
+   "scored": true
+  },
+  {
+   "id": "EQ-2015-10-26",
+   "mode": "deep",
+   "deaths": 399,
+   "p10": 0.0,
+   "p50": 0.003,
+   "p90": 1.063,
+   "scored": false
+  },
+  {
+   "id": "EQ-2016-04-15",
+   "mode": "shaking",
+   "deaths": 273,
+   "p10": 11.508,
+   "p50": 2716.362,
+   "p90": 60227.864,
+   "scored": true
+  },
+  {
+   "id": "EQ-2016-04-16",
+   "mode": "shaking",
+   "deaths": 663,
+   "p10": 96.898,
+   "p50": 2743.354,
+   "p90": 34674.594,
+   "scored": true
+  },
+  {
+   "id": "EQ-2016-08-24",
+   "mode": "shaking",
+   "deaths": 299,
+   "p10": 0.946,
+   "p50": 17.939,
+   "p90": 220.7,
+   "scored": true
+  },
+  {
+   "id": "EQ-2017-09-19",
+   "mode": "shaking",
+   "deaths": 369,
+   "p10": 0.235,
+   "p50": 29.927,
+   "p90": 696.625,
+   "scored": true
+  },
+  {
+   "id": "EQ-2017-11-12",
+   "mode": "shaking",
+   "deaths": 630,
+   "p10": 238.637,
+   "p50": 17647.366,
+   "p90": 205872.429,
+   "scored": true
+  },
+  {
+   "id": "EQ-2018-08-05",
+   "mode": "shaking",
+   "deaths": 560,
+   "p10": 0.0,
+   "p50": 0.154,
+   "p90": 25.031,
+   "scored": true
+  },
+  {
+   "id": "EQ-2018-09-28",
+   "mode": "tsunami",
+   "deaths": 4340,
+   "p10": 0.321,
+   "p50": 23.846,
+   "p90": 802.297,
+   "scored": false
+  },
+  {
+   "id": "EQ-2021-08-14",
+   "mode": "shaking",
+   "deaths": 2248,
+   "p10": 9541.119,
+   "p50": 57794.772,
+   "p90": 219543.996,
+   "scored": true
+  },
+  {
+   "id": "EQ-2022-06-21",
+   "mode": "shaking",
+   "deaths": 1039,
+   "p10": 1.372,
+   "p50": 51.993,
+   "p90": 713.966,
+   "scored": true
+  },
+  {
+   "id": "EQ-2022-11-21",
+   "mode": "shaking",
+   "deaths": 635,
+   "p10": 0.0,
+   "p50": 0.121,
+   "p90": 11.395,
+   "scored": true
+  },
+  {
+   "id": "EQ-2023-02-06",
+   "mode": "shaking",
+   "deaths": 56697,
+   "p10": 184.534,
+   "p50": 27122.031,
+   "p90": 406034.42,
+   "scored": true
+  },
+  {
+   "id": "EQ-2023-09-08",
+   "mode": "shaking",
+   "deaths": 2946,
+   "p10": 0.004,
+   "p50": 12.412,
+   "p90": 1543.299,
+   "scored": true
+  },
+  {
+   "id": "EQ-2023-10-07",
+   "mode": "shaking",
+   "deaths": 1482,
+   "p10": 0.127,
+   "p50": 20.649,
+   "p90": 599.982,
+   "scored": true
+  },
+  {
+   "id": "EQ-2024-01-01",
+   "mode": "shaking",
+   "deaths": 549,
+   "p10": 0.0,
+   "p50": 0.406,
+   "p90": 441.496,
+   "scored": true
+  },
+  {
+   "id": "EQ-2025-03-28",
+   "mode": "shaking",
+   "deaths": 3815,
+   "p10": 2260.791,
+   "p50": 15043.639,
+   "p90": 86008.009,
+   "scored": true
+  },
+  {
+   "id": "EQ-2025-08-31",
+   "mode": "shaking",
+   "deaths": 2205,
+   "p10": 1.247,
+   "p50": 52.923,
+   "p90": 624.322,
+   "scored": true
+  }
+ ]
+}

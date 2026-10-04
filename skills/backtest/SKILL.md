@@ -22,5 +22,7 @@ Each event runs through `PL.forecast` (the same chain as a live event: country i
 - A hazard is "Back-tested" only with a scored back-test; otherwise Calibrated, Checked by automated tests, or Indicative.
 - Bump `AA.MODEL_VERSION` whenever a forecast model changes, so old results are not reused.
 
+- **Regression guard.** Best live result so far is stored in `tests/baseline/backtest-3.1.0.json`. `node tools/backtest-compare.js <run.json>` exits 1 if a new run has fewer than baseline−2 events inside the range, a typical error more than 10 % above ×12.7, or within-×10 more than 6 points lower (tolerance covers map-server failures). A golden-value unit test pins P10/P50/P90 for three fixed earthquakes.
+
 ## Acceptance
 tests/phase3.test.js (catalogue integrity, scoring, summary, CSV, cards) · tests/api.test.js (model-cards, backtest) · E2E: run on the accuracy page, chart, CSV, cards.

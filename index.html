@@ -464,7 +464,7 @@ details.card[open] { display: grid; gap: 8px; }
   AA.math = M;
 
   /** Version of the forecast and planning models; back-test results and model cards refer to it. */
-  AA.MODEL_VERSION = '3.1.1';
+  AA.MODEL_VERSION = '3.1.2';
 
   // ---------- configuration (all editable in Settings) ----------
   AA.config = {
@@ -624,6 +624,50 @@ details.card[open] { display: grid; gap: 8px; }
     all.forEach((e) => Object.assign(e, D.usi(e)));
     all.sort((a, b) => b.usi - a.usi || new Date(b.to) - new Date(a.to));
     return { events: all, errors, counts: { gdacs: gd.length, usgs: us.length, eonet: eo.length } };
+  };
+
+
+  // ---------------- live events by country ----------------
+  const norm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const ALIASES = { US: ['united states', 'usa', 'united states of america'], RU: ['russia', 'russian federation'], TR: ['turkey', 'turkiye'], MM: ['myanmar', 'burma'], KR: ['south korea', 'korea, republic of'], KP: ['north korea'], CZ: ['czechia', 'czech republic'], CD: ['democratic republic of the congo', 'dr congo'], CG: ['republic of the congo', 'congo'], SZ: ['eswatini', 'swaziland'], MK: ['north macedonia', 'macedonia'], TL: ['timor-leste', 'east timor'], IR: ['iran', 'iran, islamic republic of'], VN: ['vietnam', 'viet nam'], TW: ['taiwan'], CI: ["cote d'ivoire", 'ivory coast'], LA: ['laos'], SY: ['syria'], BO: ['bolivia'], VE: ['venezuela'], TZ: ['tanzania'], MD: ['moldova'], PS: ['palestine'], FM: ['micronesia'] };
+  const US_STATES = new Set('alabama,alaska,arizona,arkansas,california,colorado,connecticut,delaware,florida,georgia,hawaii,idaho,illinois,indiana,iowa,kansas,kentucky,louisiana,maine,maryland,massachusetts,michigan,minnesota,mississippi,missouri,montana,nebraska,nevada,new hampshire,new jersey,new mexico,new york,north carolina,north dakota,ohio,oklahoma,oregon,pennsylvania,rhode island,south carolina,south dakota,tennessee,texas,utah,vermont,virginia,washington,west virginia,wisconsin,wyoming,puerto rico,al,ak,az,ar,ca,co,ct,de,fl,ga,hi,id,il,in,ia,ks,ky,la,me,md,ma,mi,mn,ms,mo,mt,ne,nv,nh,nj,nm,ny,nc,nd,oh,ok,or,pa,ri,sc,sd,tn,tx,ut,vt,va,wa,wv,wi,wy'.split(','));
+  /** Does a live event belong to this country? c = { iso2, country, bbox?: [south, north, west, east] }.
+   *  GDACS: country code or listed country names; USGS: the last part of its place name (country, or a US state);
+   *  NASA EONET names no country, so those events count when they lie inside the country's bounding box
+   *  (a border region can therefore include a neighbour's event). */
+  D.inCountry = (e, c) => {
+    if (!c || !c.iso2) return true;
+    if (e.iso2 && String(e.iso2).toUpperCase() === c.iso2) return true;
+    const names = [norm(c.country), ...(ALIASES[c.iso2] || [])].filter(Boolean);
+    const parts = String(e.country || '').split(/[,;/]/).map(norm).filter(Boolean);
+    if (parts.some((p) => names.includes(p))) return true;
+    if (c.iso2 === 'US' && e.src && /USGS/.test(e.src) && parts.some((p) => US_STATES.has(p))) return true;
+    if (!e.country && c.bbox && c.bbox.length === 4) return e.lat >= c.bbox[0] && e.lat <= c.bbox[1] && e.lon >= c.bbox[2] && e.lon <= c.bbox[3];
+    return false;
+  };
+  /** Country from the browser language (no permission needed), e.g. "en-IN" → India. */
+  D.localeCountry = () => {
+    try {
+      const lang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language)) || '';
+      const m = lang.match(/[-_]([A-Za-z]{2})\b/); if (!m) return null;
+      const iso2 = m[1].toUpperCase(), country = new Intl.DisplayNames(['en'], { type: 'region' }).of(iso2);
+      return country && country !== iso2 ? { iso2, country, src: 'browser language' } : null;
+    } catch (e) { return null; }
+  };
+  /** Country of the device's location (asks permission once; resolves null if declined or unavailable). */
+  D.geoCountry = () => new Promise((res) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(async (p) => {
+      try { const r = await D.reverse(p.coords.latitude, p.coords.longitude); res(r.iso2 ? { iso2: r.iso2, country: r.country, src: 'your location' } : null); } catch (e) { res(null); }
+    }, () => res(null), { timeout: 8000, maximumAge: 864e5, enableHighAccuracy: false });
+  });
+  /** Bounding box of a country (for events that carry no country name). */
+  D.countryBox = async (c) => {
+    try {
+      const r = await D.geocode(c.country);
+      const m = r.filter((x) => x.iso2 === c.iso2 && x.bbox).sort((a, b) => (b.bbox[1] - b.bbox[0]) * (b.bbox[3] - b.bbox[2]) - (a.bbox[1] - a.bbox[0]) * (a.bbox[3] - a.bbox[2]))[0];
+      return m ? m.bbox : null;
+    } catch (e) { return null; }
   };
 
   /** Agency-reported human impact for a GDACS event (Sendai-framework entries in geteventdata).

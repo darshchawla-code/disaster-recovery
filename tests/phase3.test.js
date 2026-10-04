@@ -230,3 +230,38 @@ t('3.1: back-test summary reports accuracy separately by how people were counted
   const sm = BT.summarise([mk('osm', 0.1), mk('osm', 1), mk('modelled', 2)]);
   return sm.byQuality.osm.n === 2 && sm.byQuality.osm.inside === 1 && sm.byQuality.modelled.n === 1 && !sm.byQuality.worldpop;
 });
+
+// ---------------- Live: events by country ----------------
+t('live scope: events match a country by code, name token or US state; "Indiana" is not India; "Papua New Guinea" is not Guinea', () => {
+  const IN = { iso2: 'IN', country: 'India' }, GN = { iso2: 'GN', country: 'Guinea' }, US = { iso2: 'US', country: 'United States' };
+  return D.inCountry({ country: 'India, Nepal', iso2: 'NP' }, IN) && !D.inCountry({ country: 'Indiana', src: 'USGS' }, IN) && D.inCountry({ country: 'Guinea' }, GN) && !D.inCountry({ country: 'Papua New Guinea' }, GN)
+    && D.inCountry({ country: 'California', src: 'USGS' }, US) && D.inCountry({ country: 'Russian Federation' }, { iso2: 'RU', country: 'Russia' }) && !D.inCountry({ country: 'Japan', iso2: 'JP' }, IN);
+});
+t('live scope: events with no country (NASA EONET) count only inside the country bounding box', () => {
+  const c = { iso2: 'IN', country: 'India', bbox: [6, 37, 68, 97] };
+  return D.inCountry({ country: '', lat: 20, lon: 78, src: 'NASA EONET' }, c) && !D.inCountry({ country: '', lat: 36, lon: 140, src: 'NASA EONET' }, c) && !D.inCountry({ country: '', lat: 20, lon: 78 }, { iso2: 'IN', country: 'India' });
+});
+t('live scope: country from the browser language (en-IN → India), none when no region is given', () => {
+  const keep = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const set = (v) => Object.defineProperty(globalThis, 'navigator', { value: v, configurable: true });
+  set({ languages: ['en-IN'] }); const a = D.localeCountry(); set({ languages: ['en'] }); const b = D.localeCountry();
+  if (keep) Object.defineProperty(globalThis, 'navigator', keep); else delete globalThis.navigator;
+  return a && a.iso2 === 'IN' && a.country === 'India' && b === null;
+});
+
+// ---------------- regression guard: the earthquake maths must not drift from model 3.1 ----------------
+t('guard: fixed earthquakes give the same P10/P50/P90 deaths as model 3.1 (change on purpose only, then re-run the back-test: tools/backtest-compare.js)', () => {
+  const P = AA.prediction;
+  const run = (iso, m, d, pl) => { const sit = { hazard: 'EQ', lat: pl[0][1], lon: pl[0][2], magnitude: m, depth: d, iso2: iso, countryVul: 0.6 }; sit.radiusKm = P.impactRadius(sit); const z = P.buildZones(sit, pl.map((p) => ({ name: p[0], lat: p[1], lon: p[2], population: p[3], type: p[4] }))); return P.forecast(sit, z).summary.fat; };
+  const near = (a, b) => Math.abs(a - b) <= 0.01 * Math.max(1, b);
+  const gold = [
+    ['IR', 6.6, 10, [['A', 28.99, 58.31, 100000, 'city'], ['B', 29.1, 58.4, 30000, 'town']], [3472.15, 147500.02, 1110946.98]],
+    ['TR', 7.8, 17, [['K', 37.2, 37.0, 1200000, 'city'], ['G', 37.07, 37.38, 1700000, 'city']], [3857.69, 113017.5, 898489.88]],
+    ['ID', 6.3, 13, [['Y', -7.8, 110.4, 400000, 'city'], ['B', -7.9, 110.35, 60000, 'town']], [0.24, 27.62, 884.31]],
+  ];
+  return gold.every(([iso, m, d, pl, g]) => { const f = run(iso, m, d, pl); return near(f.p10, g[0]) && near(f.p50, g[1]) && near(f.p90, g[2]); });
+});
+t('guard: baseline file holds the best live result (23 of 38 inside, typical error ×12.7) and the compare tool exists', () => {
+  const b = JSON.parse(require('fs').readFileSync(path.join(__dirname, 'baseline/backtest-3.1.0.json'), 'utf8'));
+  return b.summary.inside === 23 && b.summary.n === 38 && Math.abs(b.summary.typicalFactor - 12.75) < 0.01 && require('fs').existsSync(path.join(__dirname, '../tools/backtest-compare.js')) && b.events.length === 44;
+});

@@ -101,7 +101,7 @@
     (d.events || []).forEach((e, k) => {
       const top = k < (d.eventsTop ?? 5);
       const lvl = e.episodealertlevel || e.alertlevel || (e.pager ? { green: 'Green', yellow: 'Orange', orange: 'Red', red: 'Red' }[e.pager] : '');
-      out['aa-points'].push(pt(e, { kind: 'event', k, color: lvl === 'Red' ? '#dc2626' : lvl === 'Orange' ? '#ea580c' : '#16a34a', r: top ? 11 : 5, tag: top ? String(k + 1) : '' }));
+      out['aa-points'].push(pt(e, { kind: 'event', k, color: lvl === 'Red' ? '#dc2626' : lvl === 'Orange' ? '#ea580c' : '#16a34a', r: top ? 11 : 5, tag: top ? String(k + 1 + (d.rankOffset || 0)) : '' }));
       if (top) out['aa-labels'].push(pt(e, { label: e.name }));
     });
     // field reports
@@ -255,7 +255,7 @@
   V.hook = () => {
     const MP = MAP();
     const wrap = (name, after) => { const orig = MP[name]; MP[name] = (...a) => { const r = orig.apply(MP, a); try { after(...a); } catch (e) { console.error(e); } return r; }; };
-    wrap('drawEvents', (events, onClick, opts = {}) => { V.data.events = events; V.data.onEvent = onClick; V.data.eventsTop = opts.top ?? 5; V.render(); });
+    wrap('drawEvents', (events, onClick, opts = {}) => { V.data.events = events; V.data.onEvent = onClick; V.data.eventsTop = opts.top ?? 5; V.data.rankOffset = opts.rankOffset || 0; V.render(); });
     wrap('drawPlan', (st, handlers) => { V.data.st = st; V.data.handlers = handlers; V.data.events = []; V.render(); });
     wrap('drawLeg', () => V.render());
     wrap('drawSites', (st) => { V.data.st = st; V.render(); });

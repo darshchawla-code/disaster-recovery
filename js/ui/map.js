@@ -58,7 +58,7 @@
     layers.events.clearLayers();
     events.forEach((e, k) => {
       const top = k < (opts.top ?? 5);
-      const m = L.marker([e.lat, e.lon], { icon: dotIcon('#16a34a', top ? 18 : 9, top ? k + 1 : ''), zIndexOffset: top ? 500 : 0, keyboard: top });
+      const m = L.marker([e.lat, e.lon], { icon: dotIcon('#16a34a', top ? 18 : 9, top ? k + 1 + (opts.rankOffset || 0) : ''), zIndexOffset: top ? 500 : 0, keyboard: top });
       m.bindTooltip(`<b>${esc(e.name)}</b><br>${AA.HAZARDS[e.hazard]?.label || e.hazard} · ${esc(e.country || '')}${e.usi != null ? `<br>USI ${e.usi.toFixed(2)}` : ''}${e.from ? `<br>${new Date(e.from.endsWith('Z') || e.from.length < 12 ? e.from : e.from + 'Z').toUTCString().slice(5, 22)} UTC` : ''}`, { className: 'aa-tip' });
       m.on('click', () => onClick(e));
       m.addTo(layers.events);

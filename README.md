@@ -70,7 +70,7 @@ Built by [@Darshchawla](https://github.com/darshchawla-code).
 
 | Mode | What it does |
 |---|---|
-| **Live** | Pulls GDACS, USGS and NASA EONET, ranks current events by the Unified Severity Index, shows the top 5. Click one for the full plan. |
+| **Live** | Pulls GDACS, USGS and NASA EONET, ranks current events by the Unified Severity Index and shows the top 5 in the viewer's own country (device location, else browser language), with a link to the world top 5, a country picker, and Next/Previous 5 up to rank 20. Click one for the full plan. |
 | **Plan** | Search any address or click the map, choose a hazard and intensity; the full plan runs as if it happens there, plus recommended storage sites. |
 | **History** | The 5 most recent major disasters within 300 km of a place (GDACS since 2000, USGS since 1900, EONET), each replayed with optimal aid paths and storage sites. |
 | **Risk** | A 6 × 6 risk grid (~120 km) from Gutenberg–Richter seismicity, Gumbel flood return levels on 20 years of GloFAS discharge, storm/fire/volcano records, population, hospital access and World Bank coping capacity; top 5 high-risk areas and storage that covers them. |

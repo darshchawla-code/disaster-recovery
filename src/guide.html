@@ -115,7 +115,13 @@
       <li><b>USGS</b> (US Geological Survey): every earthquake of magnitude 4.5 or more in the last week, with its PAGER alert.</li>
       <li><b>NASA EONET</b>: events seen by satellites, such as wildfires, storms and volcanoes.</li>
     </ul>
-    <p>Events are ranked by the <a href="#g-usi">Unified Severity Index</a> and the <b>Top 5</b> are shown in the panel and as numbered green dots on the map. Smaller green dots are other current events.</p>
+    <p>Events are ranked by the <a href="#g-usi">Unified Severity Index</a> and the <b>Top 5 in your country</b> are shown in the panel and as numbered green dots on the map. Smaller green dots are other current events.</p>
+    <ul>
+      <li><b>Your country:</b> the app asks once for your device location to find your country. If you decline, it uses the country of your browser language. Under the list, <b>Change country</b> lets you pick another one, and the choice is remembered on this device.</li>
+      <li><b>The world:</b> click <b>Show top 5 of the world</b> to see the worldwide list, and <b>Show top 5 in</b> your country to come back.</li>
+      <li><b>Next 5:</b> use <b>Next 5</b> and <b>Previous 5</b> to move through ranks 6–10, 11–15 and 16–20. The map numbers follow the page you are on.</li>
+      <li><b>If your country has no current events</b>, the panel says so and shows the world instead. GDACS and USGS events are matched by country; NASA EONET events carry no country, so they count when they lie inside the country's bounding box, and an event just over a border can appear in the neighbouring country's list.</li>
+    </ul>
     <h3>What to do</h3>
     <ol>
       <li>Read the list: each card shows the event name, type, alert colour, country, size, how long ago it was updated and the data source. The number on the right is the severity score (0 to 1).</li>
@@ -229,7 +235,7 @@
       <thead><tr><th>Where</th><th>Button</th><th>What it contains</th></tr></thead>
       <tbody>
         <tr><td>Any plan</td><td><b>Generate action report</b> (also <b>Full action report</b> in the map box)</td><td>One-paragraph summary · areas that need help first · <b>Do now: next 6 hours</b> (numbered steps: warnings, control room, rescue, shelters, moving the injured, exactly which supplies to send from where, air drops, closed roads, what to ask for) · next 1–3 days · supplies table · what could change the plan · how the numbers were made.</td></tr>
-        <tr><td>Live list</td><td><b>Generate situation report</b></td><td>The top 5 events with where, what, alert level and three first actions each.</td></tr>
+        <tr><td>Live list</td><td><b>Generate situation report</b></td><td>The events in the list you are viewing (up to 20) with where, what, alert level and three first actions each.</td></tr>
         <tr><td>History list</td><td><b>Generate history report</b></td><td>The record of past events, the most common disaster type and what to prepare for.</td></tr>
         <tr><td>Risk list</td><td><b>Generate preparedness report</b></td><td>The five highest-risk areas, why they are risky, and a preparation checklist including storage sites if you planned them.</td></tr>
       </tbody>

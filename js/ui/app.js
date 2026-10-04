@@ -59,24 +59,65 @@
   };
 
   // ----- Mode 1: Live -----
+  // Live scope: the viewer's own country by default (from the device location if allowed, else the browser language),
+  // a link to the world list, and paging through ranks 1–20 in steps of five.
+  const LIVE_PAGE = 5, LIVE_MAX = 20;
+  app.liveScope = app.liveScope || { world: false, page: 0, country: null, asked: false };
+  const countryNames = () => { try { const dn = new Intl.DisplayNames(['en'], { type: 'region' }); return Object.keys(AA.fatalityTable || {}).map((c) => ({ iso2: c, country: dn.of(c) })).filter((x) => x.country && x.country !== x.iso2).sort((p, q) => p.country.localeCompare(q.country)); } catch (e) { return []; } };
+  const lsGet = (k) => { try { return JSON.parse(AA.workspace._ls.getItem('aa.' + k) || 'null'); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { AA.workspace._ls.setItem('aa.' + k, JSON.stringify(v)); } catch (e) { /* ignore */ } };
   const renderLive = async (opts = {}) => {
-    panel().innerHTML = `<div class="ph"><span class="eyebrow">Mode 1 · Live</span><h2>Disasters happening now</h2><p>Top 5 current events worldwide, ranked by the <a href="#m-usi" data-x="m-usi">Unified Severity Index</a>. Sources: GDACS, USGS, NASA EONET. Refreshes every 10 minutes.</p></div>
+    panel().innerHTML = `<div class="ph"><span class="eyebrow">Mode 1 · Live</span><h2>Disasters happening now</h2><p>The five most severe current events in your country, ranked by the <a href="#m-usi" data-x="m-usi">Unified Severity Index</a>, with a switch to the world and paging up to 20. Sources: GDACS, USGS, NASA EONET. Refreshes every 10 minutes.</p></div>
       <div class="sec" id="liveList"><div class="empty"><span class="spin"></span> Reading live feeds…</div></div>${AA.wsui.watchSection()}`;
     bindX(); AA.wsui.bindWatch();
     try {
       const { events, errors, counts } = await D.liveEvents();
       app.live = events;
-      const top = events.slice(0, 5);
-      $('#liveList').innerHTML = `<h3>Top 5 now <span class="small muted" style="text-transform:none;letter-spacing:0">${counts.gdacs} GDACS · ${counts.usgs} USGS · ${counts.eonet} EONET</span></h3>
-        ${top.map((e, k) => `<button class="evt" type="button" data-k="${k}"><span class="rk">${k + 1}</span><span><span class="t">${esc(e.name)}</span><br><span class="s">${hz(e.hazard)} ${alertDot(e.alertlevel || (e.pager ? ({ green: 'Green', yellow: 'Orange', orange: 'Orange', red: 'Red' })[e.pager] : ''))}${esc(e.country || '')} · ${magText(e)} · ${ago(e.to || e.from)}</span><br><span class="s">${esc(e.src)}</span></span><span class="score"><b>${e.usi.toFixed(2)}</b>USI</span></button>`).join('')}
-        ${D.offlineCopy ? '<p class="note warn">Offline: showing the last saved copy of the live feeds.</p>' : ''}${errors.length ? `<p class="note warn">${errors.map(esc).join('<br>')}</p>` : ''}
-        <div class="btns"><button class="btn primary" id="repLive" type="button">Generate situation report</button><a class="btn" href="guide.html#mode-live" target="_blank" rel="noopener">Guide</a></div>
-        <p class="small muted">${events.length - 5 > 0 ? `${events.length - 5} more current events are shown as small dots on the map.` : ''} Click an event to forecast impact, allocate supplies and route aid.</p>`;
-      $('#repLive').addEventListener('click', () => AA.report.open(AA.report.live(events)));
-      $('#liveList').querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => openEvent(top[+b.dataset.k])));
-      MAP.drawEvents(events.slice(0, 60), openEvent, { top: 5 });
+      const sc = app.liveScope;
+      if (!sc.country) sc.country = lsGet('liveCountry') || D.localeCountry();
+      const draw = async () => {
+        const c = sc.country;
+        if (c && !c.bbox && !sc.world && events.some((e) => !e.country)) { c.bbox = (lsGet('liveBox:' + c.iso2)) || await D.countryBox(c); if (c.bbox) lsSet('liveBox:' + c.iso2, c.bbox); }
+        let world = sc.world || !c, note = '';
+        let pool = world ? events : events.filter((e) => D.inCountry(e, c));
+        if (!world && !pool.length) { pool = events; world = true; note = `No current events were found in ${esc(c.country)}; showing the world.`; }
+        const total = Math.min(pool.length, LIVE_MAX), pages = Math.max(1, Math.ceil(total / LIVE_PAGE));
+        sc.page = Math.min(sc.page, pages - 1);
+        const start = sc.page * LIVE_PAGE, show = pool.slice(start, start + LIVE_PAGE);
+        const where = world ? 'worldwide' : `in ${esc(c.country)}`;
+        const title = sc.page === 0 ? `Top 5 now ${where}` : `Ranks ${start + 1}–${start + show.length} now ${where}`;
+        const opts2 = countryNames().map((x) => `<option value="${x.iso2}"${c && x.iso2 === c.iso2 ? ' selected' : ''}>${esc(x.country)}</option>`).join('');
+        const links = [world ? (c && !note ? '<a href="#" id="liveCountry">Show top 5 in ' + esc(c.country) + '</a>' : '') : '<a href="#" id="liveWorld">Show top 5 of the world</a>', `<a href="#" id="liveChange">${c ? 'Change country' : 'Choose your country'}</a>`].filter(Boolean).join(' · ');
+        $('#liveList').innerHTML = `<h3>${title}</h3>
+          <p class="small muted" style="margin:-4px 0 6px">${counts.gdacs} GDACS · ${counts.usgs} USGS · ${counts.eonet} EONET${c && c.src ? ` · country from ${esc(c.src)}` : ''}</p>
+          <p class="small" style="margin:0 0 8px">${links}</p>
+          <p class="small" id="liveChoose" style="margin:0 0 8px;display:none"><select id="liveSel" aria-label="Country"><option value="">Choose a country…</option>${opts2}</select></p>
+          ${note ? `<p class="note">${note}</p>` : ''}
+          ${show.map((e, k) => `<button class="evt" type="button" data-k="${k}"><span class="rk">${start + k + 1}</span><span><span class="t">${esc(e.name)}</span><br><span class="s">${hz(e.hazard)} ${alertDot(e.alertlevel || (e.pager ? ({ green: 'Green', yellow: 'Orange', orange: 'Orange', red: 'Red' })[e.pager] : ''))}${esc(e.country || '')} · ${magText(e)} · ${ago(e.to || e.from)}</span><br><span class="s">${esc(e.src)}</span></span><span class="score"><b>${e.usi.toFixed(2)}</b>USI</span></button>`).join('')}
+          ${pages > 1 || pool.length > LIVE_PAGE ? `<div class="btns" style="justify-content:space-between;align-items:center"><button class="btn" id="livePrev" type="button"${sc.page === 0 ? ' disabled' : ''}>Previous 5</button><span class="small muted">Showing ${start + 1}–${start + show.length} of ${total}${pool.length > LIVE_MAX ? ` (top ${LIVE_MAX})` : ''}</span><button class="btn" id="liveNext" type="button"${sc.page >= pages - 1 ? ' disabled' : ''}>Next 5</button></div>` : ''}
+          ${D.offlineCopy ? '<p class="note warn">Offline: showing the last saved copy of the live feeds.</p>' : ''}${errors.length ? `<p class="note warn">${errors.map(esc).join('<br>')}</p>` : ''}
+          <div class="btns"><button class="btn primary" id="repLive" type="button">Generate situation report</button><a class="btn" href="guide.html#mode-live" target="_blank" rel="noopener">Guide</a></div>
+          <p class="small muted">${events.length - show.length > 0 ? `${events.length - show.length} more current events are shown as small dots on the map.` : ''} Click an event to forecast impact, allocate supplies and route aid.</p>`;
+        $('#repLive').addEventListener('click', () => AA.report.open(AA.report.live(pool.slice(0, LIVE_MAX))));
+        $('#liveList').querySelectorAll('[data-k]').forEach((bt) => bt.addEventListener('click', () => openEvent(show[+bt.dataset.k])));
+        const on = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', (ev) => { ev.preventDefault(); fn(); }); };
+        on('#liveWorld', () => { sc.world = true; sc.page = 0; draw(); });
+        on('#liveCountry', () => { sc.world = false; sc.page = 0; draw(); });
+        on('#livePrev', () => { sc.page = Math.max(0, sc.page - 1); draw(); });
+        on('#liveNext', () => { sc.page += 1; draw(); });
+        on('#liveChange', () => { const el = $('#liveChoose'); el.style.display = el.style.display === 'none' ? '' : 'none'; if (el.style.display === '') $('#liveSel').focus(); });
+        $('#liveSel').addEventListener('change', (ev) => { const x = countryNames().find((n) => n.iso2 === ev.target.value); if (!x) return; sc.country = { ...x, src: 'your choice' }; sc.world = false; sc.page = 0; lsSet('liveCountry', sc.country); draw(); });
+        MAP.drawEvents([...show, ...events.filter((e) => !show.includes(e))].slice(0, 60), openEvent, { top: show.length, rankOffset: start });
+      };
+      await draw();
       AA.wsui.fillWatch(events);
+      // once per device: ask for the location so "your country" is exact (declining keeps the browser-language country)
+      if (!sc.asked && !lsGet('liveCountry') && !lsGet('liveGeoAsked') && !opts.noAuto) {
+        sc.asked = true; lsSet('liveGeoAsked', 1);
+        D.geoCountry().then((g) => { if (g && app.mode === 'live' && app.view === 'list') { sc.country = g; sc.world = false; sc.page = 0; lsSet('liveCountry', g); draw(); } });
+      }
       const want = new URLSearchParams(location.search).get('event');
+      const top = events.slice(0, 5);
       if (want && !opts.noAuto) { const e = want === 'top' ? top[0] : events.find((x) => x.id === want); if (e) openEvent(e); }
     } catch (err) {
       AA.wsui.fillWatch([]);

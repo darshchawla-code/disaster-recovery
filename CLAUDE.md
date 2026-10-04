@@ -46,6 +46,7 @@ SKILL.md first, then the code, then the test.
 6. Run `npm test` before shipping any change (models, Phases 1–3, API, addresses, alerts, schema).
 7. Every external read in `ENG.build` goes through `io()` so saved plans can be replayed offline.
 8. Never claim accuracy a model card does not support: a hazard is "back-tested" only with a scored back-test.
+9. The earthquake model must not get worse than the best live back-test (`tests/baseline/backtest-3.1.0.json`: 23 of 38 inside, typical error ×12.7). Before releasing any change to `js/models/prediction.js`, `fatality-params.js` or the zone/population logic: re-run the back-test on the live site, then `node tools/backtest-compare.js <new-run.json>`; if it exits 1, do not release. The golden-value test in `tests/phase3.test.js` flags any unintended drift.
 
 ## Running
 
