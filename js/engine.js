@@ -21,7 +21,7 @@
   // ---------------- situations ----------------
   const S0 = AA.prediction.ALERT_S0;
   ENG.situationFromEvent = (e) => {
-    const sit = { hazard: e.hazard, lat: e.lat, lon: e.lon, name: e.name, country: e.country, iso2: e.iso2 || '', src: e.src, prov: e.prov || 'live', event: e, peakInHours: 0 };
+    const sit = { hazard: e.hazard, lat: e.lat, lon: e.lon, name: e.name, country: e.country, placeName: e.place || undefined, iso2: e.iso2 || '', src: e.src, prov: e.prov || 'live', event: e, peakInHours: 0 };
     if (e.hazard === 'EQ') {
       sit.magnitude = +(e.magnitude ?? e.severity ?? 6); sit.depth = Math.max(5, +(e.depth ?? 10));
       if (e.mmi) sit.mmiA = M.clamp(e.mmi - 1.5 * sit.magnitude + 4.0 * Math.log10(sit.depth), 1.0, 4.0);

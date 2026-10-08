@@ -91,10 +91,10 @@
     const now = Date.now();
     const age = (e) => (e.to ? now - new Date(e.to.endsWith('Z') ? e.to : e.to + 'Z').getTime() : 0);
     const recent = (e) => (e.current && age(e) < 14 * 864e5) || age(e) < 7 * 864e5; // GDACS marks long droughts not-current while still updating them
-    let all = gd.filter(recent).map((e) => ({ ...e, magnitude: e.hazard === 'EQ' ? parseFloat(e.severity) : undefined }));
+    let all = gd.filter(recent).map((e) => ({ ...e, magnitude: e.hazard === 'EQ' ? parseFloat(e.severity) : undefined, magGdacs: e.hazard === 'EQ' ? parseFloat(e.severity) : undefined, magSource: e.hazard === 'EQ' ? 'GDACS' : undefined }));
     us.forEach((q) => { // merge USGS detail into GDACS EQ, or add
       const twin = all.find((e) => e.hazard === 'EQ' && M.haversine(e, q) < 100 && Math.abs(new Date(e.from + (e.from.endsWith('Z') ? '' : 'Z')) - new Date(q.from)) < 2 * 36e5);
-      if (twin) Object.assign(twin, { magnitude: q.magnitude, depth: q.depth, mmi: q.mmi, pager: q.pager, usgsUrl: q.url, src: 'GDACS + USGS' });
+      if (twin) Object.assign(twin, { magnitude: q.magnitude, depth: q.depth, mmi: q.mmi, pager: q.pager, usgsUrl: q.url, src: 'GDACS + USGS', magSource: 'USGS' });
       else all.push(q);
     });
     eo.forEach((e) => { if (!all.some((x) => x.hazard === e.hazard && M.haversine(x, e) < 150)) all.push(e); });
@@ -320,6 +320,64 @@
     const named = a.amenity || a.building || a.shop || a.office || '';
     const address = [named, road, locality, area, city !== locality ? city : '', a.postcode].filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i).join(', ');
     return { locality, area, road, city, postcode: a.postcode || '', address: address || r?.display_name || '' };
+  };
+
+  // ---------------- event place (district / state) and magnitude cross-check ----------------
+  /** "Bageshwar district, Uttarakhand, India": the finest named area plus state and country (Nominatim, cached, throttled). */
+  D.placeLabel = (r) => {
+    const a = (r && r.address) || {};
+    const fine = a.village || a.hamlet || a.town || a.city || a.suburb || '';
+    const district = a.county || a.state_district || a.city_district || '';
+    const parts = [fine && fine !== district ? fine : '', district && !/district|county|region|prefecture|province/i.test(district) && a.country_code === 'in' ? district + ' district' : district, a.state, a.country].filter(Boolean);
+    return parts.filter((x, i, arr) => arr.indexOf(x) === i).join(', ');
+  };
+  const placeMem = new Map();
+  D.eventPlace = async (e) => {
+    if (e.place) return e.place;
+    const key = `${(+e.lat).toFixed(2)},${(+e.lon).toFixed(2)}`;
+    if (placeMem.has(key)) return (e.place = placeMem.get(key));
+    let hit = null; try { hit = JSON.parse(localStorage.getItem('aa.place:' + key) || 'null'); } catch (x) { /* ignore */ }
+    if (!hit) {
+      await nomThrottle();
+      const r = await D.fetchJSON(`https://nominatim.openstreetmap.org/reverse?lat=${(+e.lat).toFixed(4)}&lon=${(+e.lon).toFixed(4)}&format=json&zoom=10&addressdetails=1&accept-language=en`, { cacheTtl: 864e5, timeout: 12000 });
+      hit = D.placeLabel(r);
+      if (hit) { try { localStorage.setItem('aa.place:' + key, JSON.stringify(hit)); } catch (x) { /* ignore */ } }
+    }
+    if (hit) { placeMem.set(key, hit); e.place = hit; }
+    return e.place || '';
+  };
+  /** Other agencies' magnitude for the same earthquake (USGS and EMSC, within 150 km and 3 hours; any size). */
+  D.quakeAgencies = async (e) => {
+    const t = new Date(e.from + (/Z$|[+-]\d\d:?\d\d$/.test(e.from) ? '' : 'Z')).getTime();
+    if (!isFinite(t)) return [];
+    const iso = (x) => new Date(x).toISOString().slice(0, 19);
+    const t0 = iso(t - 3 * 36e5), t1 = iso(t + 3 * 36e5);
+    const pick = (list) => list.filter((q) => isFinite(q.mag) && isFinite(q.t) && Math.abs(q.t - t) < 3 * 36e5 && M.haversine(e, q) < 150).sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
+    const jobs = [
+      D.fetchJSON(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${t0}&endtime=${t1}&latitude=${e.lat}&longitude=${e.lon}&maxradiuskm=150&orderby=time&limit=20`, { timeout: 9000, cacheTtl: 6e5 })
+        .then((j) => { const q = pick((j.features || []).map((f) => ({ mag: f.properties.mag, t: f.properties.time, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], type: f.properties.magType, depth: f.geometry.coordinates[2], id: f.id, url: f.properties.url }))); return q && { src: 'USGS', ...q }; }),
+      D.fetchJSON(`https://www.seismicportal.eu/fdsnws/event/1/query?format=json&starttime=${t0}&endtime=${t1}&lat=${e.lat}&lon=${e.lon}&maxradius=1.4&limit=20`, { timeout: 9000, cacheTtl: 6e5 })
+        .then((j) => { const q = pick((j.features || []).map((f) => ({ mag: f.properties.mag, t: new Date(f.properties.time).getTime(), lat: f.properties.lat, lon: f.properties.lon, type: f.properties.magtype, depth: f.properties.depth, id: f.id }))); return q && { src: 'EMSC', ...q }; }),
+    ];
+    const out = (await Promise.allSettled(jobs)).map((x) => (x.status === 'fulfilled' ? x.value : null)).filter(Boolean);
+    return out;
+  };
+  /** Fix the earthquake's magnitude from the best available agency and say where it came from.
+   *  Order of trust: USGS (reviewed), then EMSC, then the GDACS figure. All values are kept so the app can show any disagreement. */
+  D.enrichQuake = async (e) => {
+    if (e.hazard !== 'EQ' || e.magChecked) return e;
+    e.magChecked = true;
+    let list = []; try { list = await D.quakeAgencies(e); } catch (x) { /* offline: keep GDACS */ }
+    const mags = [...list.map((q) => ({ src: q.src, mag: q.mag, type: q.type })), ...(isFinite(e.magGdacs) ? [{ src: 'GDACS', mag: e.magGdacs }] : (e.src === 'USGS' ? [{ src: 'USGS', mag: e.magnitude }] : []))]
+      .filter((x, i, a) => a.findIndex((y) => y.src === x.src) === i);
+    e.mags = mags;
+    const best = mags.find((m) => m.src === 'USGS') || mags.find((m) => m.src === 'EMSC') || mags.find((m) => m.src === 'GDACS');
+    if (best && isFinite(best.mag)) { e.magnitude = best.mag; e.magSource = best.src; }
+    const v = mags.map((m) => m.mag).filter(isFinite);
+    e.magSpread = v.length > 1 ? Math.max(...v) - Math.min(...v) : 0;
+    const dep = list.find((q) => q.src === 'USGS' && isFinite(q.depth)) || list.find((q) => isFinite(q.depth));
+    if (dep && e.depth == null) e.depth = Math.abs(dep.depth);
+    return e;
   };
 
   // ---------------- OSM Overpass (raced mirrors) ----------------

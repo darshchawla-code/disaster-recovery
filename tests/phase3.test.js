@@ -160,6 +160,21 @@ t('action report: people and delivered items are whole numbers (no 1.7 people, 0
   return !bad && ab(1.7) === '2' && ab(0.4) === 'less than 1' && ab(8.4) === '8';
 });
 
+t('place label: village/district, state and country (India adds "district")', () => D.placeLabel({ address: { county: 'Bageshwar', state: 'Uttarakhand', country: 'India', country_code: 'in' } }) === 'Bageshwar district, Uttarakhand, India' && D.placeLabel({ address: { town: 'Antakya', county: 'Hatay', state: '', country: 'Türkiye', country_code: 'tr' } }) === 'Antakya, Hatay, Türkiye');
+t('quake magnitude: USGS beats EMSC beats GDACS; disagreement is recorded', async () => {
+  const keep = D.quakeAgencies;
+  try {
+    const mk = () => ({ hazard: 'EQ', src: 'GDACS', lat: 30, lon: 79.6, from: new Date().toISOString(), magnitude: 5.1, magGdacs: 5.1, magSource: 'GDACS' });
+    D.quakeAgencies = async () => [{ src: 'EMSC', mag: 3.6 }];
+    const a = await D.enrichQuake(mk());
+    D.quakeAgencies = async () => [{ src: 'EMSC', mag: 3.6 }, { src: 'USGS', mag: 4.2 }];
+    const b = await D.enrichQuake(mk());
+    D.quakeAgencies = async () => [];
+    const c = await D.enrichQuake(mk());
+    return a.magnitude === 3.6 && a.magSource === 'EMSC' && a.magSpread > 1.4 && b.magnitude === 4.2 && b.magSource === 'USGS' && c.magnitude === 5.1 && c.magSource === 'GDACS' && c.magSpread === 0;
+  } finally { D.quakeAgencies = keep; }
+});
+
 // ---------------- exports ----------------
 t('GeoJSON: valid FeatureCollection with areas, stores, hospitals, routes and the impact area; [lon, lat] order', () => {
   const g = X.geojson(st), layers = new Set(g.features.map((f) => f.properties.layer));

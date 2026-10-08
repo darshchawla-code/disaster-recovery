@@ -9,7 +9,7 @@
   const alertDot = (lvl) => `<span class="alert ${lvl || 'na'}" title="${lvl ? lvl + ' alert' : 'no agency alert'}"></span>`;
   const ago = (iso) => { if (!iso) return ''; const t = new Date(/Z$|[+-]\d\d:?\d\d$/.test(iso) || iso.length < 12 ? iso : iso + 'Z').getTime(); const h = (Date.now() - t) / 36e5; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 48 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} d ago`; };
   const dateStr = (iso) => { if (!iso) return ''; const d = new Date(/Z$/.test(iso) || iso.length < 12 ? iso : iso + 'Z'); return d.toISOString().slice(0, 10); };
-  const magText = (e) => e.hazard === 'EQ' ? `M ${(+(e.magnitude ?? e.severity)).toFixed(1)}` : e.hazard === 'TC' ? `${Math.round(e.severity || 0)} km/h` : e.severity ? `${f.n(e.severity)} ${esc(e.severityUnit || '')}` : (e.alertlevel || '');
+  const magText = (e) => e.hazard === 'EQ' ? `M ${(+(e.magnitude ?? e.severity)).toFixed(1)}${e.magSource ? ` (${e.magSource})` : ''}` : e.hazard === 'TC' ? `${Math.round(e.severity || 0)} km/h` : e.severity ? `${f.n(e.severity)} ${esc(e.severityUnit || '')}` : (e.alertlevel || '');
 
   // ---------------- toast / hint ----------------
   let toastTimer;
@@ -76,6 +76,7 @@
       const sc = app.liveScope;
       if (!sc.country) sc.country = lsGet('liveCountry') || D.localeCountry();
       const draw = async () => {
+        const tok = app.liveDrawTok = (app.liveDrawTok || 0) + 1;
         const c = sc.country;
         if (c && !c.bbox && !sc.world && events.some((e) => !e.country)) { c.bbox = (lsGet('liveBox:' + c.iso2)) || await D.countryBox(c); if (c.bbox) lsSet('liveBox:' + c.iso2, c.bbox); }
         let world = sc.world || !c, note = '';
@@ -93,7 +94,7 @@
           <p class="small" style="margin:0 0 8px">${links}</p>
           <p class="small" id="liveChoose" style="margin:0 0 8px;display:none"><select id="liveSel" aria-label="Country"><option value="">Choose a country…</option>${opts2}</select></p>
           ${note ? `<p class="note">${note}</p>` : ''}
-          ${show.map((e, k) => `<button class="evt" type="button" data-k="${k}"><span class="rk">${start + k + 1}</span><span><span class="t">${esc(e.name)}</span><br><span class="s">${hz(e.hazard)} ${alertDot(e.alertlevel || (e.pager ? ({ green: 'Green', yellow: 'Orange', orange: 'Orange', red: 'Red' })[e.pager] : ''))}${esc(e.country || '')} · ${magText(e)} · ${ago(e.to || e.from)}</span><br><span class="s">${esc(e.src)}</span></span><span class="score"><b>${e.usi.toFixed(2)}</b>USI</span></button>`).join('')}
+          ${show.map((e, k) => `<button class="evt" type="button" data-k="${k}"><span class="rk">${start + k + 1}</span><span><span class="t">${esc(e.name)}</span><br><span class="s">${hz(e.hazard)} ${alertDot(e.alertlevel || (e.pager ? ({ green: 'Green', yellow: 'Orange', orange: 'Orange', red: 'Red' })[e.pager] : ''))}${esc(e.country || '')} · ${magText(e)} · ${ago(e.to || e.from)}</span><br><span class="s"><span class="pl" data-pl="${k}">${esc(e.place || '')}</span>${e.place ? ' · ' : ''}${esc(e.src)}</span></span><span class="score"><b>${e.usi.toFixed(2)}</b>USI</span></button>`).join('')}
           ${pages > 1 || pool.length > LIVE_PAGE ? `<div class="btns" style="justify-content:space-between;align-items:center"><button class="btn" id="livePrev" type="button"${sc.page === 0 ? ' disabled' : ''}>Previous 5</button><span class="small muted">Showing ${start + 1}–${start + show.length} of ${total}${pool.length > LIVE_MAX ? ` (top ${LIVE_MAX})` : ''}</span><button class="btn" id="liveNext" type="button"${sc.page >= pages - 1 ? ' disabled' : ''}>Next 5</button></div>` : ''}
           ${D.offlineCopy ? '<p class="note warn">Offline: showing the last saved copy of the live feeds.</p>' : ''}${errors.length ? `<p class="note warn">${errors.map(esc).join('<br>')}</p>` : ''}
           <div class="btns"><button class="btn primary" id="repLive" type="button">Generate situation report</button><a class="btn" href="guide.html#mode-live" target="_blank" rel="noopener">Guide</a></div>
@@ -107,6 +108,7 @@
         on('#liveNext', () => { sc.page += 1; draw(); });
         on('#liveChange', () => { const el = $('#liveChoose'); el.style.display = el.style.display === 'none' ? '' : 'none'; if (el.style.display === '') $('#liveSel').focus(); });
         $('#liveSel').addEventListener('change', (ev) => { const x = countryNames().find((n) => n.iso2 === ev.target.value); if (!x) return; sc.country = { ...x, src: 'your choice' }; sc.world = false; sc.page = 0; lsSet('liveCountry', sc.country); draw(); });
+        (async () => { for (let k = 0; k < show.length; k++) { const e = show[k]; if (app.liveDrawTok !== tok) return; try { await D.eventPlace(e); } catch (x) { continue; } const ll = $('#liveList'); if (!ll) return; const el = ll.querySelector(`[data-pl="${k}"]`); if (el && e.place && !el.textContent) { el.textContent = e.place; el.insertAdjacentText('afterend', ' · '); } } })();
         MAP.drawEvents([...show, ...events.filter((e) => !show.includes(e))].slice(0, 60), openEvent, { top: show.length, rankOffset: start });
       };
       await draw();
@@ -124,7 +126,8 @@
       $('#liveList').innerHTML = `<p class="note warn">Live feeds could not be reached: ${esc(err.message)}. Check your connection and reload.</p>`;
     }
   };
-  const openEvent = app.openEvent = (e) => openPlan(ENG.situationFromEvent(e), { warehouses: app.mode !== 'live', back: app.mode === 'live' ? () => renderLive({ noAuto: true }) : () => renderHistoryList() });
+  const openEvent = app.openEvent = async (e) => { try { await Promise.race([Promise.all([D.enrichQuake(e), D.eventPlace(e)]), new Promise((r) => setTimeout(r, 12000))]); } catch (x) { /* keep what the feed gave */ } return openEventNow(e); };
+  const openEventNow = (e) => openPlan(ENG.situationFromEvent(e), { warehouses: app.mode !== 'live', back: app.mode === 'live' ? () => renderLive({ noAuto: true }) : () => renderHistoryList() });
   setInterval(async () => { if (app.mode === 'live' && app.view === 'list') renderLive({ noAuto: true }); else {
     try { const { events } = await D.liveEvents(); app.live = events; try { AA.wsui.notify(AA.workspace.matchWatch(await AA.workspace.watch.list(), events)); } catch (e) {} if (!(app.mode === 'live' && ENG.state?.sit?.event)) return; const cur = ENG.state.sit.event; const now = events.find((x) => x.id === cur.id); if (now && (now.magnitude ?? now.severity) !== (cur.magnitude ?? cur.severity)) app.toast(`Live update: ${esc(now.name)} changed to ${magText(now)}. Re-open it to re-forecast.`, { sticky: true }); } catch (e) {} } }, 10 * 60e3);
 
@@ -371,7 +374,7 @@
     const run = st.lastRun, sit = st.sit, K = AA.config.commodities, sm = st.fcast.summary;
     const cov = K.map((k) => { const d = M.sum(st.zones.map((z) => z.d[k.key] || 0)), u = M.sum(run.alloc.unmet.map((x) => x[k.key] || 0)); return { k, d, pct: d > 0 ? (d - u) / d : 1 }; });
     const tile = (l, d, link) => `<div class="tile"><div class="l">${l}</div><div class="v">${f.k(d.p50)}</div><div class="band">P10–P90 ${f.k(d.p10)}–${f.k(d.p90)}</div></div>`;
-    const evMeta = sit.event ? `${hz(sit.hazard)} ${alertDot(sit.event.alertlevel)} ${esc(sit.country || '')} · ${magText(sit.event)}${sit.windNote ? ` (planning ${Math.round(sit.magnitude)} km/h)` : ''} · ${esc(sit.event.src)}${sit.event.url ? ` · <a href="${esc(sit.event.url)}" target="_blank" rel="noopener">source report</a>` : ''}` : `${hz(sit.hazard)} ${esc(sit.country || '')} · <span class="prov">planning scenario</span>`;
+    const evMeta = sit.event ? `${hz(sit.hazard)} ${alertDot(sit.event.alertlevel)} ${esc(sit.event.place || sit.country || '')} · ${magText(sit.event)}${sit.event.mags && sit.event.mags.length > 1 ? ` <span class="small muted">[${sit.event.mags.map((m) => `${esc(m.src)} ${(+m.mag).toFixed(1)}`).join(' · ')}]</span>` : ''}${sit.event.magSpread >= 0.5 ? ' <span class="note warn" style="display:inline-block;margin:0">agencies disagree on magnitude; using ' + esc(sit.event.magSource) + '</span>' : ''}${sit.windNote ? ` (planning ${Math.round(sit.magnitude)} km/h)` : ''} · ${esc(sit.event.src)}${sit.event.url ? ` · <a href="${esc(sit.event.url)}" target="_blank" rel="noopener">source report</a>` : ''}` : `${hz(sit.hazard)} ${esc(sit.country || '')} · <span class="prov">planning scenario</span>`;
     const zrows = st.zones.slice().sort((a, b) => b.need - a.need).map((z) => {
       const i = st.zones.indexOf(z), c = MAP.coverage(st, i);
       return `<tr><td><a href="#" data-z="${z.id}">${z.id}</a> ${esc(z.name)}${z.served ? ' <span class="prov">served</span>' : ''}${z.spread ? ' <span class="prov">spread</span>' : ''}${z.address ? `<br><span class="small muted">${esc(z.address)}</span>` : ''}</td><td class="num">${z.need.toFixed(2)}<div class="bar need"><i style="width:${Math.round(z.need * 100)}%"></i></div></td><td class="num">${f.k(z.fc.aff.p50)}</td><td class="num">${Math.round(c * 100)}%<div class="bar cov"><i style="width:${Math.round(c * 100)}%"></i></div></td></tr>`;
