@@ -9,19 +9,23 @@
   // ---------- plain-language helpers ----------
   const about = (n) => {
     if (!isFinite(n) || n <= 0) return 'none';
-    if (n < 10) return String(Math.round(n * 10) / 10);
+    if (n < 0.5) return 'less than 1';
+    if (n < 10) return String(Math.round(n));   // people and items are whole numbers: never 1.7 people
     const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1));
     return (Math.round(n / p) * p).toLocaleString('en-US');
   };
-  const people = (n) => (n < 1 ? 'almost nobody' : `about ${about(n)} people`);
+  const whole = (n) => (n > 0 ? Math.max(1, Math.ceil(n - 1e-9)) : 0).toLocaleString('en-US');   // things we deliver come in whole units, rounded up
+  const people = (n) => (n < 0.5 ? 'almost nobody' : `about ${about(n)} ${about(n) === '1' ? 'person' : 'people'}`);
+  const dec = (n) => (!isFinite(n) || n <= 0 ? 'none' : n < 10 ? String(Math.round(n * 10) / 10) : about(n));   // measures (kilolitres, tonnes) may keep one decimal
+  const aboutN = (n) => (n < 0.5 ? 'less than 1' : `about ${about(n)}`);
   const mins = (h) => { if (h < 1) return `${Math.max(5, Math.round(h * 60 / 5) * 5)} minutes`; const v = Math.round(h * 2) / 2; return `${v} hour${v === 1 ? '' : 's'}`; };
   const plural = (n, w, pl) => `${n} ${n === 1 ? w : (pl || w + 's')}`;
   const an = (w) => (/^[aeiou]/i.test(w) ? `an ${w}` : `a ${w}`);
   const list = (arr) => (arr.length <= 1 ? arr.join('') : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`);
   const qty = (k, q) => {
     const c = AA.config.commodities.find((x) => x.key === k);
-    const words = { water: `${about(q)} kilolitres of drinking water (${about(q * 1000)} litres)`, food: `${about(q)} tonnes of food`, shelter: `${about(q)} family tents`, medical: `${about(q)} medical kits`, staff: `${about(q)} relief workers` };
-    return words[k] || `${about(q)} ${c ? c.unit : ''}`;
+    const words = { water: `${dec(q)} kilolitres of drinking water (${about(q * 1000)} litres)`, food: q < 1 ? `${about(q * 1000)} kg of food` : `${dec(q)} tonnes of food`, shelter: `${whole(q)} family ${q <= 1 ? 'tent' : 'tents'}`, medical: `${whole(q)} medical ${q <= 1 ? 'kit' : 'kits'}`, staff: `${whole(q)} relief ${q <= 1 ? 'worker' : 'workers'}` };
+    return words[k] || `${dec(q)} ${c ? c.unit : ''}`;
   };
   R.about = about;
 
@@ -115,7 +119,7 @@
     const rp = st.fcast.reported;
     if (rp && rp.missing > 0) out.push({ icon: '?', text: `Search for ${Math.round(rp.missing).toLocaleString('en')} people reported missing.`, detail: `Agencies have confirmed ${Math.round(rp.deaths || 0).toLocaleString('en')} deaths so far (${rp.asOf || 'latest report'}). ${sit.hazard === 'FL' ? 'Send search-and-rescue teams with boats and ropes downstream and to cut-off villages' : 'Send search-and-rescue teams to the worst-hit and cut-off areas'}; most survivors are found in the first 72 hours.`, at: top[0] });
     const dis = st.fcast.summary.dis.p50;
-    if (dis >= 1) out.push({ icon: '⌂', text: `Open shelter for ${people(dis)} (up to ${about(st.fcast.summary.dis.p90)} in the worst case).`, detail: `About ${about(dis / 5)} family tents or equivalent space in schools and halls.`, at: top[0] });
+    if (dis >= 1) out.push({ icon: '⌂', text: `Open shelter for ${people(dis)} (up to ${about(st.fcast.summary.dis.p90)} in the worst case).`, detail: `About ${whole(dis / 5)} family tents or equivalent space in schools and halls.`, at: top[0] });
     const flows = run.casualty.flows.slice().sort((a, b) => b.n - a.n);
     if (flows.length) { const fl = flows[0]; out.push({ icon: '+', text: `Send ambulances: ${about(M.sum(flows.map((x) => x.n)))} seriously injured patients to ${list([...new Set(flows.map((x) => st.hospitals[x.h].name))].slice(0, 3))}.`, detail: `First run: ${about(fl.n)} patients from ${st.zones[fl.i].name} to ${st.hospitals[fl.h].name} (${mins(fl.tau)})${st.hospitals[fl.h].address ? `, ${st.hospitals[fl.h].address}` : ''}.`, at: st.hospitals[fl.h] }); }
     const d = R.dispatches(st).filter((x) => !x.air)[0];
@@ -159,13 +163,13 @@
     const scenario = sit.event ? (sit.prov === 'historical' ? 'replay of a past event' : 'live event') : 'planning scenario (no disaster is happening; this is a drill)';
     const r = head(`${hzLabel} action report: ${sit.name || sit.placeName || ''}`, `${sit.country || ''} · ${scenario} · plan time T+${st.epoch * AA.config.epochHours} h`);
     r.sections = [
-      section('In one paragraph', `<p>${an(hzLabel.toLowerCase()).replace(/^a/, 'A')} with ${strength} is ${sit.event ? 'affecting' : 'assumed to hit'} ${sit.placeName ? `${esc(sit.placeName)}${sit.country ? `, ${esc(sit.country)}` : ''}` : esc(sit.event ? (sit.country || sit.name || 'the area') : (sit.name || 'the area'))}. We expect the damage to be <b>${severityWord(st)}</b> within about ${Math.round(sit.radiusKm)} km. Our best estimate is that <b>${people(sm.aff.p50)}</b> will be affected, <b>${people(sm.dis.p50)}</b> will need shelter, <b>${people(sm.inj.p50)}</b> will be injured and about <b>${about(sm.fat.p50)}</b> could die. These are estimates: the real numbers could be anywhere from ${about(sm.aff.p10)} to ${about(sm.aff.p90)} affected, so plan for the higher number.</p>${(() => { const r = st.fcast.reported; if (!r) return ''; const bits = ['deaths', 'missing', 'injured', 'displaced', 'affected'].filter((k) => r[k] > 0).map((k) => `${Math.round(r[k]).toLocaleString('en')} ${k}`); return `<p><b>Already confirmed by agencies</b> (${esc(r.source)}, ${esc(r.asOf || 'latest')}): ${bits.join(', ')}. These are minimums: the numbers above never go below them${r.missing ? `. With ${Math.round(r.missing).toLocaleString('en')} people still missing, we plan for about ${about(st.fcast.summary.fat.p50)} deaths and up to ${about(st.fcast.summary.fat.p90)}` : ''}.</p>`; })()}`),
+      section('In one paragraph', `<p>${an(hzLabel.toLowerCase()).replace(/^a/, 'A')} with ${strength} is ${sit.event ? 'affecting' : 'assumed to hit'} ${sit.placeName ? `${esc(sit.placeName)}${sit.country ? `, ${esc(sit.country)}` : ''}` : esc(sit.event ? (sit.country || sit.name || 'the area') : (sit.name || 'the area'))}. We expect the damage to be <b>${severityWord(st)}</b> within about ${Math.round(sit.radiusKm)} km. Our best estimate is that <b>${people(sm.aff.p50)}</b> will be affected, <b>${people(sm.dis.p50)}</b> will need shelter, <b>${people(sm.inj.p50)}</b> will be injured and <b>${aboutN(sm.fat.p50)}</b> could die. These are estimates: the real numbers could be anywhere from ${about(sm.aff.p10)} to ${about(sm.aff.p90)} affected, so plan for the higher number.</p>${(() => { const r = st.fcast.reported; if (!r) return ''; const bits = ['deaths', 'missing', 'injured', 'displaced', 'affected'].filter((k) => r[k] > 0).map((k) => `${Math.round(r[k]).toLocaleString('en')} ${k}`); return `<p><b>Already confirmed by agencies</b> (${esc(r.source)}, ${esc(r.asOf || 'latest')}): ${bits.join(', ')}. These are minimums: the numbers above never go below them${r.missing ? `. With ${Math.round(r.missing).toLocaleString('en')} people still missing, we plan for ${aboutN(st.fcast.summary.fat.p50)} deaths and up to ${about(st.fcast.summary.fat.p90)}` : ''}.</p>`; })()}`),
       section('Areas that need help first', `<p>Ranked by need (how bad the damage is, how many people, how poor and how hard to reach), not just by size.</p><table class="rt"><thead><tr><th>#</th><th>Area</th><th>People affected</th><th>Need shelter</th><th>Injured</th><th>Reach from nearest store</th></tr></thead><tbody>${zones.slice(0, 6).map((z, k) => `<tr><td>${k + 1}</td><td>${esc(z.name)}</td><td>${about(z.fc.aff.p50)}</td><td>${about(z.fc.dis.p50)}</td><td>${about(z.fc.inj.p50)}</td><td>${air.some((l) => l.b === z) ? 'no road: air drop' : mins(z.accHours || 0)}</td></tr>`).join('')}</tbody></table>`),
       section('Do now: next 6 hours', steps([
         `<b>Warn the public.</b> ${A.warn} Send the warning to ${list(zones.slice(0, 4).map((z) => esc(z.name)))} first.`,
         `<b>Activate the control room</b> and bring in district officials, police, fire service, health and the ${A.word === 'cyclone' || A.word === 'flood' ? 'Met department and irrigation department' : 'Met department'}. Re-check this plan every 6 hours.`,
         ...A.first.map((x) => `<b>${x.split('.')[0]}.</b>${x.split('.').slice(1).join('.')}`),
-        sm.dis.p50 >= 1 ? `<b>Open shelters</b> for ${people(sm.dis.p50)} (keep space for ${about(sm.dis.p90)}). That is about ${about(sm.dis.p50 / 5)} family tents, or schools and community halls.` : '',
+        sm.dis.p50 >= 1 ? `<b>Open shelters</b> for ${people(sm.dis.p50)} (keep space for ${about(sm.dis.p90)}). That is about ${whole(sm.dis.p50 / 5)} family tents, or schools and community halls.` : '',
         flows.length ? `<b>Move the seriously injured.</b> ${flows.slice(0, 4).map((x) => `${about(x.n)} from ${esc(st.zones[x.i].name)} to <b>${esc(st.hospitals[x.h].name)}</b>${at(st.hospitals[x.h])}, ${mins(x.tau)} away`).join('; ')}. Ask these hospitals to clear beds now.` : '',
         disp.length ? `<b>Send these supplies first</b> (largest loads first):${bullets(disp.filter((x) => !x.air).slice(0, 8).map((x) => `From <b>${esc(x.depot.name)}</b>${at(x.depot)} to <b>${esc(x.zone.name)}</b>${at(x.zone)}: ${x.trucks ? plural(x.trucks, 'truck') : ''}${x.trucks && x.buses ? ' and ' : ''}${x.buses ? plural(x.buses, 'bus', 'buses') : ''}${x.milk ? ' (shared truck, also stopping at another area)' : ''}, carrying ${Object.entries(x.cargo).filter(([, q]) => q > 1e-3).map(([k, q]) => qty(k, q)).join(', ')}. Drive time about ${mins(x.hours)}.`))}` : '',
         air.length ? `<b>Arrange air drops</b> for ${list([...new Set(air.map((l) => esc(l.b.name)))])}. No road route is safe or open.` : '',
@@ -199,7 +203,7 @@
       section('Summary', `<p>${top.length} disasters are ranked below by their overall severity (agency alert level, size of the event and how deadly this kind of disaster usually is). Open any of them in AidAtlas to get a full local plan with routes and supply lists.</p>`),
       ...top.map((e, k) => {
         const A = adv(e.hazard);
-        const sz = e.hazard === 'EQ' ? `magnitude ${(+(e.magnitude ?? e.severity)).toFixed(1)}` : e.hazard === 'TC' ? `winds up to ${Math.round(e.severity || 0)} km/h` : e.severity ? `${about(e.severity)} ${esc(e.severityUnit || '')}` : '';
+        const sz = e.hazard === 'EQ' ? `magnitude ${(+(e.magnitude ?? e.severity)).toFixed(1)}` : e.hazard === 'TC' ? `winds up to ${Math.round(e.severity || 0)} km/h` : e.severity ? `${dec(e.severity)} ${esc(e.severityUnit || '')}` : '';
         const level = e.alertlevel ? `${e.alertlevel} alert` : e.pager ? `USGS ${e.pager} alert` : 'no agency alert yet';
         return section(`${k + 1}. ${esc(e.name)}`, `<p><b>Where:</b> ${esc(e.country || 'see map')} (${e.lat.toFixed(2)}, ${e.lon.toFixed(2)}). <b>What:</b> ${AA.HAZARDS[e.hazard].label}${sz ? `, ${sz}` : ''}. <b>Level:</b> ${esc(level)}. <b>Source:</b> ${esc(e.src)}${e.url ? ` (<a href="${esc(e.url)}">report</a>)` : ''}.</p>${steps([A.warn, A.first[0], `Watch: ${A.watch}`])}`);
       }),

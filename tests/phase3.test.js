@@ -153,6 +153,13 @@ t('low-bandwidth mode skips the WorldPop download and street-address lookups', a
   finally { AA.config.lowBandwidth = false; D.worldpop = keep; }
 });
 
+t('action report: people and delivered items are whole numbers (no 1.7 people, 0.4 tents, 8.4 kits)', () => {
+  const html = AA.report.inner(AA.report.plan(st)).replace(/<[^>]+>/g, ' ');
+  const bad = html.match(/\b\d+\.\d+\s+(people|persons|family tents?|medical kits?|relief workers?|patients|buses|trucks)\b/g);
+  const ab = AA.report.about;
+  return !bad && ab(1.7) === '2' && ab(0.4) === 'less than 1' && ab(8.4) === '8';
+});
+
 // ---------------- exports ----------------
 t('GeoJSON: valid FeatureCollection with areas, stores, hospitals, routes and the impact area; [lon, lat] order', () => {
   const g = X.geojson(st), layers = new Set(g.features.map((f) => f.properties.layer));
